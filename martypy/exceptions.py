@@ -1,4 +1,8 @@
 
+class MartyCommandException(Exception):
+    pass
+
+
 class MartyConfigException(Exception):
     pass
 

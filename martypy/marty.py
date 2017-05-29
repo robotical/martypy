@@ -39,9 +39,10 @@ class Marty(object):
         '''
         Zero joints and wiggle eyebrows
         '''
+        self.client.execute('hello')
 
 
-    def stop(self):
+    def stop(self, stop_type):
         '''
         Stop motions
         '''
@@ -123,6 +124,9 @@ class Marty(object):
         '''
         Returns:
             The battery voltage reading as a float
+
+        Code:
+            battery
         '''
 
 
@@ -150,6 +154,9 @@ class Marty(object):
     def enable_motors(self, enable):
         '''
         Toggle power to motors
+        
+        Command:
+           enable_motors and disable_motors
         '''
 
 
