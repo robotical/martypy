@@ -18,9 +18,9 @@ setup(
     maintainer_email='hello@robotical.io',
     packages=["martypy"],
     url='http://github.com/robotical/martypy',
-    license='Unlicensed',
+    license='Apache 2.0',
     install_requires=[
-        'six>=1.10.0'
+        'six>=1.10.0',
     ],
     keywords=[
         'marty',
