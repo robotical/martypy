@@ -1,0 +1,3 @@
+Version 0.0.1 (Alpha)
+: - Adds initial API implementation for Socket-based control
+  - Adds client class structure

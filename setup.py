@@ -9,14 +9,14 @@ with open('README.md') as f:
 
 setup(
     name="martypy",
-    version="0.1",
+    version="0.1.0",
     description="Client library for Marty the Robot by Robotical Ltd",
     long_description=readme,
     author="Robotical Ltd",
     author_email="hello@robotical.io",
     maintainer='Robotical Ltd',
     maintainer_email='hello@robotical.io',
-    packages=["martypy"],
+    packages=['martypy'],
     url='http://github.com/robotical/martypy',
     license='Apache 2.0',
     install_requires=[
@@ -47,3 +47,10 @@ setup(
         #'License :: OSI Approved :: MIT License',
     )
 )
+
+# To Publish:
+# First, build a source distribution:
+# $ python setup.py sdist
+# Then upload this to PyPi (have ~/.pypirc exist)
+# $ twine upload dist/*
+
