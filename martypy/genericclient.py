@@ -1,3 +1,4 @@
+from .utils import dict_merge
 from .exceptions import (UnavailableCommandException,
                          MartyCommandException)
 
@@ -55,31 +56,11 @@ class GenericClient(object):
         except Exception as e:
             raise MartyCommandException(e)
 
-    
-    def dict_merge(self, *dicts):
-        '''
-        Merge all provided dicts into one dict
-        '''
-        merged = {}
-        for d in dicts:
-            if not isinstance(d, dict):
-                raise ValueError('Value should be a dict')
-            else:
-                merged.update(d)
-        return merged
-
 
     def register_commands(self, handlers):
         '''
         Take {str:func} command names & handlers in a dict
         and register them with the COMMANDS_LUT 
         '''
-        self.COMMANDS_LUT = self.dict_merge(self.COMMANDS_LUT, handlers)
-
-    
-    def pingtest(self, *args, **kwargs):
-        '''
-        Basic member to fill empty COMMANDS_LUT dict
-        '''
-        print('pong')
+        self.COMMANDS_LUT = dict_merge(self.COMMANDS_LUT, handlers)
 

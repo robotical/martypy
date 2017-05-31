@@ -1,4 +1,5 @@
 import struct
+from .utils import dict_merge
 from .serialclient import SerialClient
 from .socketclient import SocketClient
 from .testclient import TestClient
@@ -16,7 +17,7 @@ class Marty(object):
         'test'   : TestClient,
     }
 
-    def __init__(self, url='socket://marty.local', *args, **kwargs):
+    def __init__(self, url='socket://marty.local', client_types=dict(), *args, **kwargs):
         '''
         Initialise a Marty client class from a url
 
@@ -29,6 +30,8 @@ class Marty(object):
 
         proto, _, loc = url.partition('://')
 
+        self.CLIENT_TYPES = dict_merge(self.CLIENT_TYPES, client_types)
+        
         if not (proto and loc):
             raise MartyConfigException('Invalid URL format "{}" given'.format(url))
 
@@ -138,7 +141,7 @@ class Marty(object):
         Move the eyes to an angle
         Args:
             angle, int, degrees
-        TODO: Calibration
+        TODO: Calibration, zero if angle is None?
         '''
         return self.client.execute('eyes', angle)
 
@@ -285,8 +288,8 @@ class Marty(object):
         try:
             ax = self.ACCEL_AXES[axis]
         except KeyError:
-            raise MartyCommandException("Axis must be one of {}, not {}"
-                                        "".format(self.ACCEL_AXES.keys(), axis))
+            raise MartyCommandException("Axis must be one of {}, not '{}'"
+                                        "".format(set(self.ACCEL_AXES.keys()), axis))
         return self.client.execute('accel', ax)
 
 
