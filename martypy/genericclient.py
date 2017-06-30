@@ -10,37 +10,11 @@ class GenericClient(object):
 
     def __init__(self, *args, **kwargs):
         '''
-        Initialise the client class
+        Initialise the client class.
+        COMMANDS_LUT is initialised as empty
         '''
 
-    COMMANDS_LUT = {
-        'battery'            : None,
-        'accel'              : None,
-        'motorcurrent'       : None,
-        'gpio'               : None,
-        'hello'              : None,
-        'lean'               : None,
-        'walk'               : None,
-        'eyes'               : None,
-        'kick'               : None,
-        'lift_leg'           : None,
-        'lower_leg'          : None,
-        'celebrate'          : None,
-        'arms'               : None,
-        'sidestep'           : None,
-        'stand_straight'     : None,
-        'play_sound'         : None,
-        'stop'               : None,
-        'move_joint'         : None,
-        'enable_motors'      : None,
-        'disable_motors'     : None,
-        'fall_protection'    : None,
-        'motor_protection'   : None,
-        'battery_protection' : None,
-        'buzz_prevention'    : None,
-        'save_calibration'   : None,
-        'ros_command'        : None,
-    }
+    COMMANDS_LUT = dict()
 
 
     def execute(self, *args, **kwargs):
@@ -49,7 +23,7 @@ class GenericClient(object):
         '''
         try:
             return self.COMMANDS_LUT[args[0]](self, *args, **kwargs)
-        except TypeError:
+        except KeyError:
             raise UnavailableCommandException("The command '{}' is not available "
                                               "from the {} client type"
                                               "".format(args[0], str(self.__class__.__name__)))

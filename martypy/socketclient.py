@@ -16,7 +16,7 @@ class SocketClient(GenericClient):
 
     SOCKET_PORT = 24
     
-    def __init__(self, proto, loc, port=None, timeout=5.0, *args, **kwargs):
+    def __init__(self, proto, loc, port=None, timeout=5.0, debug=False, *args, **kwargs):
         '''
         Initialise connection to remote Marty over a IPv4 socket by name 'loc' over port 24
 
@@ -27,10 +27,13 @@ class SocketClient(GenericClient):
             MartyConnectException if the socket failed to make the connection to the host
         '''
         GenericClient.__init__(self)
+
         if port is None:
             self.port = self.SOCKET_PORT
         else:
             self.port = port
+
+        self.debug = debug
 
         self.loc = loc
         self.timeout = timeout
@@ -39,6 +42,7 @@ class SocketClient(GenericClient):
 
         # Extend basis LUT with specific handlers
         self.register_commands({
+            'discover'           : self.discover,
             'battery'            : self.simple_sensor,
             'accel'              : self.select_sensor,
             'motorcurrent'       : self.select_sensor,
@@ -65,6 +69,7 @@ class SocketClient(GenericClient):
             'buzz_prevention'    : self.toggle_command,
             'save_calibration'   : self.fixed_command,
             'ros_command'        : self.command,
+            'chatter'            : self.chatter,
         })
 
 
@@ -106,6 +111,13 @@ class SocketClient(GenericClient):
                              self.sock.getsockname())
 
 
+    def discover(self, *args, **kwargs):
+        '''
+        Search for Marties on the network
+        '''
+        raise NotImplementedError()
+
+
     # Encodes Command Type flag, LSB size, MSB size, Data
     CMD_OPCODES = {
         'battery'            : [0x01, 0x01, 0x00],       # OK
@@ -126,14 +138,15 @@ class SocketClient(GenericClient):
         'play_sound'         : [0x02, 0x07, 0x00, 0x10], # OK
         'stop'               : [0x02, 0x02, 0x00, 0x11], # 
         'move_joint'         : [0x02, 0x05, 0x00, 0x12], # 
-        'enable_motors'      : [0x02, 0x01, 0x00, 0x13], # OK, Subject to change
-        'disable_motors'     : [0x02, 0x01, 0x00, 0x14], # OK, Subject to change
+        'enable_motors'      : [0x02, 0x01, 0x00, 0x13], # OK, Has optional args now
+        'disable_motors'     : [0x02, 0x01, 0x00, 0x14], # OK, Has optional args now
         'fall_protection'    : [0x02, 0x02, 0x00, 0x15], # 
         'motor_protection'   : [0x02, 0x02, 0x00, 0x16], # OK
         'battery_protection' : [0x02, 0x02, 0x00, 0x17], # OK
         'buzz_prevention'    : [0x02, 0x02, 0x00, 0x18], # OK
         'save_calibration'   : [0x02, 0x01, 0x00, 0xFF], # 
         'ros_command'        : [0x03],                   # Variable Length
+        'chatter'            : [0x01, 0x05, 0x00],       # Variable Length
     }
 
 
@@ -167,6 +180,8 @@ class SocketClient(GenericClient):
         if len(data) != datalen:
             raise TypeError('{} takes {} arguments but {} were given'
                             ''.format(cmd, datalen, len(data)))
+        if self.debug:
+            print(self.pack(opcode + data))
         self.sock.send(self.pack(opcode + data))
         return True
 
@@ -177,7 +192,6 @@ class SocketClient(GenericClient):
         Pipes args down the socket whilst calculating the payload length
         Args:
             *args of length at least 3
-        TODO: test for too-large payloads
         '''
         cmd = args[1]
         opcode = self.CMD_OPCODES[cmd][0]
@@ -223,4 +237,15 @@ class SocketClient(GenericClient):
         self.sock.send(self.pack(self.CMD_OPCODES[cmd] + [index]))
         data = self.sock.recv(4)
         return struct.unpack('f', data)[0]
+
+
+
+    def chatter(self, *args, **kwargs):
+        '''
+        Return chatter topic data (variable length)
+        '''
+        cmd = args[1]
+        self.sock.send(self.pack(self.CMD_OPCODES[cmd]))
+        data_length = self.sock.recv(1)
+        return data
 

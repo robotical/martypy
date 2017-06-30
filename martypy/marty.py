@@ -62,6 +62,13 @@ class Marty(object):
         return self.client.execute('hello')
 
 
+    def discover(self):
+        '''
+        Try and find us some Marties!
+        '''
+        return self.client.execute('discover')
+
+
     SIDE_CODES = {
         'left'    : 0x00,
         'right'   : 0x01,
@@ -69,12 +76,14 @@ class Marty(object):
         'back'    : 0x03
     }
 
+
     STOP_TYPE = {
         'clear queue'       : 0, # clear movement queue only (so finish the current movement)
         'clear and stop'    : 1, # clear movement queue and servo queues (freeze in-place)
         'clear and disable' : 2, # clear everything and disable motors
         'clear and zero'    : 3  # clear everything, and make robot return to zero
     }
+
 
     def stop(self, stop_type=None):
         '''
@@ -157,7 +166,7 @@ class Marty(object):
         '''
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
-        return self.client.execute('kick', side_c, dur_lsb, dur_msb, twist)
+        return self.client.execute('kick', side_c, twist, dur_lsb, dur_msb)
 
 
     def arms(self, right_angle, left_angle, move_time):
@@ -254,7 +263,7 @@ class Marty(object):
                                    dur_lsb, dur_msb)
 
 
-    def get_battery_volatage(self):
+    def get_battery_voltage(self):
         '''
         Returns:
             The battery voltage reading as a float in Volts
@@ -262,21 +271,11 @@ class Marty(object):
         return self.client.execute('battery')
 
 
-
-    # Current, borked axes:
-    # also z is negative
-    # ACCEL_AXES = {
-    #     'y' : 0x00,
-    #     'z' : 0x01,
-    #     'x' : 0x02,
-    # }
-
     ACCEL_AXES = {
         'x' : 0x00,
         'y' : 0x01,
         'z' : 0x02,
     }
-
 
     def get_accelerometer(self, axis):
         '''
@@ -377,3 +376,9 @@ class Marty(object):
         '''
         return self.client.execute('ros_command', byte_array)
 
+
+    def get_chatter(self):
+        '''
+        Return chatter topic data (variable length)
+        '''
+        return self.client.execute('chatter')
