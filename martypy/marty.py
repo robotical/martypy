@@ -42,6 +42,7 @@ class Marty(object):
         self.client = self.CLIENT_TYPES[proto](proto, loc, *args, **kwargs)
 
         # To be able to do anything:
+        self.enable_safeties(True)
         self.enable_motors(True)
 
 
@@ -144,6 +145,10 @@ class Marty(object):
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self.client.execute('walk', num_steps, turn, dur_lsb, dur_msb, step_length, side_c)
 
+    
+    def circle_dance(self):
+        raise NotImplementedError()
+
 
     def eyes(self, angle):
         '''
@@ -211,7 +216,7 @@ class Marty(object):
         return self.client.execute('lower_leg', side_c, distance, dur_lsb, dur_msb)
 
 
-    def celebrate(self, move_time=1000):
+    def celebrate(self, move_time=4000):
         '''
         Do a small celebration
         Args:
@@ -221,7 +226,7 @@ class Marty(object):
         return self.client.execute('celebrate', dur_lsb, dur_msb)
 
 
-    def sidestep(self, side, steps, step_length, move_time):
+    def sidestep(self, side, steps=1, step_length=100, move_time=2000):
         '''
         Take sidesteps
         TODO: Calibration for step length
@@ -261,6 +266,30 @@ class Marty(object):
                                    f_start_lsb, f_start_msb,
                                    f_end_lsb, f_end_msb,
                                    dur_lsb, dur_msb)
+
+    
+
+    def set_io_type(self, io_number, io_type):
+        '''
+        Configure the behaviour of a GPIO port
+        '''
+        raise NotImplementedError()
+
+
+    def io_write(self, io_number, value):
+        '''
+        Write a floating value to an IO port
+        '''
+        raise NotImplementedError()
+
+
+    def i2c_write(self, byte_array):
+        '''
+        Write a bytestream to the i2c port.
+        The first byte should be the address, following from that
+        the datagram folows standard i2c spec
+        '''
+        raise NotImplementedError()
 
 
     def get_battery_voltage(self):
@@ -324,8 +353,15 @@ class Marty(object):
         else:
             return self.client.execute('disable_motors') and False
 
+        
+    def enable_safeties(self, enable=True):
+        '''
+        Tell the board to turn on 'normal' safeties
+        '''
+        return self.client.execute('enable_safeties')
 
-    def fall_protection(self, enable):
+
+    def fall_protection(self, enable=True):
         '''
         Toggle fall protections
         Args:
@@ -334,7 +370,7 @@ class Marty(object):
         return self.client.execute('fall_protection', enable)
 
 
-    def motor_protection(self, enable):
+    def motor_protection(self, enable=True):
         '''
         Toggle motor current protections
         Args:
@@ -343,7 +379,7 @@ class Marty(object):
         return self.client.execute('motor_protection', enable)
 
 
-    def battery_protection(self, enable):
+    def battery_protection(self, enable=True):
         '''
         Toggle low battery protections
         Args:
@@ -352,7 +388,7 @@ class Marty(object):
         return self.client.execute('battery_protection', enable)
 
 
-    def buzz_prevention(self, enable):
+    def buzz_prevention(self, enable=True):
         '''
         Toggle motor buzz prevention
         Args:
@@ -361,12 +397,29 @@ class Marty(object):
         return self.client.execute('buzz_prevention', enable)
 
 
+    def lifelike_behaviour(self, enable=True):
+        '''
+        Tell the robot whether it can or can't move now and then in a lifelike way when idle.
+        Args:
+            enable: True/False toggle
+        '''
+        return self.client.execute('lifelike_behaviour', enable)
+
+
     def save_calibration(self):
         '''
         Set the current motor positions as the zero positions
         BE CAREFUL, this can cause unexpected movement or self-interference
         '''
         return self.client.execute('save_calibration')
+
+    
+    def clear_calibration(self):
+        '''
+        Tell the Robot to forget it's calibration
+        BE CAREFUL, this can cause unexpected movement or self-interference
+        '''
+        return self.client.execute('clear_calibration')
 
 
     def ros_command(self, byte_array):
@@ -382,3 +435,4 @@ class Marty(object):
         Return chatter topic data (variable length)
         '''
         return self.client.execute('chatter')
+

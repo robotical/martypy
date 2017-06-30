@@ -63,10 +63,13 @@ class SocketClient(GenericClient):
             'move_joint'         : self.fixed_command,
             'enable_motors'      : self.fixed_command,
             'disable_motors'     : self.fixed_command,
+            'enable_safeties'    : self.fixed_command,
             'fall_protection'    : self.toggle_command,
             'motor_protection'   : self.toggle_command,
             'battery_protection' : self.toggle_command,
             'buzz_prevention'    : self.toggle_command,
+            'lifelike_behaviour' : self.toggle_command,
+            'clear_calibration'  : self.fixed_command,
             'save_calibration'   : self.fixed_command,
             'ros_command'        : self.command,
             'chatter'            : self.chatter,
@@ -120,30 +123,33 @@ class SocketClient(GenericClient):
 
     # Encodes Command Type flag, LSB size, MSB size, Data
     CMD_OPCODES = {
-        'battery'            : [0x01, 0x01, 0x00],       # OK
-        'accel'              : [0x01, 0x02],             # OK, but CHECK AXES
-        'motorcurrent'       : [0x01, 0x03],             # OK
-        'gpio'               : [0x01, 0x04],             # OK
-        'hello'              : [0x02, 0x01, 0x00, 0x00], # OK
-        'lean'               : [0x02, 0x05, 0x00, 0x02], # 
+        'battery'            : [0x01, 0x01, 0x00],       # 
+        'accel'              : [0x01, 0x02],             # CHECK AXES
+        'motorcurrent'       : [0x01, 0x03],             # BOUNDS CHECK
+        'gpio'               : [0x01, 0x04],             # 
+        'hello'              : [0x02, 0x01, 0x00, 0x00], # 
+        'lean'               : [0x02, 0x05, 0x00, 0x02], # NOT OK, int8
         'walk'               : [0x02, 0x07, 0x00, 0x03], # 
-        'eyes'               : [0x02, 0x02, 0x00, 0x04], # OK
-        'kick'               : [0x02, 0x05, 0x00, 0x05], # 
+        'eyes'               : [0x02, 0x02, 0x00, 0x04], # NOT OK, int8
+        'kick'               : [0x02, 0x05, 0x00, 0x05], # Time Ignored
         'lift_leg'           : [0x02, 0x06, 0x00, 0x06], # NotImplemented on board
         'lower_leg'          : [0x02, 0x06, 0x00, 0x07], # NotImplemented on board
         'celebrate'          : [0x02, 0x03, 0x00, 0x08], # OK
-        'arms'               : [0x02, 0x05, 0x00, 0x0B], # 
+        'arms'               : [0x02, 0x05, 0x00, 0x0B], # NOT OK, int8
         'sidestep'           : [0x02, 0x06, 0x00, 0x0E], # 
         'stand_straight'     : [0x02, 0x03, 0x00, 0x0F], # NotImplemented on board
-        'play_sound'         : [0x02, 0x07, 0x00, 0x10], # OK
-        'stop'               : [0x02, 0x02, 0x00, 0x11], # 
-        'move_joint'         : [0x02, 0x05, 0x00, 0x12], # 
-        'enable_motors'      : [0x02, 0x01, 0x00, 0x13], # OK, Has optional args now
-        'disable_motors'     : [0x02, 0x01, 0x00, 0x14], # OK, Has optional args now
+        'play_sound'         : [0x02, 0x07, 0x00, 0x10], # 
+        'stop'               : [0x02, 0x02, 0x00, 0x11], # OK
+        'move_joint'         : [0x02, 0x05, 0x00, 0x12], # NOT OK, int8
+        'enable_motors'      : [0x02, 0x01, 0x00, 0x13], # Has optional args now
+        'disable_motors'     : [0x02, 0x01, 0x00, 0x14], # Has optional args now
+        'enable_safeties'    : [0x02, 0x01, 0x00, 0x1E], # IMPL TODO
         'fall_protection'    : [0x02, 0x02, 0x00, 0x15], # 
-        'motor_protection'   : [0x02, 0x02, 0x00, 0x16], # OK
-        'battery_protection' : [0x02, 0x02, 0x00, 0x17], # OK
-        'buzz_prevention'    : [0x02, 0x02, 0x00, 0x18], # OK
+        'motor_protection'   : [0x02, 0x02, 0x00, 0x16], # 
+        'battery_protection' : [0x02, 0x02, 0x00, 0x17], # 
+        'buzz_prevention'    : [0x02, 0x02, 0x00, 0x18], # 
+        'lifelike_behaviour' : [0x02, 0x02, 0x00, 0x1D], # 
+        'clear_calibration'  : [0x02, 0x01, 0x00, 0xFE], # 
         'save_calibration'   : [0x02, 0x01, 0x00, 0xFF], # 
         'ros_command'        : [0x03],                   # Variable Length
         'chatter'            : [0x01, 0x05, 0x00],       # Variable Length
@@ -247,5 +253,5 @@ class SocketClient(GenericClient):
         cmd = args[1]
         self.sock.send(self.pack(self.CMD_OPCODES[cmd]))
         data_length = self.sock.recv(1)
-        return data
+        return data_length
 
