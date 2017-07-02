@@ -1,3 +1,4 @@
+import six
 import struct
 from .utils import dict_merge
 from .serialclient import SerialClient
@@ -50,10 +51,71 @@ class Marty(object):
         '''
         Pack an unsigned 16 bit int into two 8 bit bytes, little-endian
         Returns:
-           tuple(least-sig-byte, most-sig-byte)
+            tuple(least-sig-byte, most-sig-byte)
+
+        Struct:
+            Fmt    C Type                 Python Type    Standard Size
+            h      short/uint16           integer        2
+        '''
+        data = struct.pack('<H', num)
+        return chr(data[0]), chr(data[1])
+
+
+    def _pack_int16(self, num):
+        '''
+        Pack a signed 16 bit int into two 8 bit bytes, little-endian
+        Returns:
+            tuple(least-sig-byte, most-sig-byte)
+
+        Struct:
+            Fmt    C Type                 Python Type    Standard Size
+            h      short/uint16           integer        2
         '''
         data = struct.pack('<h', num)
-        return data[0], data[1]
+        return chr(data[0]), chr(data[1])
+
+
+    def _pack_uint8(self, num):
+        '''
+        Pack an unsigned 8 bit int into one 8 bit byte, little-endian
+        Returns:
+            bytes
+        
+        Struct:
+            Fmt    C Type                 Python Type    Standard Size
+            B      unsigned char/uint8    integer        1
+        '''
+        data = struct.pack('<B', num)
+        return chr(data[0])
+
+
+    def _pack_int8(self, num):
+        '''
+        Pack a signed 8 bit int into one 8 bit unsigned byte, little-endian
+        Returns:
+            bytes
+        
+        Struct:
+            Fmt    C Type                 Python Type    Standard Size
+            b      signed char/int8       integer        1
+        '''
+        data = struct.pack('<b', num)
+        return chr(data[0])
+
+
+    def _pack_float(self, num):
+        '''
+        Pack a float into four bit unsigned byte, little-endian
+        Returns:
+            tuple(least-sig-byte, less-sig-byte, more-sig-byte, most-sig-byte)
+        
+        Struct:
+            Fmt    C Type                 Python Type    Standard Size
+            f      float                  float          4
+        '''
+        data = struct.pack('<f', float(num))
+        return chr(data[0]), chr(data[1]), chr(data[2]), chr(data[3])
+
 
 
     def hello(self):
@@ -67,22 +129,22 @@ class Marty(object):
         '''
         Try and find us some Marties!
         '''
-        return self.client.execute('discover')
+        return self.client.discover()
 
 
     SIDE_CODES = {
-        'left'    : 0x00,
-        'right'   : 0x01,
-        'forward' : 0x02,
-        'back'    : 0x03
+        'left'    : '\x00',
+        'right'   : '\x01',
+        'forward' : '\x02',
+        'back'    : '\x03'
     }
 
 
     STOP_TYPE = {
-        'clear queue'       : 0, # clear movement queue only (so finish the current movement)
-        'clear and stop'    : 1, # clear movement queue and servo queues (freeze in-place)
-        'clear and disable' : 2, # clear everything and disable motors
-        'clear and zero'    : 3  # clear everything, and make robot return to zero
+        'clear queue'       : '\x00', # clear movement queue only (so finish the current movement)
+        'clear and stop'    : '\x01', # clear movement queue and servo queues (freeze in-place)
+        'clear and disable' : '\x02', # clear everything and disable motors
+        'clear and zero'    : '\x03'  # clear everything, and make robot return to zero
     }
 
 
@@ -113,27 +175,30 @@ class Marty(object):
             move_time: how long this movement should last, in milliseconds
         '''
         dur_lsb, dur_msb = self._pack_uint16(move_time)
-        return self.client.execute('move_joint', joint_id, postition, dur_lsb, dur_msb)
+        return self.client.execute('move_joint',
+                                   self._pack_uint8(joint_id),
+                                   self._pack_int8(postition),
+                                   dur_lsb, dur_msb)
 
 
     def lean(self, direction, amount, move_time):
         '''
         Lean over in a direction
-        TODO: Calibration for amount
         Args:
             direction: 'left' or 'right'
             amount: distance
             move_time: how long this movement should last, in milliseconds
         '''
-        side_c = self.SIDE_CODES[side]
+        side_c = self.SIDE_CODES[direction]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
-        return self.client.execute('lean', side_c, amount, dur_lsb, dur_msb)
+        return self.client.execute('lean', side_c,
+                                   self._pack_int8(amount),
+                                   dur_lsb, dur_msb)
 
 
-    def walk(self, num_steps=2, start_foot='left', turn=0, step_length=25, move_time=1500):
+    def walk(self, num_steps=2, start_foot='left', turn=0, step_length=40, move_time=1500):
         '''
         Walking macro
-        TODO: Calibration step_length, turn
         Args:
             num_steps: int, how many steps to take
             start_foot: 'left' or 'right', start walking with this foot
@@ -143,11 +208,12 @@ class Marty(object):
         '''
         side_c = self.SIDE_CODES[start_foot]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
-        return self.client.execute('walk', num_steps, turn, dur_lsb, dur_msb, step_length, side_c)
-
-    
-    def circle_dance(self):
-        raise NotImplementedError()
+        return self.client.execute('walk',
+                                   self._pack_uint8(num_steps),
+                                   self._pack_int8(turn),
+                                   dur_lsb, dur_msb,
+                                   self._pack_int8(step_length),
+                                   side_c)
 
 
     def eyes(self, angle):
@@ -155,15 +221,13 @@ class Marty(object):
         Move the eyes to an angle
         Args:
             angle, int, degrees
-        TODO: Calibration, zero if angle is None?
         '''
-        return self.client.execute('eyes', angle)
+        return self.client.execute('eyes', self._pack_int8(angle))
 
 
     def kick(self, side, twist, move_time):
         '''
         Kick with Marty's feet
-        TODO: Calibration for twist
         Args:
             side: 'left' or 'right', which foot to use
             twist: TODO
@@ -171,49 +235,25 @@ class Marty(object):
         '''
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
-        return self.client.execute('kick', side_c, twist, dur_lsb, dur_msb)
+        return self.client.execute('kick', side_c,
+                                   self._pack_int8(twist),
+                                   dur_lsb, dur_msb)
 
 
     def arms(self, right_angle, left_angle, move_time):
         '''
         Move the arms to a position
-        TODO: Calibration on angles
         Args:
             right_angle: Position of the right arm
             left_angle: Position of the left arm
             move_time: how long this movement should last, in milliseconds
         '''
         dur_lsb, dur_msb = self._pack_uint16(move_time)
-        return self.client.execute('arms', right_angle, left_angle, dur_lsb, dur_msb)
+        return self.client.execute('arms',
+                                   self._pack_int8(right_angle),
+                                   self._pack_int8(left_angle),
+                                   dur_lsb, dur_msb)
 
-
-    def lift_leg(self, leg, distance, move_time):
-        '''
-        Lift a leg up
-        TODO: Calibration for distance
-        Args:
-            leg: 'left' or 'right' leg
-            distance: How high to raise the leg
-            move_time: how long this movement should last, in milliseconds
-        '''
-        raise NotImplementedError()
-        side_c = self.SIDE_CODES[side]
-        dur_lsb, dur_msb = self._pack_uint16(move_time)
-        return self.client.execute('lift_leg', side_c, distance, dur_lsb, dur_msb)
-
-
-    def lower_leg(self, leg, distance, move_time):
-        '''
-        Lower a leg down
-        Args:
-            leg: 'left' or 'right' leg
-            distance: How much to lower the leg
-            move_time: how long this movement should last, in milliseconds
-        '''
-        raise NotImplementedError()
-        side_c = self.SIDE_CODES[side]
-        dur_lsb, dur_msb = self._pack_uint16(move_time)
-        return self.client.execute('lower_leg', side_c, distance, dur_lsb, dur_msb)
 
 
     def celebrate(self, move_time=4000):
@@ -226,10 +266,20 @@ class Marty(object):
         return self.client.execute('celebrate', dur_lsb, dur_msb)
 
 
+    def circle_dance(self, side='right', move_time=1500):
+        '''
+        Boogy, Marty!
+        '''
+        side_c = self.SIDE_CODES[side]
+        dur_lsb, dur_msb = self._pack_uint16(move_time)
+        return self.client.execute('circle_dance',
+                                   side_c,
+                                   dur_lsb, dur_msb)
+
+
     def sidestep(self, side, steps=1, step_length=100, move_time=2000):
         '''
         Take sidesteps
-        TODO: Calibration for step length
         Args:
             side: 'left' or 'right', direction to step in
             steps: number of steps to take
@@ -238,7 +288,10 @@ class Marty(object):
         '''
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
-        return self.client.execute('sidestep', side_c, steps, dur_lsb, dur_msb, step_length)
+        return self.client.execute('sidestep', side_c,
+                                   self._pack_int8(steps),
+                                   dur_lsb, dur_msb,
+                                   self._pack_int8(step_length))
 
 
     def stand_straight(self, move_time=1000):
@@ -267,20 +320,40 @@ class Marty(object):
                                    f_end_lsb, f_end_msb,
                                    dur_lsb, dur_msb)
 
-    
 
-    def set_io_type(self, io_number, io_type):
+
+
+    GPIO_PIN_MODES = {
+        'digital in'  : '\x00',
+        'analog in'   : '\x01',
+        'digital out' : '\x02',
+        #'servo'       : '\x03',
+        #'pwm'         : '\x04',
+    }
+
+
+    def pinmode_gpio(self, gpio, mode):
         '''
-        Configure the behaviour of a GPIO port
+        Configure a GPIO pin
         '''
         raise NotImplementedError()
 
 
-    def io_write(self, io_number, value):
+    def write_gpio(self, gpio, value):
         '''
-        Write a floating value to an IO port
+        Write a value to a GPIO port
         '''
         raise NotImplementedError()
+
+
+    def digitalread_gpio(self, gpio):
+        '''
+        Returns:
+            Returns High/Low state of a GPIO pin
+        Args:
+            GPIO pin number, >= 0 (non-negative)
+        '''
+        return bool(self.client.execute('gpio', self._pack_uint8(gpio)))
 
 
     def i2c_write(self, byte_array):
@@ -301,10 +374,11 @@ class Marty(object):
 
 
     ACCEL_AXES = {
-        'x' : 0x00,
-        'y' : 0x01,
-        'z' : 0x02,
+        'x' : '\x00',
+        'y' : '\x01',
+        'z' : '\x02',
     }
+
 
     def get_accelerometer(self, axis):
         '''
@@ -332,28 +406,23 @@ class Marty(object):
         return self.client.execute('motorcurrent', int(motor_id))
 
 
-    def digitalread_gpio(self, gpio):
-        '''
-        Returns:
-            Returns High/Low state of a GPIO pin
-        Args:
-            GPIO pin number, >= 0 (non-negative)
-        '''
-        return bool(self.client.execute('gpio', int(gpio)))
-
-
-    def enable_motors(self, enable=True):
+    def enable_motors(self, enable=True, clear_queue=True):
         '''
         Toggle power to motors
         Args:
             enable: True/False toggle
+            clear_queue: Default True, prevents unfinished but 'muted' motions
+                         from jumping as soon as motors are enabled
+        ToDo: Implement optional options
         '''
+        if clear_queue:
+            self.stop('clear queue')
         if enable:
             return self.client.execute('enable_motors') and True
         else:
             return self.client.execute('disable_motors') and False
 
-        
+
     def enable_safeties(self, enable=True):
         '''
         Tell the board to turn on 'normal' safeties
@@ -413,7 +482,7 @@ class Marty(object):
         '''
         return self.client.execute('save_calibration')
 
-    
+
     def clear_calibration(self):
         '''
         Tell the Robot to forget it's calibration

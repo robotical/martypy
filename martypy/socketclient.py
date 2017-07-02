@@ -57,6 +57,7 @@ class SocketClient(GenericClient):
             'celebrate'          : self.fixed_command,
             'arms'               : self.fixed_command,
             'sidestep'           : self.fixed_command,
+            'circle_dance'       : self.fixed_command,
             'stand_straight'     : self.fixed_command,
             'play_sound'         : self.fixed_command,
             'stop'               : self.fixed_command,
@@ -74,7 +75,6 @@ class SocketClient(GenericClient):
             'ros_command'        : self.command,
             'chatter'            : self.chatter,
         })
-
 
 
     def socket_factory(self):
@@ -114,7 +114,8 @@ class SocketClient(GenericClient):
                              self.sock.getsockname())
 
 
-    def discover(self, *args, **kwargs):
+    @staticmethod
+    def discover(*args, **kwargs):
         '''
         Search for Marties on the network
         '''
@@ -123,45 +124,47 @@ class SocketClient(GenericClient):
 
     # Encodes Command Type flag, LSB size, MSB size, Data
     CMD_OPCODES = {
-        'battery'            : [0x01, 0x01, 0x00],       # 
-        'accel'              : [0x01, 0x02],             # CHECK AXES
-        'motorcurrent'       : [0x01, 0x03],             # BOUNDS CHECK
-        'gpio'               : [0x01, 0x04],             # 
-        'hello'              : [0x02, 0x01, 0x00, 0x00], # 
-        'lean'               : [0x02, 0x05, 0x00, 0x02], # NOT OK, int8
-        'walk'               : [0x02, 0x07, 0x00, 0x03], # 
-        'eyes'               : [0x02, 0x02, 0x00, 0x04], # NOT OK, int8
-        'kick'               : [0x02, 0x05, 0x00, 0x05], # Time Ignored
-        'lift_leg'           : [0x02, 0x06, 0x00, 0x06], # NotImplemented on board
-        'lower_leg'          : [0x02, 0x06, 0x00, 0x07], # NotImplemented on board
-        'celebrate'          : [0x02, 0x03, 0x00, 0x08], # OK
-        'arms'               : [0x02, 0x05, 0x00, 0x0B], # NOT OK, int8
-        'sidestep'           : [0x02, 0x06, 0x00, 0x0E], # 
-        'stand_straight'     : [0x02, 0x03, 0x00, 0x0F], # NotImplemented on board
-        'play_sound'         : [0x02, 0x07, 0x00, 0x10], # 
-        'stop'               : [0x02, 0x02, 0x00, 0x11], # OK
-        'move_joint'         : [0x02, 0x05, 0x00, 0x12], # NOT OK, int8
-        'enable_motors'      : [0x02, 0x01, 0x00, 0x13], # Has optional args now
-        'disable_motors'     : [0x02, 0x01, 0x00, 0x14], # Has optional args now
-        'enable_safeties'    : [0x02, 0x01, 0x00, 0x1E], # IMPL TODO
-        'fall_protection'    : [0x02, 0x02, 0x00, 0x15], # 
-        'motor_protection'   : [0x02, 0x02, 0x00, 0x16], # 
-        'battery_protection' : [0x02, 0x02, 0x00, 0x17], # 
-        'buzz_prevention'    : [0x02, 0x02, 0x00, 0x18], # 
-        'lifelike_behaviour' : [0x02, 0x02, 0x00, 0x1D], # 
-        'clear_calibration'  : [0x02, 0x01, 0x00, 0xFE], # 
-        'save_calibration'   : [0x02, 0x01, 0x00, 0xFF], # 
-        'ros_command'        : [0x03],                   # Variable Length
-        'chatter'            : [0x01, 0x05, 0x00],       # Variable Length
+        'battery'            : ['\x01', '\x01', '\x00'],         # 
+        'accel'              : ['\x01', '\x02'],                 #
+        'motorcurrent'       : ['\x01', '\x03'],                 #
+        'digitalread_gpio'   : ['\x01', '\x04'],                 # 
+        'hello'              : ['\x02', '\x01', '\x00', '\x00'], # 
+        'lean'               : ['\x02', '\x05', '\x00', '\x02'], # 
+        'walk'               : ['\x02', '\x07', '\x00', '\x03'], # OK
+        'eyes'               : ['\x02', '\x02', '\x00', '\x04'], # 
+        'kick'               : ['\x02', '\x05', '\x00', '\x05'], # Time Ignored
+        'celebrate'          : ['\x02', '\x03', '\x00', '\x08'], # OK
+        'arms'               : ['\x02', '\x05', '\x00', '\x0B'], # 
+        'sidestep'           : ['\x02', '\x06', '\x00', '\x0E'], # 
+        'stand_straight'     : ['\x02', '\x03', '\x00', '\x0F'], # NotImplemented on board
+        'play_sound'         : ['\x02', '\x07', '\x00', '\x10'], # 
+        'stop'               : ['\x02', '\x02', '\x00', '\x11'], # OK
+        'move_joint'         : ['\x02', '\x05', '\x00', '\x12'], # 
+        'enable_motors'      : ['\x02', '\x01', '\x00', '\x13'], # Has optional args now
+        'disable_motors'     : ['\x02', '\x01', '\x00', '\x14'], # Has optional args now
+        'circle_dance'       : ['\x02', '\x04', '\x00', '\x1C'], #
+        'enable_safeties'    : ['\x02', '\x01', '\x00', '\x1E'], # IMPL TODO
+        'fall_protection'    : ['\x02', '\x02', '\x00', '\x15'], # 
+        'motor_protection'   : ['\x02', '\x02', '\x00', '\x16'], # 
+        'battery_protection' : ['\x02', '\x02', '\x00', '\x17'], # 
+        'buzz_prevention'    : ['\x02', '\x02', '\x00', '\x18'], # 
+        'lifelike_behaviour' : ['\x02', '\x02', '\x00', '\x1D'], # IMPL TODO
+        'clear_calibration'  : ['\x02', '\x01', '\x00', '\xFE'], # 
+        'save_calibration'   : ['\x02', '\x01', '\x00', '\xFF'], # 
+        'ros_command'        : ['\x03'],                         # Variable Length
+        'chatter'            : ['\x01', '\x05', '\x00'],         # Variable Length
     }
 
 
     def pack(self, characters):
         '''
         Pack characters list into a byte string
+        Expects pre-packed chars, use chr or struct.pack to do this
         '''
+        if self.debug:
+            print(list(map(lambda x: '{}:{}'.format(x, type(x)), characters)))
         try:
-            return six.b("".join(map(chr, characters)))
+            return six.b("".join(characters))
         except UnicodeEncodeError:
             raise ArgumentOutOfRangeException('Argument(s) overflowed int')
 
@@ -181,7 +184,7 @@ class SocketClient(GenericClient):
         '''
         cmd = args[1]
         opcode = self.CMD_OPCODES[cmd]
-        datalen = opcode[1] + (opcode[2] << 8) - 1
+        datalen = ord(opcode[1]) + (ord(opcode[2]) << 8) - 1
         data = list(args[2:])
         if len(data) != datalen:
             raise TypeError('{} takes {} arguments but {} were given'
@@ -214,10 +217,10 @@ class SocketClient(GenericClient):
         Takes a python Boolean and toggles a switch on the board
         '''
         cmd = args[1]
-        toggle = 0x01 if args[2] == True else 0x00
+        toggle = '\x01' if args[2] == True else '\x00'
         opcode = self.CMD_OPCODES[cmd]
         self.sock.send(self.pack(opcode + [toggle]))
-        return toggle
+        return args[2]
 
 
     def simple_sensor(self, *args, **kwargs):
