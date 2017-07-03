@@ -4,7 +4,10 @@ from .utils import dict_merge
 from .serialclient import SerialClient
 from .socketclient import SocketClient
 from .testclient import TestClient
-from .exceptions import MartyCommandException, MartyConnectException, MartyConfigException
+from .exceptions import (MartyCommandException,
+                         MartyConnectException,
+                         MartyConfigException,
+                         ArgumentOutOfRangeException)
 
 
 class Marty(object):
@@ -18,7 +21,10 @@ class Marty(object):
         'test'   : TestClient,
     }
 
-    def __init__(self, url='socket://marty.local', client_types=dict(), *args, **kwargs):
+    def __init__(self, url='socket://marty.local',
+                 client_types=dict(),
+                 default_lifelike=True,
+                 *args, **kwargs):
         '''
         Initialise a Marty client class from a url
 
@@ -46,6 +52,9 @@ class Marty(object):
         self.enable_safeties(True)
         self.enable_motors(True)
 
+        if default_lifelike:
+            self.lifelike_behaviour(True)
+
 
     def _pack_uint16(self, num):
         '''
@@ -57,8 +66,11 @@ class Marty(object):
             Fmt    C Type                 Python Type    Standard Size
             h      short/uint16           integer        2
         '''
-        data = struct.pack('<H', num)
-        return chr(data[0]), chr(data[1])
+        try:
+            data = struct.pack('<H', num)
+        except struct.error as e:
+            raise ArgumentOutOfRangeException(e)
+        return chr(six.byte2int(data[0])), chr(six.byte2int(data[1]))
 
 
     def _pack_int16(self, num):
@@ -71,8 +83,11 @@ class Marty(object):
             Fmt    C Type                 Python Type    Standard Size
             h      short/uint16           integer        2
         '''
-        data = struct.pack('<h', num)
-        return chr(data[0]), chr(data[1])
+        try:
+            data = struct.pack('<h', num)
+        except struct.error as e:
+            raise ArgumentOutOfRangeException(e)
+        return chr(six.byte2int(data[:1])), chr(six.byte2int(data[-1::]))
 
 
     def _pack_uint8(self, num):
@@ -85,7 +100,10 @@ class Marty(object):
             Fmt    C Type                 Python Type    Standard Size
             B      unsigned char/uint8    integer        1
         '''
-        data = struct.pack('<B', num)
+        try:
+            data = struct.pack('<B', num)
+        except struct.error as e:
+            raise ArgumentOutOfRangeException(e)
         return chr(data[0])
 
 
@@ -99,7 +117,10 @@ class Marty(object):
             Fmt    C Type                 Python Type    Standard Size
             b      signed char/int8       integer        1
         '''
-        data = struct.pack('<b', num)
+        try:
+            data = struct.pack('<b', num)
+        except struct.error as e:
+            raise ArgumentOutOfRangeException(e)
         return chr(data[0])
 
 
@@ -113,7 +134,10 @@ class Marty(object):
             Fmt    C Type                 Python Type    Standard Size
             f      float                  float          4
         '''
-        data = struct.pack('<f', float(num))
+        try:
+            data = struct.pack('<f', float(num))
+        except struct.error as e:
+            raise ArgumentOutOfRangeException(e)
         return chr(data[0]), chr(data[1]), chr(data[2]), chr(data[3])
 
 
@@ -144,7 +168,9 @@ class Marty(object):
         'clear queue'       : '\x00', # clear movement queue only (so finish the current movement)
         'clear and stop'    : '\x01', # clear movement queue and servo queues (freeze in-place)
         'clear and disable' : '\x02', # clear everything and disable motors
-        'clear and zero'    : '\x03'  # clear everything, and make robot return to zero
+        'clear and zero'    : '\x03', # clear everything, and make robot return to zero
+        'pause'             : '\x04', # pause, but keep servo and movequeue intact and motors enabled
+        'pause and disable' : '\x05', # as 4, but disable motors too
     }
 
 
@@ -157,7 +183,7 @@ class Marty(object):
             MartyCommandException if the stop_type is unknown
         '''
         if stop_type is None:
-            stop_type = 'clear and zero'
+            stop_type = 'clear and stop'
 
         try:
             stop = self.STOP_TYPE[stop_type]
@@ -216,16 +242,17 @@ class Marty(object):
                                    side_c)
 
 
-    def eyes(self, angle):
+    def eyes(self, angle, move_time=100):
         '''
         Move the eyes to an angle
         Args:
             angle, int, degrees
+            move_time, milliseconds
         '''
-        return self.client.execute('eyes', self._pack_int8(angle))
+        return self.move_joint(8, angle, move_time)
 
 
-    def kick(self, side, twist, move_time):
+    def kick(self, side='right', twist=0, move_time=2000):
         '''
         Kick with Marty's feet
         Args:
@@ -240,12 +267,12 @@ class Marty(object):
                                    dur_lsb, dur_msb)
 
 
-    def arms(self, right_angle, left_angle, move_time):
+    def arms(self, left_angle, right_angle, move_time):
         '''
         Move the arms to a position
         Args:
-            right_angle: Position of the right arm
             left_angle: Position of the left arm
+            right_angle: Position of the right arm
             move_time: how long this movement should last, in milliseconds
         '''
         dur_lsb, dur_msb = self._pack_uint16(move_time)
@@ -292,16 +319,6 @@ class Marty(object):
                                    self._pack_int8(steps),
                                    dur_lsb, dur_msb,
                                    self._pack_int8(step_length))
-
-
-    def stand_straight(self, move_time=1000):
-        '''
-        Return to the zero position for motors
-        Args:
-            move_time: how long this movement should last, in milliseconds
-        '''
-        dur_lsb, dur_msb = self._pack_uint16(move_time)
-        return self.client.execute('stand_straight', dur_lsb, dur_msb)
 
 
     def play_sound(self, freq_start, freq_end, duration):
@@ -401,7 +418,6 @@ class Marty(object):
             motor_id, integer >= 0 (non-negative) selects which motor to query
         Returns:
             Instantaneous current sense reading from motor `motor_id`
-        TODO: Calibrate units
         '''
         return self.client.execute('motorcurrent', int(motor_id))
 
@@ -413,7 +429,6 @@ class Marty(object):
             enable: True/False toggle
             clear_queue: Default True, prevents unfinished but 'muted' motions
                          from jumping as soon as motors are enabled
-        ToDo: Implement optional options
         '''
         if clear_queue:
             self.stop('clear queue')
@@ -475,6 +490,14 @@ class Marty(object):
         return self.client.execute('lifelike_behaviour', enable)
 
 
+    def set_parameter(self):
+        '''
+        Return the board's firmware version
+        '''
+        raise NotImplementedError()
+        return self.client.execute('set_param')
+
+
     def save_calibration(self):
         '''
         Set the current motor positions as the zero positions
@@ -503,5 +526,23 @@ class Marty(object):
         '''
         Return chatter topic data (variable length)
         '''
+        raise NotImplementedError()
         return self.client.execute('chatter')
 
+
+    def get_firmware_version(self):
+        '''
+        Return the board's firmware version
+        '''
+        raise NotImplementedError()
+        return self.client.execute('firmware_version')
+
+
+
+    def _mute_serial(self):
+        '''
+        Mutes the internal serial line on Rick. Depends on platform and API
+        '''
+        raise NotImplementedError()
+        return self.client.execute('mute_serial')
+        

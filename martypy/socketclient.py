@@ -50,15 +50,11 @@ class SocketClient(GenericClient):
             'hello'              : self.fixed_command,
             'lean'               : self.fixed_command,
             'walk'               : self.fixed_command,
-            'eyes'               : self.fixed_command,
             'kick'               : self.fixed_command,
-            'lift_leg'           : self.fixed_command,
-            'lower_leg'          : self.fixed_command,
             'celebrate'          : self.fixed_command,
             'arms'               : self.fixed_command,
             'sidestep'           : self.fixed_command,
             'circle_dance'       : self.fixed_command,
-            'stand_straight'     : self.fixed_command,
             'play_sound'         : self.fixed_command,
             'stop'               : self.fixed_command,
             'move_joint'         : self.fixed_command,
@@ -74,7 +70,14 @@ class SocketClient(GenericClient):
             'save_calibration'   : self.fixed_command,
             'ros_command'        : self.command,
             'chatter'            : self.chatter,
+            'set_param'          : None,
+            'firmware_version'   : self.simple_sensor,
+            'mute_serial'        : None,
         })
+
+        # for opcode, _ in self.COMMANDS_LUT.items():
+        #     if opcode not in self.CMD_OPCODES.keys():
+        #         print('Missing {}'.format(opcode))
 
 
     def socket_factory(self):
@@ -127,32 +130,33 @@ class SocketClient(GenericClient):
         'battery'            : ['\x01', '\x01', '\x00'],         # 
         'accel'              : ['\x01', '\x02'],                 #
         'motorcurrent'       : ['\x01', '\x03'],                 #
-        'digitalread_gpio'   : ['\x01', '\x04'],                 # 
+        'gpio'               : ['\x01', '\x04'],                 # 
         'hello'              : ['\x02', '\x01', '\x00', '\x00'], # 
         'lean'               : ['\x02', '\x05', '\x00', '\x02'], # 
         'walk'               : ['\x02', '\x07', '\x00', '\x03'], # OK
-        'eyes'               : ['\x02', '\x02', '\x00', '\x04'], # 
         'kick'               : ['\x02', '\x05', '\x00', '\x05'], # Time Ignored
         'celebrate'          : ['\x02', '\x03', '\x00', '\x08'], # OK
         'arms'               : ['\x02', '\x05', '\x00', '\x0B'], # 
-        'sidestep'           : ['\x02', '\x06', '\x00', '\x0E'], # 
-        'stand_straight'     : ['\x02', '\x03', '\x00', '\x0F'], # NotImplemented on board
+        'sidestep'           : ['\x02', '\x06', '\x00', '\x0E'], #
         'play_sound'         : ['\x02', '\x07', '\x00', '\x10'], # 
         'stop'               : ['\x02', '\x02', '\x00', '\x11'], # OK
         'move_joint'         : ['\x02', '\x05', '\x00', '\x12'], # 
         'enable_motors'      : ['\x02', '\x01', '\x00', '\x13'], # Has optional args now
         'disable_motors'     : ['\x02', '\x01', '\x00', '\x14'], # Has optional args now
         'circle_dance'       : ['\x02', '\x04', '\x00', '\x1C'], #
-        'enable_safeties'    : ['\x02', '\x01', '\x00', '\x1E'], # IMPL TODO
+        'enable_safeties'    : ['\x02', '\x01', '\x00', '\x1E'], #
         'fall_protection'    : ['\x02', '\x02', '\x00', '\x15'], # 
         'motor_protection'   : ['\x02', '\x02', '\x00', '\x16'], # 
         'battery_protection' : ['\x02', '\x02', '\x00', '\x17'], # 
         'buzz_prevention'    : ['\x02', '\x02', '\x00', '\x18'], # 
-        'lifelike_behaviour' : ['\x02', '\x02', '\x00', '\x1D'], # IMPL TODO
+        'lifelike_behaviour' : ['\x02', '\x02', '\x00', '\x1D'], #
         'clear_calibration'  : ['\x02', '\x01', '\x00', '\xFE'], # 
         'save_calibration'   : ['\x02', '\x01', '\x00', '\xFF'], # 
         'ros_command'        : ['\x03'],                         # Variable Length
-        'chatter'            : ['\x01', '\x05', '\x00'],         # Variable Length
+        'chatter'            : ['\x01', '\x05', '\x00',],        # Variable Length
+        'set_param'          : ['\x01', '\x05', '\x00', '\x1F'], #
+        'firmware_version'   : ['\x01', '\x05', '\x00', '\x20'], #
+        'mute_serial'        : ['\x01', '\x05', '\x00', '\x21'], #
     }
 
 
@@ -189,8 +193,6 @@ class SocketClient(GenericClient):
         if len(data) != datalen:
             raise TypeError('{} takes {} arguments but {} were given'
                             ''.format(cmd, datalen, len(data)))
-        if self.debug:
-            print(self.pack(opcode + data))
         self.sock.send(self.pack(opcode + data))
         return True
 
