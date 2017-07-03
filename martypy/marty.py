@@ -70,7 +70,7 @@ class Marty(object):
             data = struct.pack('<H', num)
         except struct.error as e:
             raise ArgumentOutOfRangeException(e)
-        return chr(six.byte2int(data[0])), chr(six.byte2int(data[1]))
+        return chr(six.byte2int(data[:1])), chr(six.byte2int(data[-1::]))
 
 
     def _pack_int16(self, num):
@@ -104,7 +104,7 @@ class Marty(object):
             data = struct.pack('<B', num)
         except struct.error as e:
             raise ArgumentOutOfRangeException(e)
-        return chr(data[0])
+        return chr(six.byte2int(data[:1]))
 
 
     def _pack_int8(self, num):
@@ -121,7 +121,7 @@ class Marty(object):
             data = struct.pack('<b', num)
         except struct.error as e:
             raise ArgumentOutOfRangeException(e)
-        return chr(data[0])
+        return chr(six.byte2int(data[:1]))
 
 
     def _pack_float(self, num):
@@ -138,7 +138,10 @@ class Marty(object):
             data = struct.pack('<f', float(num))
         except struct.error as e:
             raise ArgumentOutOfRangeException(e)
-        return chr(data[0]), chr(data[1]), chr(data[2]), chr(data[3])
+        return (chr(six.byte2int([data[0]])),
+                chr(six.byte2int([data[1]])),
+                chr(six.byte2int([data[2]])),
+                chr(six.byte2int([data[3]])))
 
 
 
@@ -229,7 +232,7 @@ class Marty(object):
         Args:
             num_steps: int, how many steps to take
             start_foot: 'left' or 'right', start walking with this foot
-            turn: Turnyness TODO No idea
+            turn: How much to turn (-128 to 127). 0 is straight.
             step_length: How far to step (approximately in mm)
             move_time: how long this movement should last, in milliseconds
         '''
@@ -355,6 +358,7 @@ class Marty(object):
         Configure a GPIO pin
         '''
         raise NotImplementedError()
+        return self.client.execute('i2c_write', byte_array)
 
 
     def write_gpio(self, gpio, value):
@@ -362,6 +366,7 @@ class Marty(object):
         Write a value to a GPIO port
         '''
         raise NotImplementedError()
+        return self.client.execute('gpio_write', byte_array)
 
 
     def digitalread_gpio(self, gpio):
@@ -381,6 +386,7 @@ class Marty(object):
         the datagram folows standard i2c spec
         '''
         raise NotImplementedError()
+        return self.client.execute('i2c_write', byte_array)
 
 
     def get_battery_voltage(self):
@@ -542,7 +548,7 @@ class Marty(object):
     def _mute_serial(self):
         '''
         Mutes the internal serial line on Rick. Depends on platform and API
+        NOTE: Once you've done this, the Robot will ignore you until you cycle power.
         '''
-        raise NotImplementedError()
         return self.client.execute('mute_serial')
         

@@ -72,8 +72,11 @@ class SocketClient(GenericClient):
             'ros_command'        : self.command,
             'chatter'            : self.chatter,
             'set_param'          : None,
-            'firmware_version'   : self.simple_sensor,
-            'mute_serial'        : None,
+            'firmware_version'   : None,
+            'mute_serial'        : self.fixed_command,
+            'i2c_write'          : None,
+            'gpio_write'         : None,
+            'gpio_mode'          : None,
         })
 
         # for opcode, _ in self.COMMANDS_LUT.items():
@@ -146,10 +149,11 @@ class SocketClient(GenericClient):
         'accel'              : ['\x01', '\x02'],                 # OK
         'motorcurrent'       : ['\x01', '\x03'],                 # OK
         'gpio'               : ['\x01', '\x04'],                 # 
+        'chatter'            : ['\x01', '\x05', '\x00',],        # Variable Length
         'hello'              : ['\x02', '\x01', '\x00', '\x00'], # OK
         'lean'               : ['\x02', '\x05', '\x00', '\x02'], # 
         'walk'               : ['\x02', '\x07', '\x00', '\x03'], # OK
-        'kick'               : ['\x02', '\x05', '\x00', '\x05'], # Time Ignored
+        'kick'               : ['\x02', '\x05', '\x00', '\x05'], # OK
         'celebrate'          : ['\x02', '\x03', '\x00', '\x08'], # OK
         'arms'               : ['\x02', '\x05', '\x00', '\x0B'], # 
         'sidestep'           : ['\x02', '\x06', '\x00', '\x0E'], #
@@ -168,10 +172,12 @@ class SocketClient(GenericClient):
         'clear_calibration'  : ['\x02', '\x01', '\x00', '\xFE'], # 
         'save_calibration'   : ['\x02', '\x01', '\x00', '\xFF'], # 
         'ros_command'        : ['\x03'],                         # Variable Length
-        'chatter'            : ['\x01', '\x05', '\x00',],        # Variable Length
-        'set_param'          : ['\x01', '\x05', '\x00', '\x1F'], #
-        'firmware_version'   : ['\x01', '\x05', '\x00', '\x20'], #
-        'mute_serial'        : ['\x01', '\x05', '\x00', '\x21'], #
+        'set_param'          : ['\x02', '\x05', '\x00', '\x1F'], #
+        'firmware_version'   : ['\x02', '\x05', '\x00', '\x20'], #
+        'mute_serial'        : ['\x02', '\x01', '\x00', '\x21'], # OK
+        'i2c_write'          : [None], # TODO
+        'gpio_write'         : [None], # TODO
+        'gpio_mode'          : [None], # TODO
     }
 
 
