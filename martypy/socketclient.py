@@ -1,5 +1,6 @@
 import six
 import sys
+import time
 import socket
 import struct
 from .genericclient import GenericClient
@@ -118,20 +119,34 @@ class SocketClient(GenericClient):
 
 
     @staticmethod
-    def discover(*args, **kwargs):
+    def discover(timeout=10, *args, **kwargs):
         '''
-        Search for Marties on the network
+        Search for Marties on the network using a UDB multicast to port 4000
         '''
-        raise NotImplementedError()
+        socket_addr = "224.0.0.1"
+        socket_port = 4000
+        magic_command = b"AA"
+        
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
+        sock.settimeout(timeout)
+        sock.sendto(magic_command, (socket_addr, socket_port))
+
+        found = []
+        start = time.time()
+        while (time.time() - start) < timeout:
+            data, addr = sock.recvfrom(1000)
+            found.append({addr: data})
+        return found
 
 
     # Encodes Command Type flag, LSB size, MSB size, Data
     CMD_OPCODES = {
-        'battery'            : ['\x01', '\x01', '\x00'],         # 
-        'accel'              : ['\x01', '\x02'],                 #
-        'motorcurrent'       : ['\x01', '\x03'],                 #
+        'battery'            : ['\x01', '\x01', '\x00'],         # OK
+        'accel'              : ['\x01', '\x02'],                 # OK
+        'motorcurrent'       : ['\x01', '\x03'],                 # OK
         'gpio'               : ['\x01', '\x04'],                 # 
-        'hello'              : ['\x02', '\x01', '\x00', '\x00'], # 
+        'hello'              : ['\x02', '\x01', '\x00', '\x00'], # OK
         'lean'               : ['\x02', '\x05', '\x00', '\x02'], # 
         'walk'               : ['\x02', '\x07', '\x00', '\x03'], # OK
         'kick'               : ['\x02', '\x05', '\x00', '\x05'], # Time Ignored

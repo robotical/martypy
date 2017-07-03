@@ -160,7 +160,8 @@ class Marty(object):
         'left'    : '\x00',
         'right'   : '\x01',
         'forward' : '\x02',
-        'back'    : '\x03'
+        'back'    : '\x03',
+        'auto'    : '\xff',
     }
 
 
@@ -526,13 +527,12 @@ class Marty(object):
         '''
         Return chatter topic data (variable length)
         '''
-        raise NotImplementedError()
         return self.client.execute('chatter')
 
 
     def get_firmware_version(self):
         '''
-        Return the board's firmware version
+        Ask the board to print the firmware version over chatter
         '''
         raise NotImplementedError()
         return self.client.execute('firmware_version')
