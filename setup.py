@@ -21,9 +21,13 @@ setup(
     license='Apache 2.0',
     install_requires=[
         'six>=1.10.0',
+        'requests>=2.18.1',
     ],
     keywords=[
+        'ros',
+        'robot',
         'marty',
+        'marty the robot',
         'robotical',
     ],
     classifiers=(

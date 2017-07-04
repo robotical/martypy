@@ -219,7 +219,6 @@ class SocketClient(GenericClient):
         Args:
             *args of length at least 3
         '''
-        print("COMMAND")
         cmd = args[1]
         opcode = self.CMD_OPCODES[cmd][0]
         data = list(args[2:])
@@ -227,7 +226,6 @@ class SocketClient(GenericClient):
         payload = [opcode,
                    chr(six.byte2int([datalen_lsb])),
                    chr(six.byte2int([datalen_msb]))] + data
-        print(payload)
         self.sock.send(self.pack(payload))
         return True
 
