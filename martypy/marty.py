@@ -3,6 +3,7 @@ import struct
 from .utils import dict_merge
 from .serialclient import SerialClient
 from .socketclient import SocketClient
+from .rosclient import ROSClient
 from .testclient import TestClient
 from .exceptions import (MartyCommandException,
                          MartyConnectException,
@@ -18,6 +19,7 @@ class Marty(object):
     CLIENT_TYPES = {
         'socket' : SocketClient,
         'serial' : SerialClient,
+        'ros'    : ROSClient,
         'test'   : TestClient,
     }
 
@@ -521,12 +523,12 @@ class Marty(object):
         return self.client.execute('clear_calibration')
 
 
-    def ros_command(self, byte_array):
+    def ros_command(self, *byte_array):
         '''
         Low level proxied access to the ROS Serial API between
         the modem and main controller
         '''
-        return self.client.execute('ros_command', byte_array)
+        return self.client.execute('ros_command', *byte_array)
 
 
     def get_chatter(self):

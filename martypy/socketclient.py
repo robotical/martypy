@@ -194,12 +194,6 @@ class SocketClient(GenericClient):
             raise ArgumentOutOfRangeException('Argument(s) overflowed int')
 
 
-    def little_endian(self, integer):
-        '''
-        Return the little endian 'short' (2 byte) encoding of the int
-        '''
-        return struct.pack('<h', integer)
-
 
     def fixed_command(self, *args, **kwargs):
         '''
@@ -225,12 +219,16 @@ class SocketClient(GenericClient):
         Args:
             *args of length at least 3
         '''
+        print("COMMAND")
         cmd = args[1]
         opcode = self.CMD_OPCODES[cmd][0]
         data = list(args[2:])
-        datalen = struct.pack('<i', len(data))
-        payload = six.int2byte(opcode) + datalen + self.pack(data)
-        self.sock.send(payload)
+        datalen_lsb, datalen_msb = struct.pack('<H', len(data))
+        payload = [opcode,
+                   chr(six.byte2int([datalen_lsb])),
+                   chr(six.byte2int([datalen_msb]))] + data
+        print(payload)
+        self.sock.send(self.pack(payload))
         return True
 
 

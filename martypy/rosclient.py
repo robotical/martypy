@@ -1,6 +1,6 @@
 from .genericclient import GenericClient
 
-class SerialClient(GenericClient):
+class ROSClient(GenericClient):
 
     def __init__(self, *args, **kwargs):
         GenericClient.__init__(self)
