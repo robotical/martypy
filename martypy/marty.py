@@ -530,7 +530,7 @@ class Marty(object):
         '''
         return self.client.execute('ros_command', *byte_array)
 
-    def ros_processed_command(topicID, *message):
+    def ros_processed_command(self, topicID, *message):
         '''
         Formats message into ROS serial format then calls
         ros_command with the processed message.
@@ -562,7 +562,7 @@ class Marty(object):
         command_to_be_sent += msg
         command_to_be_sent += (chr(checksum2),)
 
-        m.ros_command(*command_to_be_sent)
+        self.ros_command(*command_to_be_sent)
 
 
     def get_chatter(self):
