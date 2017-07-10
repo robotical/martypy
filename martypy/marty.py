@@ -40,7 +40,7 @@ class Marty(object):
         proto, _, loc = url.partition('://')
 
         self.CLIENT_TYPES = dict_merge(self.CLIENT_TYPES, client_types)
-        
+
         if not (proto and loc):
             raise MartyConfigException('Invalid URL format "{}" given'.format(url))
 
@@ -97,7 +97,7 @@ class Marty(object):
         Pack an unsigned 8 bit int into one 8 bit byte, little-endian
         Returns:
             bytes
-        
+
         Struct:
             Fmt    C Type                 Python Type    Standard Size
             B      unsigned char/uint8    integer        1
@@ -114,7 +114,7 @@ class Marty(object):
         Pack a signed 8 bit int into one 8 bit unsigned byte, little-endian
         Returns:
             bytes
-        
+
         Struct:
             Fmt    C Type                 Python Type    Standard Size
             b      signed char/int8       integer        1
@@ -131,7 +131,7 @@ class Marty(object):
         Pack a float into four bit unsigned byte, little-endian
         Returns:
             tuple(least-sig-byte, less-sig-byte, more-sig-byte, most-sig-byte)
-        
+
         Struct:
             Fmt    C Type                 Python Type    Standard Size
             f      float                  float          4
@@ -530,6 +530,40 @@ class Marty(object):
         '''
         return self.client.execute('ros_command', *byte_array)
 
+    def ros_processed_command(topicID, *message):
+        '''
+        Formats message into ROS serial format then calls
+        ros_command with the processed message.
+        '''
+        msg = message
+
+        msg_length = len(msg)
+        msg_length_LB = msg_length & 0xFF #int   #3rd byte
+        msg_length_HB = (msg_length >> 8) & 0xFF #int   #4th byte
+
+        checksum1 = 255 - ((msg_length_LB + msg_length_HB) % 256)    #5th byte
+        topic_ID_LB = topicID & 0xFF #int
+        topic_ID_HB = (topicID >> 8) & 0xFF  #int
+
+        data_values_sum = 0
+        for i in msg:
+            data_values_sum += ord(i)
+
+        checksum2 = 255 - ((topic_ID_LB + topic_ID_HB + data_values_sum) % 256) #final byte
+
+        command_to_be_sent = []
+        command_to_be_sent += ('\xff',)
+        command_to_be_sent += ('\xfe',)
+        command_to_be_sent += (chr(msg_length_LB),)
+        command_to_be_sent += (chr(msg_length_HB),)
+        command_to_be_sent += (chr(checksum1),)
+        command_to_be_sent += (chr(topic_ID_LB),)
+        command_to_be_sent += (chr(topic_ID_HB),)
+        command_to_be_sent += msg
+        command_to_be_sent += (chr(checksum2),)
+
+        m.ros_command(*command_to_be_sent)
+
 
     def get_chatter(self):
         '''
@@ -553,4 +587,3 @@ class Marty(object):
         NOTE: Once you've done this, the Robot will ignore you until you cycle power.
         '''
         return self.client.execute('mute_serial')
-        
