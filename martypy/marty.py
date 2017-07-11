@@ -534,16 +534,22 @@ class Marty(object):
         '''
         Formats message into ROS serial format then calls
         ros_command with the processed message.
+
+        More information about the ROS serial format can be
+        found here: http://wiki.ros.org/rosserial/Overview/Protocol
         '''
         msg = message
 
         msg_length = len(msg)
-        msg_length_LB = msg_length & 0xFF #int   #3rd byte
-        msg_length_HB = (msg_length >> 8) & 0xFF #int   #4th byte
+        #Message length in little endian format
+        msg_length_LB = msg_length & 0xFF                           #3rd byte
+        msg_length_HB = (msg_length >> 8) & 0xFF                    #4th byte
 
-        checksum1 = 255 - ((msg_length_LB + msg_length_HB) % 256)    #5th byte
-        topic_ID_LB = topicID & 0xFF #int
-        topic_ID_HB = (topicID >> 8) & 0xFF  #int
+        checksum1 = 255 - ((msg_length_LB + msg_length_HB) % 256)   #5th byte
+
+        #Topic ID in little endian format
+        topic_ID_LB = topicID & 0xFF                                #6th byte
+        topic_ID_HB = (topicID >> 8) & 0xFF                         #7th byte
 
         data_values_sum = 0
         for i in msg:
@@ -551,9 +557,10 @@ class Marty(object):
 
         checksum2 = 255 - ((topic_ID_LB + topic_ID_HB + data_values_sum) % 256) #final byte
 
+        #encode into bytes
         command_to_be_sent = []
-        command_to_be_sent += ('\xff',)
-        command_to_be_sent += ('\xfe',)
+        command_to_be_sent += ('\xff',) #Sync Flag. Check ROS Wiki
+        command_to_be_sent += ('\xfe',) #Protocol version. Check ROS Wiki
         command_to_be_sent += (chr(msg_length_LB),)
         command_to_be_sent += (chr(msg_length_HB),)
         command_to_be_sent += (chr(checksum1),)
