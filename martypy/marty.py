@@ -530,6 +530,49 @@ class Marty(object):
         '''
         return self.client.execute('ros_command', *byte_array)
 
+
+    def ros_serial_formatter(self, topicID, *message):
+        '''
+        Formats message into ROS serial format and
+        returns formatted message as a list
+
+        More information about the ROS serial format can be
+        found here: http://wiki.ros.org/rosserial/Overview/Protocol
+        '''
+        msg = message
+
+        msg_length = len(msg)
+        #Message length in little endian format
+        msg_length_LB = msg_length & 0xFF                           #3rd byte
+        msg_length_HB = (msg_length >> 8) & 0xFF                    #4th byte
+
+        checksum1 = 255 - ((msg_length_LB + msg_length_HB) % 256)   #5th byte
+
+        #Topic ID in little endian format
+        topic_ID_LB = topicID & 0xFF                                #6th byte
+        topic_ID_HB = (topicID >> 8) & 0xFF                         #7th byte
+
+        data_values_sum = 0
+        for i in msg:
+            data_values_sum += ord(i)
+
+        checksum2 = 255 - ((topic_ID_LB + topic_ID_HB + data_values_sum) % 256) #final byte
+
+        #encode into bytes
+        command_to_be_sent = []
+        command_to_be_sent += ('\xff',) #Sync Flag. Check ROS Wiki
+        command_to_be_sent += ('\xfe',) #Protocol version. Check ROS Wiki
+        command_to_be_sent += (chr(msg_length_LB),)
+        command_to_be_sent += (chr(msg_length_HB),)
+        command_to_be_sent += (chr(checksum1),)
+        command_to_be_sent += (chr(topic_ID_LB),)
+        command_to_be_sent += (chr(topic_ID_HB),)
+        command_to_be_sent += msg
+        command_to_be_sent += (chr(checksum2),)
+
+        return(command_to_be_sent)
+
+
     def ros_processed_command(self, topicID, *message):
         '''
         Formats message into ROS serial format then calls
