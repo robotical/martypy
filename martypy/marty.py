@@ -92,6 +92,26 @@ class Marty(object):
         return chr(six.byte2int(data[:1])), chr(six.byte2int(data[-1::]))
 
 
+    def _pack_int32(self, num):
+        '''
+        Pack a signed 32 bit int into four 8 bit bytes, little-endian
+        Returns:
+            tuple(least-sig-byte, less-sig-byte, more-sig-byte, most-sig-byte)
+
+        Struct:
+            Fmt    C Type                 Python Type    Standard Size
+            i      int                    integer        4
+        '''
+        try:
+            data = struct.pack('<i', num)
+        except struct.error as e:
+            raise ArgumentOutOfRangeException(e)
+        return (chr(six.byte2int([data[0]])),
+                chr(six.byte2int([data[1]])),
+                chr(six.byte2int([data[2]])),
+                chr(six.byte2int([data[3]])))
+
+
     def _pack_uint8(self, num):
         '''
         Pack an unsigned 8 bit int into one 8 bit byte, little-endian
@@ -529,6 +549,48 @@ class Marty(object):
         the modem and main controller
         '''
         return self.client.execute('ros_command', *byte_array)
+
+
+    def keyframe (self, time, num_of_msgs, msgs):
+        '''
+        Takes in information about movements and generates keyframes
+        returns a list of bytes
+
+        time: time (in seconds) taken to complete movement
+        num_of_msgs: number of commands sent
+        msgs: commands sent in the following format [(ID CMD), (ID CMD), etc...]
+        '''
+        processed_keyframe = []
+
+        #Number of key frames
+        len_byte0, len_byte1, len_byte2, len_byte3 = self._pack_int32(1)
+        processed_keyframe.append(len_byte0)
+        processed_keyframe.append(len_byte1)
+        processed_keyframe.append(len_byte2)
+        processed_keyframe.append(len_byte3)
+
+        #Time (in seconds) to excute keyframe. This is float encoded.
+        time_byte0, time_byte1, time_byte2, time_byte3 = self._pack_float(time)
+        processed_keyframe.append(time_byte0)
+        processed_keyframe.append(time_byte1)
+        processed_keyframe.append(time_byte2)
+        processed_keyframe.append(time_byte3)
+
+        if(len(msgs) != num_of_msgs):
+            print('Number of messages do not match entered messages')
+        #Array length
+        arr_len_byte0, arr_len_byte1, arr_len_byte2, arr_len_byte3 = self._pack_int32(num_of_msgs)
+        processed_keyframe.append(arr_len_byte0)
+        processed_keyframe.append(arr_len_byte1)
+        processed_keyframe.append(arr_len_byte2)
+        processed_keyframe.append(arr_len_byte3)
+
+        #Messages
+        for items in msgs:
+            for values in items:
+                processed_keyframe.append(chr(values))
+
+        return(processed_keyframe)
 
 
     def ros_serial_formatter(self, topicID, *message):
