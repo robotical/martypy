@@ -588,7 +588,7 @@ class Marty(object):
         #Messages
         for items in msgs:
             for values in items:
-                processed_keyframe.append(chr(values))
+                processed_keyframe.append(self._pack_int8(values))
 
         return(processed_keyframe)
 
