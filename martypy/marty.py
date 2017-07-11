@@ -40,7 +40,7 @@ class Marty(object):
         proto, _, loc = url.partition('://')
 
         self.CLIENT_TYPES = dict_merge(self.CLIENT_TYPES, client_types)
-        
+
         if not (proto and loc):
             raise MartyConfigException('Invalid URL format "{}" given'.format(url))
 
@@ -156,7 +156,7 @@ class Marty(object):
 
     def discover(self):
         '''
-        Try and find us some Marties!
+        Try and find us some Martys!
         '''
         return self.client.discover()
 
@@ -218,7 +218,7 @@ class Marty(object):
         Lean over in a direction
         Args:
             direction: 'left' or 'right'
-            amount: distance
+            amount: percentage of normal lean
             move_time: how long this movement should last, in milliseconds
         '''
         side_c = self.SIDE_CODES[direction]
@@ -228,7 +228,7 @@ class Marty(object):
                                    dur_lsb, dur_msb)
 
 
-    def walk(self, num_steps=2, start_foot='left', turn=0, step_length=40, move_time=1500):
+    def walk(self, num_steps=2, start_foot='auto', turn=0, step_length=40, move_time=1500):
         '''
         Walking macro
         Args:
@@ -252,7 +252,7 @@ class Marty(object):
         '''
         Move the eyes to an angle
         Args:
-            angle, int, degrees
+            angle, 
             move_time, milliseconds
         '''
         return self.move_joint(8, angle, move_time)
