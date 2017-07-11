@@ -411,6 +411,18 @@ class Marty(object):
         return self.client.execute('i2c_write', byte_array)
 
 
+    def i2c_write_to_rick(self, address, *byte_array):
+        '''
+        Write a formatted bytestream to the i2c port.
+        The bytestream is formatted in the ROS serial format.
+        '''
+
+        data = ['0x1B']         #i2c write opcode
+        data.append(address)    #i2c address
+        data.append(byte_array)
+        command_to_be_sent = self.ros_serial_formatter(111, *byte_array)
+        return self.client.execute('i2c_write', *command_to_be_sent)
+
     def get_battery_voltage(self):
         '''
         Returns:
