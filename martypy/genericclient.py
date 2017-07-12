@@ -33,8 +33,7 @@ class GenericClient(object):
 
     def register_commands(self, handlers):
         '''
-        Take {str:func} command names & handlers in a dict
-        and register them with the COMMANDS_LUT 
+        Take {str:func} command names & handlers in handlersa dict
+        and register them with the COMMANDS_LUT
         '''
         self.COMMANDS_LUT = dict_merge(self.COMMANDS_LUT, handlers)
-

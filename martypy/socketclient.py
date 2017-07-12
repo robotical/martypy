@@ -74,7 +74,7 @@ class SocketClient(GenericClient):
             'set_param'          : None,
             'firmware_version'   : None,
             'mute_serial'        : self.fixed_command,
-            'i2c_write'          : self.fixed_command,
+            'i2c_write'          : self.command,
             'gpio_write'         : None,
             'gpio_mode'          : None,
         })
