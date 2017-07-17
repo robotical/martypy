@@ -97,7 +97,7 @@ class Marty(object):
         Pack an unsigned 8 bit int into one 8 bit byte, little-endian
         Returns:
             bytes
-        
+
         Struct:
             Fmt    C Type                 Python Type    Standard Size
             B      unsigned char/uint8    integer        1
@@ -114,7 +114,7 @@ class Marty(object):
         Pack a signed 8 bit int into one 8 bit unsigned byte, little-endian
         Returns:
             bytes
-        
+
         Struct:
             Fmt    C Type                 Python Type    Standard Size
             b      signed char/int8       integer        1
@@ -131,7 +131,7 @@ class Marty(object):
         Pack a float into four bit unsigned byte, little-endian
         Returns:
             tuple(least-sig-byte, less-sig-byte, more-sig-byte, most-sig-byte)
-        
+
         Struct:
             Fmt    C Type                 Python Type    Standard Size
             f      float                  float          4
@@ -252,7 +252,7 @@ class Marty(object):
         '''
         Move the eyes to an angle
         Args:
-            angle, 
+            angle,
             move_time, milliseconds
         '''
         return self.move_joint(8, angle, move_time)
@@ -542,7 +542,7 @@ class Marty(object):
         '''
         Ask the board to print the firmware version over chatter
         '''
-        raise NotImplementedError()
+        #raise NotImplementedError()
         return self.client.execute('firmware_version')
 
 
@@ -553,4 +553,3 @@ class Marty(object):
         NOTE: Once you've done this, the Robot will ignore you until you cycle power.
         '''
         return self.client.execute('mute_serial')
-        

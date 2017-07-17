@@ -16,7 +16,7 @@ class SocketClient(GenericClient):
     '''
 
     SOCKET_PORT = 24
-    
+
     def __init__(self, proto, loc, port=None, timeout=5.0, debug=False, *args, **kwargs):
         '''
         Initialise connection to remote Marty over a IPv4 socket by name 'loc' over port 24
@@ -38,7 +38,7 @@ class SocketClient(GenericClient):
 
         self.loc = loc
         self.timeout = timeout
-        
+
         self.sock = self.socket_factory()
 
         # Extend basis LUT with specific handlers
@@ -72,7 +72,7 @@ class SocketClient(GenericClient):
             'ros_command'        : self.command,
             'chatter'            : self.chatter,
             'set_param'          : None,
-            'firmware_version'   : None,
+            'firmware_version'   : self.fixed_command,
             'mute_serial'        : self.fixed_command,
             'i2c_write'          : None,
             'gpio_write'         : None,
@@ -129,7 +129,7 @@ class SocketClient(GenericClient):
         socket_addr = "224.0.0.1"
         socket_port = 4000
         magic_command = b"AA"
-        
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
         sock.settimeout(timeout)
@@ -148,32 +148,32 @@ class SocketClient(GenericClient):
         'battery'            : ['\x01', '\x01', '\x00'],         # OK
         'accel'              : ['\x01', '\x02'],                 # OK
         'motorcurrent'       : ['\x01', '\x03'],                 # OK
-        'gpio'               : ['\x01', '\x04'],                 # 
+        'gpio'               : ['\x01', '\x04'],                 #
         'chatter'            : ['\x01', '\x05', '\x00',],        # Variable Length
         'hello'              : ['\x02', '\x01', '\x00', '\x00'], # OK
-        'lean'               : ['\x02', '\x05', '\x00', '\x02'], # 
+        'lean'               : ['\x02', '\x05', '\x00', '\x02'], #
         'walk'               : ['\x02', '\x07', '\x00', '\x03'], # OK
         'kick'               : ['\x02', '\x05', '\x00', '\x05'], # OK
         'celebrate'          : ['\x02', '\x03', '\x00', '\x08'], # OK
-        'arms'               : ['\x02', '\x05', '\x00', '\x0B'], # 
+        'arms'               : ['\x02', '\x05', '\x00', '\x0B'], #
         'sidestep'           : ['\x02', '\x06', '\x00', '\x0E'], #
-        'play_sound'         : ['\x02', '\x07', '\x00', '\x10'], # 
+        'play_sound'         : ['\x02', '\x07', '\x00', '\x10'], #
         'stop'               : ['\x02', '\x02', '\x00', '\x11'], # OK
-        'move_joint'         : ['\x02', '\x05', '\x00', '\x12'], # 
+        'move_joint'         : ['\x02', '\x05', '\x00', '\x12'], #
         'enable_motors'      : ['\x02', '\x01', '\x00', '\x13'], # Has optional args now
         'disable_motors'     : ['\x02', '\x01', '\x00', '\x14'], # Has optional args now
         'circle_dance'       : ['\x02', '\x04', '\x00', '\x1C'], #
         'enable_safeties'    : ['\x02', '\x01', '\x00', '\x1E'], #
-        'fall_protection'    : ['\x02', '\x02', '\x00', '\x15'], # 
-        'motor_protection'   : ['\x02', '\x02', '\x00', '\x16'], # 
-        'battery_protection' : ['\x02', '\x02', '\x00', '\x17'], # 
-        'buzz_prevention'    : ['\x02', '\x02', '\x00', '\x18'], # 
+        'fall_protection'    : ['\x02', '\x02', '\x00', '\x15'], #
+        'motor_protection'   : ['\x02', '\x02', '\x00', '\x16'], #
+        'battery_protection' : ['\x02', '\x02', '\x00', '\x17'], #
+        'buzz_prevention'    : ['\x02', '\x02', '\x00', '\x18'], #
         'lifelike_behaviour' : ['\x02', '\x02', '\x00', '\x1D'], #
-        'clear_calibration'  : ['\x02', '\x01', '\x00', '\xFE'], # 
-        'save_calibration'   : ['\x02', '\x01', '\x00', '\xFF'], # 
+        'clear_calibration'  : ['\x02', '\x01', '\x00', '\xFE'], #
+        'save_calibration'   : ['\x02', '\x01', '\x00', '\xFF'], #
         'ros_command'        : ['\x03'],                         # Variable Length
         'set_param'          : ['\x02', '\x05', '\x00', '\x1F'], #
-        'firmware_version'   : ['\x02', '\x05', '\x00', '\x20'], #
+        'firmware_version'   : ['\x02', '\x01', '\x00', '\x20'], #
         'mute_serial'        : ['\x02', '\x01', '\x00', '\x21'], # OK
         'i2c_write'          : [None], # TODO
         'gpio_write'         : [None], # TODO
@@ -276,4 +276,3 @@ class SocketClient(GenericClient):
         self.sock.send(self.pack(self.CMD_OPCODES[cmd]))
         data_length = self.sock.recv(1)
         return data_length
-
