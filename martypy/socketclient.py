@@ -75,8 +75,8 @@ class SocketClient(GenericClient):
             'firmware_version'   : self.fixed_command,
             'mute_serial'        : self.fixed_command,
             'i2c_write'          : None,
-            'gpio_write'         : None,
-            'gpio_mode'          : None,
+            'gpio_write'         : self.fixed_command,
+            'gpio_mode'          : self.fixed_command,
         })
 
         # for opcode, _ in self.COMMANDS_LUT.items():
@@ -176,8 +176,8 @@ class SocketClient(GenericClient):
         'firmware_version'   : ['\x02', '\x01', '\x00', '\x20'], #
         'mute_serial'        : ['\x02', '\x01', '\x00', '\x21'], # OK
         'i2c_write'          : [None], # TODO
-        'gpio_write'         : [None], # TODO
-        'gpio_mode'          : [None], # TODO
+        'gpio_write'         : ['\x02', '\x06', '\x00', '\x1A'], #
+        'gpio_mode'          : ['\x02', '\x03', '\x00', '\x19'], #
     }
 
 

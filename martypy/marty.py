@@ -358,17 +358,19 @@ class Marty(object):
     def pinmode_gpio(self, gpio, mode):
         '''
         Configure a GPIO pin
+
+        gpio: pin number between 0 and 7
+        mode: choose from: 'digital in','analog in' or 'digital out'
         '''
-        raise NotImplementedError()
-        return self.client.execute('i2c_write', byte_array)
+        return self.client.execute('gpio_mode', self._pack_uint8(gpio), self.GPIO_PIN_MODES[mode])
 
 
     def write_gpio(self, gpio, value):
         '''
         Write a value to a GPIO port
         '''
-        raise NotImplementedError()
-        return self.client.execute('gpio_write', byte_array)
+        byte_array = (self._pack_uint8(gpio),) + self._pack_float(value)
+        return self.client.execute('gpio_write', *byte_array)
 
 
     def digitalread_gpio(self, gpio):
@@ -542,7 +544,6 @@ class Marty(object):
         '''
         Ask the board to print the firmware version over chatter
         '''
-        #raise NotImplementedError()
         return self.client.execute('firmware_version')
 
 
