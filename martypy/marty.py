@@ -252,7 +252,7 @@ class Marty(object):
         '''
         Move the eyes to an angle
         Args:
-            angle,
+            angle (-128 to 127),
             move_time, milliseconds
         '''
         return self.move_joint(8, angle, move_time)
@@ -277,8 +277,8 @@ class Marty(object):
         '''
         Move the arms to a position
         Args:
-            left_angle: Position of the left arm
-            right_angle: Position of the right arm
+            left_angle: Position of the left arm (-128 to 127)
+            right_angle: Position of the right arm (-128 to 127)
             move_time: how long this movement should last, in milliseconds
         '''
         dur_lsb, dur_msb = self._pack_uint16(move_time)
@@ -316,7 +316,7 @@ class Marty(object):
         Args:
             side: 'left' or 'right', direction to step in
             steps: number of steps to take
-            step length: how broad the steps are
+            step length: how broad the steps are (up to 127)
             move_time: how long this movement should last, in milliseconds
         '''
         side_c = self.SIDE_CODES[side]
@@ -504,7 +504,8 @@ class Marty(object):
         '''
         Set board parameters.
 
-        byte_array: a list in the following format [paramID, params]
+        Args:
+            byte_array: a list in the following format [paramID, params]
         '''
         return self.client.execute('set_param', '\x1F',*byte_array)
 
