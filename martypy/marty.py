@@ -429,7 +429,7 @@ class Marty(object):
         Returns:
             Instantaneous current sense reading from motor `motor_id`
         '''
-        return self.client.execute('motorcurrent', int(motor_id))
+        return self.client.execute('motorcurrent', str(motor_id))
 
 
     def enable_motors(self, enable=True, clear_queue=True):
