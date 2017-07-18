@@ -501,12 +501,13 @@ class Marty(object):
         return self.client.execute('lifelike_behaviour', enable)
 
 
-    def set_parameter(self):
+    def set_parameter(self, *byte_array):
         '''
-        Return the board's firmware version
+        Set board parameters.
+
+        byte_array: a list in the following format [paramID, params]
         '''
-        raise NotImplementedError()
-        return self.client.execute('set_param')
+        return self.client.execute('set_param', '\x1F',*byte_array)
 
 
     def save_calibration(self):

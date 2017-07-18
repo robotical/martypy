@@ -71,7 +71,7 @@ class SocketClient(GenericClient):
             'save_calibration'   : self.fixed_command,
             'ros_command'        : self.command,
             'chatter'            : self.chatter,
-            'set_param'          : None,
+            'set_param'          : self.command,
             'firmware_version'   : self.fixed_command,
             'mute_serial'        : self.fixed_command,
             'i2c_write'          : None,
@@ -172,7 +172,8 @@ class SocketClient(GenericClient):
         'clear_calibration'  : ['\x02', '\x01', '\x00', '\xFE'], #
         'save_calibration'   : ['\x02', '\x01', '\x00', '\xFF'], #
         'ros_command'        : ['\x03'],                         # Variable Length
-        'set_param'          : ['\x02', '\x05', '\x00', '\x1F'], #
+        #'set_param'          : ['\x02', '\x05', '\x00', '\x1F'], #
+        'set_param'          : ['\x02', '\x1F'], #
         'firmware_version'   : ['\x02', '\x01', '\x00', '\x20'], #
         'mute_serial'        : ['\x02', '\x01', '\x00', '\x21'], # OK
         'i2c_write'          : [None], # TODO
