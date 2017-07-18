@@ -383,14 +383,13 @@ class Marty(object):
         return bool(self.client.execute('gpio', self._pack_uint8(gpio)))
 
 
-    def i2c_write(self, byte_array):
+    def i2c_write(self, *byte_array):
         '''
         Write a bytestream to the i2c port.
         The first byte should be the address, following from that
         the datagram folows standard i2c spec
         '''
-        raise NotImplementedError()
-        return self.client.execute('i2c_write', byte_array)
+        return self.client.execute('i2c_write', *byte_array)
 
 
     def get_battery_voltage(self):
