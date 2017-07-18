@@ -261,7 +261,7 @@ class SocketClient(GenericClient):
             cmd, index
         '''
         cmd = args[1]
-        index = int(args[2])
+        index = args[2]
         self.sock.send(self.pack(self.CMD_OPCODES[cmd] + [index]))
         data = self.sock.recv(4)
         return struct.unpack('f', data)[0]
