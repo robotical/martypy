@@ -274,5 +274,6 @@ class SocketClient(GenericClient):
         '''
         cmd = args[1]
         self.sock.send(self.pack(self.CMD_OPCODES[cmd]))
-        data_length = self.sock.recv(1)
-        return data_length
+        data_length = ord(self.sock.recv(1))
+        data = self.sock.recv(data_length)
+        return data
