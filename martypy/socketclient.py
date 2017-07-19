@@ -137,10 +137,12 @@ class SocketClient(GenericClient):
 
         found = []
         start = time.time()
-        while (time.time() - start) < timeout:
-            data, addr = sock.recvfrom(1000)
-            found.append({addr: data})
-        return found
+        try:
+            while (time.time() - start) < timeout:
+                data, addr = sock.recvfrom(1000)
+                found.append({addr: data})
+        except socket.timeout:
+            return found
 
 
     # Encodes Command Type flag, LSB size, MSB size, Data
