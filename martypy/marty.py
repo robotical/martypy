@@ -92,6 +92,26 @@ class Marty(object):
         return chr(six.byte2int(data[:1])), chr(six.byte2int(data[-1::]))
 
 
+    def _pack_int32(self, num):
+        '''
+        Pack a signed 32 bit int into four 8 bit bytes, little-endian
+        Returns:
+            tuple(least-sig-byte, less-sig-byte, more-sig-byte, most-sig-byte)
+
+        Struct:
+            Fmt    C Type                 Python Type    Standard Size
+            i      int                    integer        4
+        '''
+        try:
+            data = struct.pack('<i', num)
+        except struct.error as e:
+            raise ArgumentOutOfRangeException(e)
+        return (chr(six.byte2int([data[0]])),
+                chr(six.byte2int([data[1]])),
+                chr(six.byte2int([data[2]])),
+                chr(six.byte2int([data[3]])))
+
+
     def _pack_uint8(self, num):
         '''
         Pack an unsigned 8 bit int into one 8 bit byte, little-endian
@@ -392,6 +412,20 @@ class Marty(object):
         return self.client.execute('i2c_write', *byte_array)
 
 
+    def i2c_write_to_rick(self, address, byte_array):
+        '''
+        Write a formatted bytestream to the i2c port.
+        The bytestream is formatted in the ROS serial format.
+
+        address: the other device's address
+        '''
+
+        data = ['\x1B']         #i2c_write opcode
+        data.append(address)    #i2c address
+        data.append(byte_array) #message
+        data += self.ros_serial_formatter(111, *byte_array) #ros serial format
+        return self.client.execute('i2c_write', *data)
+
     def get_battery_voltage(self):
         '''
         Returns:
@@ -534,6 +568,49 @@ class Marty(object):
         return self.client.execute('ros_command', *byte_array)
 
 
+    def keyframe (self, time, num_of_msgs, msgs):
+        '''
+        Takes in information about movements and generates keyframes
+        returns a list of bytes
+
+        time: time (in seconds) taken to complete movement
+        num_of_msgs: number of commands sent
+        msgs: commands sent in the following format [(ID CMD), (ID CMD), etc...]
+        '''
+        processed_keyframe = []
+
+        #Number of key frames
+        len_byte0, len_byte1, len_byte2, len_byte3 = self._pack_int32(1)
+        processed_keyframe.append(len_byte0)
+        processed_keyframe.append(len_byte1)
+        processed_keyframe.append(len_byte2)
+        processed_keyframe.append(len_byte3)
+
+        #Time (in seconds) to excute keyframe. This is float encoded.
+        time_byte0, time_byte1, time_byte2, time_byte3 = self._pack_float(time)
+        processed_keyframe.append(time_byte0)
+        processed_keyframe.append(time_byte1)
+        processed_keyframe.append(time_byte2)
+        processed_keyframe.append(time_byte3)
+
+        if(len(msgs) != num_of_msgs):
+            raise MartyCommandException('Number of messages do not match entered messages')
+        #Array length
+        arr_len_byte0, arr_len_byte1, arr_len_byte2, arr_len_byte3 = self._pack_int32(num_of_msgs)
+        processed_keyframe.append(arr_len_byte0)
+        processed_keyframe.append(arr_len_byte1)
+        processed_keyframe.append(arr_len_byte2)
+        processed_keyframe.append(arr_len_byte3)
+
+        #Messages
+        for items in msgs:
+            for values in items:
+                processed_keyframe.append(self._pack_int8(values))
+
+        return(processed_keyframe)
+
+
+
     def get_chatter(self):
         '''
         Return chatter topic data (variable length)
@@ -548,10 +625,93 @@ class Marty(object):
         return self.client.execute('firmware_version')
 
 
-
     def _mute_serial(self):
         '''
         Mutes the internal serial line on Rick. Depends on platform and API
         NOTE: Once you've done this, the Robot will ignore you until you cycle power.
         '''
         return self.client.execute('mute_serial')
+
+
+    def ros_serial_formatter(self, topicID, *message):
+        '''
+        Formats message into ROS serial format and
+        returns formatted message as a list
+
+        More information about the ROS serial format can be
+        found here: http://wiki.ros.org/rosserial/Overview/Protocol
+        '''
+        msg = message
+
+        msg_length = len(msg)
+        #Message length in little endian format
+        msg_length_LB = msg_length & 0xFF                           #3rd byte
+        msg_length_HB = (msg_length >> 8) & 0xFF                    #4th byte
+
+        checksum1 = 255 - ((msg_length_LB + msg_length_HB) % 256)   #5th byte
+
+        #Topic ID in little endian format
+        topic_ID_LB = topicID & 0xFF                                #6th byte
+        topic_ID_HB = (topicID >> 8) & 0xFF                         #7th byte
+
+        data_values_sum = 0
+        for i in msg:
+            data_values_sum += ord(i)
+
+        checksum2 = 255 - ((topic_ID_LB + topic_ID_HB + data_values_sum) % 256) #final byte
+
+        #encode into bytes
+        command_to_be_sent = []
+        command_to_be_sent += ('\xff',) #Sync Flag. Check ROS Wiki
+        command_to_be_sent += ('\xfe',) #Protocol version. Check ROS Wiki
+        command_to_be_sent += (chr(msg_length_LB),)
+        command_to_be_sent += (chr(msg_length_HB),)
+        command_to_be_sent += (chr(checksum1),)
+        command_to_be_sent += (chr(topic_ID_LB),)
+        command_to_be_sent += (chr(topic_ID_HB),)
+        command_to_be_sent += msg
+        command_to_be_sent += (chr(checksum2),)
+
+        return(command_to_be_sent)
+
+
+    def ros_processed_command(self, topicID, *message):
+        '''
+        Formats message into ROS serial format then calls
+        ros_command with the processed message.
+
+        More information about the ROS serial format can be
+        found here: http://wiki.ros.org/rosserial/Overview/Protocol
+        '''
+        msg = message
+
+        msg_length = len(msg)
+        #Message length in little endian format
+        msg_length_LB = msg_length & 0xFF                           #3rd byte
+        msg_length_HB = (msg_length >> 8) & 0xFF                    #4th byte
+
+        checksum1 = 255 - ((msg_length_LB + msg_length_HB) % 256)   #5th byte
+
+        #Topic ID in little endian format
+        topic_ID_LB = topicID & 0xFF                                #6th byte
+        topic_ID_HB = (topicID >> 8) & 0xFF                         #7th byte
+
+        data_values_sum = 0
+        for i in msg:
+            data_values_sum += ord(i)
+
+        checksum2 = 255 - ((topic_ID_LB + topic_ID_HB + data_values_sum) % 256) #final byte
+
+        #encode into bytes
+        command_to_be_sent = []
+        command_to_be_sent += ('\xff',) #Sync Flag. Check ROS Wiki
+        command_to_be_sent += ('\xfe',) #Protocol version. Check ROS Wiki
+        command_to_be_sent += (chr(msg_length_LB),)
+        command_to_be_sent += (chr(msg_length_HB),)
+        command_to_be_sent += (chr(checksum1),)
+        command_to_be_sent += (chr(topic_ID_LB),)
+        command_to_be_sent += (chr(topic_ID_HB),)
+        command_to_be_sent += msg
+        command_to_be_sent += (chr(checksum2),)
+
+        self.ros_command(*command_to_be_sent)
