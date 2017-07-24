@@ -49,7 +49,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         #'Environment :: Web Environment',
         #'Operating System :: POSIX',
-        #'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: Apache Software License',
     )
 )
 
