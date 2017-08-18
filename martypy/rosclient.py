@@ -8,7 +8,7 @@ try:
 except ImportError:
     print("ROS not installed")
 
-from marty_msgs.msg import ByteArray, Accelerometer, MotorCurrents
+from marty_msgs.msg import ByteArray, Accelerometer, MotorCurrents, GPIOs
 from std_msgs.msg import Float32
 
 class ROSClient(GenericClient):
@@ -20,11 +20,13 @@ class ROSClient(GenericClient):
         self.sensor_value = Float32()
         self.acceleration = Accelerometer()
         self.currents = MotorCurrents()
+        self.gpios = GPIOs()
 
         self.pub = rospy.Publisher('/marty/socket_cmd', ByteArray, queue_size=10)
         rospy.Subscriber('/marty/battery', Float32, self.simple_sensor_value)
         rospy.Subscriber('/marty/accel', Accelerometer, self.get_accel)
         rospy.Subscriber('/marty/motor_currents', MotorCurrents, self.get_currents)
+        rospy.Subscriber('/marty/gpios', GPIOs, self.get_gpios)
 
         rospy.init_node('martypy_client', anonymous=True)
 
@@ -35,7 +37,7 @@ class ROSClient(GenericClient):
             'battery'            : self.simple_sensor,
             'accel'              : self.select_sensor,
             'motorcurrent'       : self.select_sensor,
-            # 'gpio'               : self.select_sensor,
+            'gpio'               : self.select_sensor,
             'hello'              : self.fixed_command,
             'lean'               : self.fixed_command,
             'walk'               : self.fixed_command,
@@ -206,6 +208,12 @@ class ROSClient(GenericClient):
         '''
         self.currents = data
 
+    def get_gpios(self, data):
+        '''
+        Assign gpio data to variable
+        '''
+        self.gpios = data
+
     def select_sensor(self, *args, **kwargs):
         '''
         Read a sensor that takes an argument and give i)ts value
@@ -223,6 +231,8 @@ class ROSClient(GenericClient):
                 return self.acceleration.z
         elif(cmd == 'motorcurrent'):
             return self.currents.current[int(index)]
+        elif(cmd == 'gpio'):
+            return  self.gpios.gpio[ord(index)]
 
     # def chatter(self, *args, **kwargs):
     #     '''
