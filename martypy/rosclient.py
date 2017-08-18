@@ -8,7 +8,7 @@ try:
 except ImportError:
     print("ROS not installed")
 
-from marty_msgs.msg import ByteArray
+from marty_msgs.msg import ByteArray, Accelerometer
 from std_msgs.msg import Float32
 
 class ROSClient(GenericClient):
@@ -17,7 +17,12 @@ class ROSClient(GenericClient):
         GenericClient.__init__(self)
         # raise NotImplementedError()
 
+        self.sensor_value = Float32()
+        self.acceleration = Accelerometer()
+
         self.pub = rospy.Publisher('/marty/socket_cmd', ByteArray, queue_size=10)
+        rospy.Subscriber('/marty/battery', Float32, self.simple_sensor_value)
+        rospy.Subscriber('/marty/accel', Accelerometer, self.get_accel)
 
         rospy.init_node('martypy_client', anonymous=True)
 
@@ -26,7 +31,7 @@ class ROSClient(GenericClient):
         self.register_commands({
             # 'discover'           : self.discover,
             'battery'            : self.simple_sensor,
-            # 'accel'              : self.select_sensor,
+            'accel'              : self.select_sensor,
             # 'motorcurrent'       : self.select_sensor,
             # 'gpio'               : self.select_sensor,
             'hello'              : self.fixed_command,
@@ -170,7 +175,6 @@ class ROSClient(GenericClient):
         self.pub.publish(list(map(ord, opcode[3:])) + [ord(toggle)])
         return args[2]
 
-    sensor_value = None
     def simple_sensor_value(self, data):
         '''
         Called by ROS subscriber to update variable with requested sensor value
@@ -184,27 +188,33 @@ class ROSClient(GenericClient):
             cmd
         '''
         cmd = args[1]
-        if(cmd == 'battery'):
-            while(self.sensor_value == None):
-                rospy.Subscriber('/marty/battery', Float32, self.simple_sensor_value)
         data = self.sensor_value.data
         return data
 
-    #
-    # def select_sensor(self, *args, **kwargs):
-    #     '''
-    #     Read a sensor that takes an argument and give its value
-    #     Args:
-    #         cmd, index
-    #     '''
-    #     cmd = args[1]
-    #     index = args[2]
-    #     self.sock.send(self.pack(self.CMD_OPCODES[cmd] + [index]))
-    #     data = self.sock.recv(4)
-    #     return struct.unpack('f', data)[0]
-    #
-    #
-    #
+
+    def get_accel(self, data):
+        '''
+        Assign acceleration data to variables
+        '''
+        self.acceleration = data
+
+    def select_sensor(self, *args, **kwargs):
+        '''
+        Read a sensor that takes an argument and give its value
+        Args:
+            cmd, index
+        '''
+        cmd = args[1]
+        index = args[2]
+        if(cmd == 'accel'):
+            if(index == '\x00'):
+                return self.acceleration.x
+            elif(index == '\x01'):
+                return self.acceleration.y
+            elif(index == '\x02'):
+                return self.acceleration.z
+        
+
     # def chatter(self, *args, **kwargs):
     #     '''
     #     Return chatter topic data (variable length)
