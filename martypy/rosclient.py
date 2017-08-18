@@ -8,7 +8,7 @@ try:
 except ImportError:
     print("ROS not installed")
 
-from marty_msgs.msg import ByteArray, Accelerometer
+from marty_msgs.msg import ByteArray, Accelerometer, MotorCurrents
 from std_msgs.msg import Float32
 
 class ROSClient(GenericClient):
@@ -19,10 +19,12 @@ class ROSClient(GenericClient):
 
         self.sensor_value = Float32()
         self.acceleration = Accelerometer()
+        self.currents = MotorCurrents()
 
         self.pub = rospy.Publisher('/marty/socket_cmd', ByteArray, queue_size=10)
         rospy.Subscriber('/marty/battery', Float32, self.simple_sensor_value)
         rospy.Subscriber('/marty/accel', Accelerometer, self.get_accel)
+        rospy.Subscriber('/marty/motor_currents', MotorCurrents, self.get_currents)
 
         rospy.init_node('martypy_client', anonymous=True)
 
@@ -32,7 +34,7 @@ class ROSClient(GenericClient):
             # 'discover'           : self.discover,
             'battery'            : self.simple_sensor,
             'accel'              : self.select_sensor,
-            # 'motorcurrent'       : self.select_sensor,
+            'motorcurrent'       : self.select_sensor,
             # 'gpio'               : self.select_sensor,
             'hello'              : self.fixed_command,
             'lean'               : self.fixed_command,
@@ -194,14 +196,20 @@ class ROSClient(GenericClient):
 
     def get_accel(self, data):
         '''
-        Assign acceleration data to variables
+        Assign acceleration data to variable
         '''
         self.acceleration = data
 
+    def get_currents(self, data):
+        '''
+        Assign motor currents data to variable
+        '''
+        self.currents = data
+
     def select_sensor(self, *args, **kwargs):
         '''
-        Read a sensor that takes an argument and give its value
-        Args:
+        Read a sensor that takes an argument and give i)ts value
+        Args:(
             cmd, index
         '''
         cmd = args[1]
@@ -213,7 +221,8 @@ class ROSClient(GenericClient):
                 return self.acceleration.y
             elif(index == '\x02'):
                 return self.acceleration.z
-        
+        elif(cmd == 'motorcurrent'):
+            return self.currents.current[int(index)]
 
     # def chatter(self, *args, **kwargs):
     #     '''
