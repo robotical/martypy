@@ -9,7 +9,7 @@ except ImportError:
     print("ROS not installed")
 
 from marty_msgs.msg import ByteArray, Accelerometer, MotorCurrents, GPIOs
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, String
 
 class ROSClient(GenericClient):
 
@@ -21,12 +21,14 @@ class ROSClient(GenericClient):
         self.acceleration = Accelerometer()
         self.currents = MotorCurrents()
         self.gpios = GPIOs()
+        self.chatter_data = ''
 
         self.pub = rospy.Publisher('/marty/socket_cmd', ByteArray, queue_size=10)
         rospy.Subscriber('/marty/battery', Float32, self.simple_sensor_value)
         rospy.Subscriber('/marty/accel', Accelerometer, self.get_accel)
         rospy.Subscriber('/marty/motor_currents', MotorCurrents, self.get_currents)
         rospy.Subscriber('/marty/gpios', GPIOs, self.get_gpios)
+        rospy.Subscriber('/marty/chatter', String, self.get_chatter)
 
         rospy.init_node('martypy_client', anonymous=True)
 
@@ -60,7 +62,7 @@ class ROSClient(GenericClient):
             'clear_calibration'  : self.fixed_command,
             'save_calibration'   : self.fixed_command,
             # 'ros_command'        : self.command,
-            # 'chatter'            : self.chatter,
+            'chatter'            : self.chatter,
             # 'set_param'          : self.command,
             'firmware_version'   : self.fixed_command,
             'mute_serial'        : self.fixed_command,
@@ -163,11 +165,13 @@ class ROSClient(GenericClient):
     #     payload = [opcode,
     #                chr(six.byte2int([datalen_lsb])),
     #                chr(six.byte2int([datalen_msb]))] + data
+    #     print(list(map(ord, payload)))
     #     self.sock.send(self.pack(payload))
+    #     # self.pub.publish(list(map(ord, payload)))
     #     return True
-    #
-    #
-    #
+
+
+
     def toggle_command(self, *args, **kwargs):
         '''
         Takes a python Boolean and toggles a switch on the board
@@ -234,12 +238,19 @@ class ROSClient(GenericClient):
         elif(cmd == 'gpio'):
             return  self.gpios.gpio[ord(index)]
 
-    # def chatter(self, *args, **kwargs):
-    #     '''
-    #     Return chatter topic data (variable length)
-    #     '''
-    #     cmd = args[1]
-    #     self.sock.send(self.pack(self.CMD_OPCODES[cmd]))
-    #     data_length = six.byte2int(self.sock.recv(1))
-    #     data = self.sock.recv(data_length)
-    #     return data
+
+    def get_chatter(self, data):
+        '''
+        Assign chatter data to variable
+        '''
+        self.chatter_data = data
+
+
+    def chatter(self, *args, **kwargs):
+        '''
+        Return chatter topic data (variable length)
+        '''
+        cmd = args[1]
+        while(self.chatter_data == ''):
+            continue
+        return self.chatter_data
