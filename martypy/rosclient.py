@@ -209,6 +209,8 @@ class ROSClient(GenericClient):
             cmd
         '''
         cmd = args[1]
+        while(self.sensor_value.data == 0.0):
+            continue
         data = self.sensor_value.data
         return data
 
