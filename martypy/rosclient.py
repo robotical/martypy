@@ -62,12 +62,12 @@ class ROSClient(GenericClient):
             'lifelike_behaviour' : self.toggle_command,
             'clear_calibration'  : self.fixed_command,
             'save_calibration'   : self.fixed_command,
-            # 'ros_command'        : self.command,
+            'ros_command'        : self.command,
             'chatter'            : self.chatter,
-            # 'set_param'          : self.command,      #TODO
+            'set_param'          : self.command,    
             'firmware_version'   : self.fixed_command,
             'mute_serial'        : self.fixed_command,
-            # 'i2c_write'          : self.command,
+            'i2c_write'          : self.command,
             'gpio_write'         : self.fixed_command,
             'gpio_mode'          : self.fixed_command,
         })
@@ -163,23 +163,20 @@ class ROSClient(GenericClient):
 
 
     def command(self, *args, **kwargs):
-    #     '''
-    #     Pipes args down the socket whilst calculating the payload length
-    #     Args:
-    #         *args of length at least 3
-    #     '''
-    #     cmd = args[1]
-    #     opcode = self.CMD_OPCODES[cmd][0]
-    #     data = list(args[2:])
-    #     datalen_lsb, datalen_msb = struct.pack('<H', len(data))
-    #     payload = [opcode,
-    #                chr(six.byte2int([datalen_lsb])),
-    #                chr(six.byte2int([datalen_msb]))] + data
-    #     print(list(map(ord, payload)))
-    #     self.sock.send(self.pack(payload))
-    #     # self.pub.publish(list(map(ord, payload)))
-    #     return True
-        raise NotImplementedError
+        '''
+        Pipes args down the socket whilst calculating the payload length
+        Args:
+            *args of length at least 3
+        '''
+        cmd = args[1]
+        opcode = self.CMD_OPCODES[cmd][0]
+        data = list(*args[2:])
+        datalen_lsb, datalen_msb = struct.pack('<H', len(data))
+        payload = [opcode,
+                   chr(six.byte2int([datalen_lsb])),
+                   chr(six.byte2int([datalen_msb]))] + data
+        self.pub.publish(self.pack_signed_int(payload))
+        return True
 
 
 
