@@ -1,6 +1,7 @@
 import six
 import time
 import struct
+import ctypes
 from .genericclient import GenericClient
 
 try:
@@ -63,7 +64,7 @@ class ROSClient(GenericClient):
             'save_calibration'   : self.fixed_command,
             # 'ros_command'        : self.command,
             'chatter'            : self.chatter,
-            # 'set_param'          : self.command,
+            # 'set_param'          : self.command,      #TODO
             'firmware_version'   : self.fixed_command,
             'mute_serial'        : self.fixed_command,
             # 'i2c_write'          : self.command,
@@ -133,6 +134,15 @@ class ROSClient(GenericClient):
             raise ArgumentOutOfRangeException('Argument(s) overflowed int')
 
 
+    def pack_signed_int(self, data):
+        '''
+        Packs unsigned int data to bytes
+        '''
+        packed_list = []
+        for item in data:
+            packed_list.append(ctypes.c_byte(ord(item)).value)
+        return packed_list
+
 
     def fixed_command(self, *args, **kwargs):
         '''
@@ -147,12 +157,12 @@ class ROSClient(GenericClient):
         if len(data) != datalen:
             raise TypeError('{} takes {} arguments but {} were given'
                             ''.format(datalen, len(data)))
-        self.pub.publish(list(map(ord, opcode[3:])))
+        self.pub.publish(self.pack_signed_int(opcode[3:] + data))
         return True
 
 
 
-    # def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs):
     #     '''
     #     Pipes args down the socket whilst calculating the payload length
     #     Args:
@@ -169,6 +179,7 @@ class ROSClient(GenericClient):
     #     self.sock.send(self.pack(payload))
     #     # self.pub.publish(list(map(ord, payload)))
     #     return True
+        raise NotImplementedError
 
 
 
@@ -183,11 +194,13 @@ class ROSClient(GenericClient):
         self.pub.publish(list(map(ord, opcode[3:])) + [ord(toggle)])
         return args[2]
 
+
     def simple_sensor_value(self, data):
         '''
         Called by ROS subscriber to update variable with requested sensor value
         '''
         self.sensor_value = data
+
 
     def simple_sensor(self, *args, **kwargs):
         '''
@@ -206,17 +219,20 @@ class ROSClient(GenericClient):
         '''
         self.acceleration = data
 
+
     def get_currents(self, data):
         '''
         Assign motor currents data to variable
         '''
         self.currents = data
 
+
     def get_gpios(self, data):
         '''
         Assign gpio data to variable
         '''
         self.gpios = data
+
 
     def select_sensor(self, *args, **kwargs):
         '''
