@@ -633,10 +633,12 @@ class Marty(object):
         return self.client.execute('mute_serial')
 
 
-    def ros_serial_formatter(self, topicID, *message):
+    def ros_serial_formatter(self, topicID, *message, send=False):
         '''
         Formats message into ROS serial format and
         returns formatted message as a list
+
+        calls ros_command with the processed message if send is True.
 
         More information about the ROS serial format can be
         found here: http://wiki.ros.org/rosserial/Overview/Protocol
@@ -671,6 +673,9 @@ class Marty(object):
         command_to_be_sent += (chr(topic_ID_HB),)
         command_to_be_sent += msg
         command_to_be_sent += (chr(checksum2),)
+
+        if(send == True):
+            self.ros_command(*command_to_be_sent)
 
         return(command_to_be_sent)
 
