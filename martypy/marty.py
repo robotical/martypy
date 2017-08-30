@@ -633,7 +633,7 @@ class Marty(object):
         return self.client.execute('mute_serial')
 
 
-    def ros_serial_formatter(self, topicID, *message, send=False):
+    def ros_serial_formatter(self, topicID, send=False, *message):
         '''
         Formats message into ROS serial format and
         returns formatted message as a list
