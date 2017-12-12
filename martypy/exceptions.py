@@ -18,3 +18,7 @@ class MartyConnectException(Exception):
 class ArgumentOutOfRangeException(Exception):
     pass
 
+
+class UnavailableClientTypeException(Exception):
+    pass
+

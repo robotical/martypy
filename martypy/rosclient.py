@@ -3,20 +3,24 @@ import time
 import struct
 import ctypes
 from .genericclient import GenericClient
+from .exceptions import UnavailableClientTypeException, ArgumentOutOfRangeException
 
 try:
     import rospy
+    from marty_msgs.msg import ByteArray, Accelerometer, MotorCurrents, GPIOs
+    from std_msgs.msg import Float32, String
+    have_ros = True
 except ImportError:
-    print("ROS not installed")
+    have_ros = False
 
-from marty_msgs.msg import ByteArray, Accelerometer, MotorCurrents, GPIOs
-from std_msgs.msg import Float32, String
 
 class ROSClient(GenericClient):
 
     def __init__(self, debug=False,*args, **kwargs):
         GenericClient.__init__(self)
-        # raise NotImplementedError()
+
+        if not have_ros:
+            raise UnavailableClientTypeException('Unable to import rospy')
 
         self.sensor_value = Float32()
         self.acceleration = Accelerometer()
