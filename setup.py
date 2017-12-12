@@ -9,7 +9,7 @@ with open('README.md') as f:
 
 setup(
     name="martypy",
-    version="1.0",
+    version="1.1",
     description="Client library for Marty the Robot by Robotical Ltd",
     long_description=readme,
     author="Robotical Ltd",
@@ -35,8 +35,8 @@ setup(
         # 'Development Status :: 1 - Planning',
         # 'Development Status :: 2 - Pre-Alpha',
         # 'Development Status :: 3 - Alpha',
-        'Development Status :: 4 - Beta',
-        # 'Development Status :: 5 - Production/Stable',
+        #'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         # 'Development Status :: 6 - Mature',
         # 'Development Status :: 7 - Inactive',
         'Programming Language :: Python',
