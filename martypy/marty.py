@@ -426,12 +426,21 @@ class Marty(object):
         data += self.ros_serial_formatter(111, *byte_array) #ros serial format
         return self.client.execute('i2c_write', *data)
 
+
     def get_battery_voltage(self):
         '''
         Returns:
             The battery voltage reading as a float in Volts
         '''
         return self.client.execute('battery')
+
+
+    def get_distance_sensor(self):
+        '''
+        Returns:
+            The distance sensor reading as a float (raw, no units)
+        '''
+        return self.client.execute('distance')
 
 
     ACCEL_AXES = {

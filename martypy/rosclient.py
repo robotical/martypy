@@ -42,6 +42,7 @@ class ROSClient(GenericClient):
         self.register_commands({
             # 'discover'           : self.discover,
             'battery'            : self.simple_sensor,
+            'distance'           : self.simple_sensor,
             'accel'              : self.select_sensor,
             'motorcurrent'       : self.select_sensor,
             'gpio'               : self.select_sensor,
@@ -90,6 +91,7 @@ class ROSClient(GenericClient):
     # Encodes Command Type flag, LSB size, MSB size, Data
     CMD_OPCODES = {
         'battery'            : ['\x01', '\x01', '\x00'],         # OK
+        'distance'           : ['\x01', '\x08', '\x00'],         #
         'accel'              : ['\x01', '\x02'],                 # OK
         'motorcurrent'       : ['\x01', '\x03'],                 # OK
         'gpio'               : ['\x01', '\x04'],                 #
