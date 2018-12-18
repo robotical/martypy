@@ -9,7 +9,7 @@ with open('README.md') as f:
 
 setup(
     name="martypy",
-    version="1.1",
+    version="1.2.post1",
     description="Client library for Marty the Robot by Robotical Ltd",
     long_description=readme,
     author="Robotical Ltd",
@@ -21,7 +21,8 @@ setup(
     license='Apache 2.0',
     install_requires=[
         'six>=1.10.0',
-        'requests>=2.18.1',
+        'requests>=2.21.0',
+        'urllib3>=1.24.1',
     ],
     keywords=[
         'ros',
