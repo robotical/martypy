@@ -550,7 +550,7 @@ class Marty(object):
         Args:
             byte_array: a list in the following format [paramID, params]
         '''
-        return self.client.execute('set_param', '\x1F',*byte_array)
+        return self.client.execute('set_param', '\x1F', *byte_array)
 
 
     def save_calibration(self):
