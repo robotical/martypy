@@ -220,7 +220,7 @@ class Marty(object):
         return self.client.execute('stop', stop)
 
 
-    def move_joint(self, joint_id, postition, move_time):
+    def move_joint(self, joint_id, position, move_time):
         '''
         Move a specific joint to a position
         Args:
@@ -229,7 +229,7 @@ class Marty(object):
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self.client.execute('move_joint',
                                    self._pack_uint8(joint_id),
-                                   self._pack_int8(postition),
+                                   self._pack_int8(position),
                                    dur_lsb, dur_msb)
 
 
