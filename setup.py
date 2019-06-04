@@ -20,9 +20,8 @@ setup(
     url='http://github.com/robotical/martypy',
     license='Apache 2.0',
     install_requires=[
-        'six>=1.10.0',
-        'requests>=2.21.0',
-        'urllib3>=1.24.1',
+        'six>=1.12.0',
+        'requests>=2.22.0',
     ],
     keywords=[
         'ros',
