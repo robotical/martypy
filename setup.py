@@ -9,7 +9,7 @@ with open('README.md') as f:
 
 setup(
     name="martypy",
-    version="1.2.post1",
+    version="1.3",
     description="Client library for Marty the Robot by Robotical Ltd",
     long_description=readme,
     author="Robotical Ltd",
@@ -47,6 +47,8 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         #'Environment :: Web Environment',
         #'Operating System :: POSIX',
         'License :: OSI Approved :: Apache Software License',
