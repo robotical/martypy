@@ -47,7 +47,7 @@ class SocketClient(GenericClient):
             'battery'            : self.simple_sensor,
             'distance'           : self.simple_sensor,
             'accel'              : self.select_sensor,
-            'motorcurrent'       : self.select_sensor,
+            'motorcurrent'       : self.current_sensor,
             'gpio'               : self.select_sensor,
             'hello'              : self.fixed_command,
             'lean'               : self.fixed_command,
@@ -267,6 +267,20 @@ class SocketClient(GenericClient):
         cmd = args[1]
         index = args[2]
         self.sock.send(self.pack(self.CMD_OPCODES[cmd] + [index]))
+        data = self.sock.recv(4)
+        return struct.unpack('f', data)[0]
+
+
+    def current_sensor(self, *args, **kwargs):
+        '''
+        Read current sensor that takes an argument and give its value
+        Args:
+            cmd, index
+        '''
+        cmd = args[1]
+        index = args[2]
+        pakd = self.pack(self.CMD_OPCODES[cmd] + [chr(int(index))])
+        self.sock.send(pakd)
         data = self.sock.recv(4)
         return struct.unpack('f', data)[0]
 
