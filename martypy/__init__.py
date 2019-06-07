@@ -7,4 +7,4 @@ from .testclient import TestClient
 from .utils import *
 from .exceptions import *
 
-__version__ = '1.2.post1'
+__version__ = '1.3'
