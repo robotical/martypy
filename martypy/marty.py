@@ -259,7 +259,7 @@ class Marty(object):
                            angle (in degrees - can be negative),
             move_time, milliseconds
         '''
-        return self.client.eyes(Marty.JOINT_IDS['Eyes'], pose_or_angle, move_time)
+        return self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
 
     def kick(self, side: str = 'right', twist: float = 0, move_time: int = 2000) -> bool:
         '''

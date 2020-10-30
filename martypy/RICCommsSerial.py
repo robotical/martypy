@@ -6,6 +6,7 @@ from typing import Callable, Dict, Union
 import serial
 import time
 import logging
+import platform
 
 from serial.serialutil import SerialException
 from .LikeHDLC import LikeHDLC
@@ -104,11 +105,29 @@ class RICCommsSerial:
         if len(serialPort) == 0:
             return False
 
+        # Running on OSX?
+        # if platform.system() == 'Darwin':
+        #     try:
+        #         import termios
+        #         f = open(serialPort)
+        #         attrs = termios.tcgetattr(f)
+        #         attrs[2] = attrs[2] & ~termios.HUPCL
+        #         termios.tcsetattr(f, termios.TCSAFLUSH, attrs)
+        #         f.close()
+        #     except Exception as excp:
+        #         logger.debug(f"Failed to set HUPCL flag {excp}")
+        #         pass
+
         # Open serial port
         self.serialDevice = serial.Serial(port=None, baudrate=serialBaud)
         self.serialDevice.port = serialPort
-        self.serialDevice.rts = 0
-        self.serialDevice.dtr = 0
+        if platform.system() == 'Windows':
+            self.serialDevice.rts = 0
+            self.serialDevice.dtr = 0
+        elif platform.system() == 'Darwin':
+            self.serialDevice.dsrdtr = False
+            self.serialDevice.rts = 0
+            self.serialDevice.dtr = 0
         self.serialDevice.open()
 
         # Start receive loop
