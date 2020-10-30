@@ -30,25 +30,25 @@ class Marty(object):
     }
 
     JOINT_IDS = {
-        'LeftHip'       : 0,
-        'LeftTwist'     : 1,
-        'LeftKnee'      : 2,
-        'RightHip'      : 3,
-        'RightTwist'    : 4,
-        'RightKnee'     : 5,
-        'LeftArm'       : 6,
-        'RightArm'      : 7,
-        'Eyes'          : 8        
+        'left hip'       : 0,
+        'left twist'     : 1,
+        'left knee'      : 2,
+        'right hip'      : 3,
+        'right twist'    : 4,
+        'right knee'     : 5,
+        'left arm'       : 6,
+        'right arm'      : 7,
+        'eyes'          : 8        
     }
 
     JOINT_STATUS = {
-        'Enabled'       : 0x01,
-        'CurrentLimInst': 0x02,
-        'CurrentLimSust': 0x04,
-        'Busy'          : 0x08,
-        'PosRestricted' : 0x10,
-        'Paused'        : 0x20,
-        'CommsOk'       : 0x80
+        'enabled'           : 0x01,
+        'current limit now' : 0x02,
+        'current limit long': 0x04,
+        'busy'              : 0x08,
+        'pos restricted'    : 0x10,
+        'paused'            : 0x20,
+        'comms ok'          : 0x80
     }
 
     ACCEL_AXES = {
@@ -62,7 +62,6 @@ class Marty(object):
                  *args, **kwargs) -> None:
         '''
         Initialise a Marty client class from a url
-
         Args:
             url: How to connect to Marty - e.g. 
                  usb://COM2 for Windows serial connection to Marty USB port
@@ -77,6 +76,10 @@ class Marty(object):
         if not (client_type and loc):
             raise MartyConfigException('Invalid URL format "{}" given'.format(url))
 
+        # Be forgiving about triple forward slash in unix serial devices
+        if loc.startswith('dev/'):
+            loc = '/' + loc
+
         # Merge in any clients that have been added and check valid
         self.CLIENT_TYPES = SocketClient.dict_merge(self.CLIENT_TYPES, client_types)
         if client_type not in self.CLIENT_TYPES.keys():
@@ -87,6 +90,12 @@ class Marty(object):
 
         # Get Marty details
         self.client.start()
+
+    def __del__(self) -> None:
+        '''
+        Marty is stopping
+        '''
+        self.client.close()
 
     def close(self) -> None:
         '''
@@ -123,12 +132,21 @@ class Marty(object):
         # Default to plain "stop"
         stopInfo = 1 
         if stop_type is not None:
-            try:
-                stopInfo = self.STOP_TYPE[stop_type]
-            except KeyError:
+            if stop_type not in self.STOP_TYPE:
+                self.client.preException(True)
                 raise MartyCommandException("Unknown Stop Type '{}', not in Marty.STOP_TYPE"
                                             "".format(stop_type))
+            stopInfo = self.STOP_TYPE.get(stop_type, stopInfo)
         return self.client.stop(stopInfo)
+
+    def hold_position(self, hold_time: int) -> bool:
+        '''
+        Hold at current position
+        Args:
+            hold_time, time to hold position in milli-seconds
+        '''
+        # Default to plain "stop"
+        return self.client.hold_position(hold_time)
 
     def move_joint(self, joint_name_or_num: Union[int, str], position: float, move_time: int) -> bool:
         '''
@@ -137,15 +155,16 @@ class Marty(object):
             joint_name_or_num: joint to move, see the Marty.JOINT_IDS dictionary (can be name or number)
             position: angle in degrees
             move_time: how long this movement should last, in milliseconds
+        Raises:
+            MartyCommandException if the joint_name_or_num is unknown
         '''
-        try:
-            if type(joint_name_or_num) is str:
-                jointIDNo = self.JOINT_IDS[joint_name_or_num]
-            else:
-                jointIDNo = joint_name_or_num
-        except KeyError:
-            raise MartyCommandException("Joint must be one of {}, not '{}'"
-                                        "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
+        jointIDNo = joint_name_or_num
+        if type(joint_name_or_num) is str:
+            if joint_name_or_num not in self.JOINT_IDS:
+                self.client.preException(True)
+                raise MartyCommandException("Joint must be one of {}, not '{}'"
+                                            "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
+            jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
         self.client.move_joint(jointIDNo, position, move_time)
 
     def get_joint_position(self, joint_name_or_num: Union[int, str]) -> float:
@@ -153,15 +172,16 @@ class Marty(object):
         Get the position (angle in degrees) of a joint
         Args:
             joint_name_or_num: see the Marty.JOINT_IDS dictionary (can be name or number)
+        Raises:
+            MartyCommandException if the joint_name_or_num is unknown            
         '''
-        try:
-            if type(joint_name_or_num) is str:
-                jointIDNo = self.JOINT_IDS[joint_name_or_num]
-            else:
-                jointIDNo = joint_name_or_num
-        except KeyError:
-            raise MartyCommandException("Joint must be one of {}, not '{}'"
-                                        "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
+        jointIDNo = joint_name_or_num
+        if type(joint_name_or_num) is str:
+            if joint_name_or_num not in self.JOINT_IDS:
+                self.client.preException(True)
+                raise MartyCommandException("Joint must be one of {}, not '{}'"
+                                            "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
+            jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
         return self.client.get_joint_position(jointIDNo)
 
     def get_joint_current(self, joint_name_or_num: Union[int, str]) -> float:
@@ -174,15 +194,16 @@ class Marty(object):
         Returns:
             current of the joint in milli-Amps
             will be 0 if the joint current is unknown
+        Raises:
+            MartyCommandException if the joint_name_or_num is unknown
         '''
-        try:
-            if type(joint_name_or_num) is str:
-                jointIDNo = self.JOINT_IDS[joint_name_or_num]
-            else:
-                jointIDNo = joint_name_or_num
-        except KeyError:
-            raise MartyCommandException("Joint must be one of {}, not '{}'"
-                                        "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
+        jointIDNo = joint_name_or_num
+        if type(joint_name_or_num) is str:
+            if joint_name_or_num not in self.JOINT_IDS:
+                self.client.preException(True)
+                raise MartyCommandException("Joint must be one of {}, not '{}'"
+                                            "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
+            jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
         return self.client.get_joint_current(jointIDNo)
 
     def get_joint_status(self, joint_name_or_num: Union[int, str]) -> int:
@@ -195,15 +216,16 @@ class Marty(object):
         Returns:
             a code number which is the sum of codes in the Marty.JOINT_STATUS dictionary
             will be 0 if the joint status is unknown
+        Raises:
+            MartyCommandException if the joint_name_or_num is unknown
         '''
-        try:
-            if type(joint_name_or_num) is str:
-                jointIDNo = self.JOINT_IDS[joint_name_or_num]
-            else:
-                jointIDNo = joint_name_or_num
-        except KeyError:
-            raise MartyCommandException("Joint must be one of {}, not '{}'"
-                                        "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
+        jointIDNo = joint_name_or_num
+        if type(joint_name_or_num) is str:
+            if joint_name_or_num not in self.JOINT_IDS:
+                self.client.preException(True)
+                raise MartyCommandException("Joint must be one of {}, not '{}'"
+                                            "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
+            jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
         return self.client.get_joint_status(jointIDNo)
 
     def lean(self, direction: str, amount: float, move_time: int) -> bool:
@@ -223,7 +245,7 @@ class Marty(object):
         Args:
             num_steps: int, how many steps to take
             start_foot: 'left', 'right' or 'auto', start walking with this foot
-            turn: How much to turn (-128 to 127). 0 is straight.
+            turn: How much to turn (-128 to 127), 0 is straight.
             step_length: How far to step (approximately in mm)
             move_time: how long this movement should last, in milliseconds
         '''
@@ -317,7 +339,6 @@ class Marty(object):
     def pinmode_gpio(self, gpio: int, mode: str) -> bool:
         '''
         Configure a GPIO pin
-
         gpio: pin number between 0 and 7
         mode: choose from: 'digital in','analog in' or 'digital out'
         '''
@@ -359,7 +380,6 @@ class Marty(object):
         '''
         Write a formatted bytestream to the i2c port.
         The bytestream is formatted in the ROS serial format.
-
         address: the other device's address
         '''
         return self.client.i2c_write_to_ric(address, byte_array)
@@ -394,14 +414,16 @@ class Marty(object):
                 acceleration value - or 0 if no information is available
             If axis is not provided returns a tuple with x, y and z values (which may
                 be 0 if no information is available)
+        Raises:
+            MartyCommandException if the axis is unknown
         '''
         axisCode = 0
-        if axis is not None:
-            try:
-                axisCode = self.ACCEL_AXES[axis]
-            except KeyError:
+        if (axis is not None) and (type(axis) is str):
+            if axis not in self.ACCEL_AXES:
+                self.client.preException(True)
                 raise MartyCommandException("Axis must be one of {}, not '{}'"
                                             "".format(set(self.ACCEL_AXES.keys()), axis))
+            axisCode = self.ACCEL_AXES.get(axis, 0)
         return self.client.get_accelerometer(axis, axisCode)
 
     def get_motor_current(self, motor_id: int) -> float:
@@ -472,7 +494,6 @@ class Marty(object):
     def set_parameter(self, *byte_array: int) -> bool:
         '''
         Set board parameters.
-
         Args:
             byte_array: a list in the following format [paramID, params]
         '''
@@ -503,7 +524,6 @@ class Marty(object):
         '''
         Takes in information about movements and generates keyframes
         returns a list of bytes
-
         time: time (in seconds) taken to complete movement
         num_of_msgs: number of commands sent
         msgs: commands sent in the following format [(ID CMD), (ID CMD), etc...]
@@ -533,9 +553,7 @@ class Marty(object):
         '''
         Formats message into ROS serial format and
         returns formatted message as a list
-
         Calls ros_command with the processed message if send is True.
-
         More information about the ROS serial format can be
         found here: http://wiki.ros.org/rosserial/Overview/Protocol
         '''
@@ -544,7 +562,6 @@ class Marty(object):
     def is_moving(self) -> bool:
         '''
         Check if Marty is moving
-
         Args:
             none
         Returns:
@@ -555,7 +572,6 @@ class Marty(object):
     def is_paused(self) -> bool:
         '''
         Check if Marty is paused
-
         Args:
             none
         Returns:
@@ -566,7 +582,6 @@ class Marty(object):
     def get_robot_status(self) -> Dict:
         '''
         Get status of Marty the Robot
-
         Args:
             none
         Returns:
@@ -581,7 +596,6 @@ class Marty(object):
     def get_joints(self) -> Dict:
         '''
         Get information on all of Marty's joints
-
         Args:
             none
         Returns:
@@ -598,7 +612,6 @@ class Marty(object):
     def get_power_status(self) -> Dict:
         '''
         Get information on all of Marty's joints
-
         Args:
             none
         Returns:
@@ -612,12 +625,11 @@ class Marty(object):
                 "isOnUSBPower": True if Marty is running on power from the USB connector
                 "is5VOn": True if power to the joints and add-ons is turned on
         '''
-        raise self.client.get_power_status()
+        return self.client.get_power_status()
     
     def get_add_ons_status(self) -> Dict:
         '''
         Get latest information for all add-ons
-
         Args:
             none
         Returns:
@@ -632,7 +644,6 @@ class Marty(object):
     def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
         '''
         Get latest information for a single add-on
-
         Args:
             add_on_name_or_id: either the name or the id (number) of an add-on
         Returns:

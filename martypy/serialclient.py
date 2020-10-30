@@ -24,11 +24,11 @@ class SerialClient():
     }
 
     EYE_POSES = {
-        'angry': 'eyesAngry',
-        'excited': 'eyesExcited',
-        'normal': 'eyesNormal',
-        'wide': 'eyesWide',
-        'wiggle': 'wiggleEyes'
+        'angry'   : 'eyesAngry',
+        'excited' : 'eyesExcited',
+        'normal'  : 'eyesNormal',
+        'wide'    : 'eyesWide',
+        'wiggle'  : 'wiggleEyes'
     }
 
     NOT_IMPLEMENTED_STR = "Unfortunately this Marty doesn't do that"
@@ -61,6 +61,7 @@ class SerialClient():
         self.lastSubscribedMsgTime = None
         self.maxTimeBetweenPubs = 10
         self.ricHardware = RICHWElems()
+        self.isClosing = False
 
         # Open comms
         try:
@@ -96,6 +97,17 @@ class SerialClient():
         '''
         Close interface to RIC
         '''
+        self.isClosing = True
+        # Stop any publishing messages
+        self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
+                '"pubRecs":[' + \
+                    '{"name":"MultiStatus","rateHz":0},' + \
+                    '{"name":"PowerStatus","rateHz":0},' + \
+                    '{"name":"AddOnStatus","rateHz":0}' + \
+                ']}\0')
+        # Allow message to be sent
+        time.sleep(0.5)
+        # Close the RIC interface (which includes the serial port)
         self.ricIF.close()
 
     def hello(self) -> bool:
@@ -134,6 +146,14 @@ class SerialClient():
         if len(trajCmd) > 0:
             self.ricIF.sendRICRESTURL("traj/" + trajCmd)
         return isOk
+
+    def hold_position(self, hold_time: int) -> bool:
+        '''
+        Hold at current position
+        Args:
+            hold_time, time to hold position in milli-seconds
+        '''
+        isOk = self.ricIF.sendRICRESTURL(f"traj/hold?move_time={hold_time}")
 
     def move_joint(self, joint_id: int, position: float, move_time: int) -> bool:
         '''
@@ -193,6 +213,7 @@ class SerialClient():
         try:
             directionNum = self.SIDE_CODES[direction]
         except KeyError:
+            self.preException(True)
             raise MartyCommandException("Direction must be one of {}, not '{}'"
                                         "".format(set(self.SIDE_CODES.keys()), direction))
         return self.ricIF.sendRICRESTURL(f"traj/lean?side={directionNum}&leanAngle={amount}&moveTime={move_time}")
@@ -407,14 +428,12 @@ class SerialClient():
             clear_queue: Default True, prevents unfinished but 'muted' motions
                          from jumping as soon as motors are enabled
         '''
-        # TODO ?
         return True
                   
     def enable_safeties(self, enable: bool = True) -> bool:
         '''
         Tell the board to turn on 'normal' safeties
         '''
-        # TODO ?
         return True
 
     def fall_protection(self, enable: bool = True) -> bool:
@@ -423,7 +442,6 @@ class SerialClient():
         Args:
             enable: True/False toggle
         '''
-        # TODO ?
         return True
 
     def motor_protection(self, enable: bool = True) -> bool:
@@ -432,7 +450,6 @@ class SerialClient():
         Args:
             enable: True/False toggle
         '''
-        # TODO ?
         return True
 
     def battery_protection(self, enable: bool = True) -> bool:
@@ -441,7 +458,6 @@ class SerialClient():
         Args:
             enable: True/False toggle
         '''
-        # TODO ?
         return True
 
     def buzz_prevention(self, enable: bool = True) -> bool:
@@ -450,7 +466,6 @@ class SerialClient():
         Args:
             enable: True/False toggle
         '''
-        # TODO ?
         return True
 
     def lifelike_behaviour(self, enable: bool = True) -> bool:
@@ -532,30 +547,6 @@ class SerialClient():
         found here: http://wiki.ros.org/rosserial/Overview/Protocol
         '''
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
-
-    def _rxDecodedMsg(self, decodedMsg: DecodedMsg, interface: RICInterfaceSerial):
-        if decodedMsg.protocolID == RICProtocols.PROTOCOL_ROSSERIAL:
-            # logger.debug(f"ROSSERIAL message received {len(decodedMsg.payload)}")
-            self.lastSubscribedMsgTime = time.time()
-            if decodedMsg.payload:
-                RICROSSerial.decode(decodedMsg.payload, 0, self.ricHardware.updateWithROSSerialMsg)
-        elif decodedMsg.protocolID == RICProtocols.PROTOCOL_RICREST:
-            logger.debug(f"RIC REST message received {decodedMsg.payload}")
-
-    def _logDebugMsg(self, logMsg: str) -> None:
-        logger.debug(logMsg)
-
-    def _msgTimerCallback(self) -> None:
-        if self.lastSubscribedMsgTime is None or \
-                    time.time() > self.lastSubscribedMsgTime + self.maxTimeBetweenPubs:
-            # Subscribe for publication messages
-            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
-                            '"pubRecs":[' + \
-                                '{"name":"MultiStatus","rateHz":10.0},' + \
-                                '{"name":"PowerStatus","rateHz":1.0},' + \
-                                '{"name":"AddOnStatus","rateHz":10.0}' + \
-                            ']}\0')
-            self.lastSubscribedMsgTime = time.time()
 
     def is_moving(self) -> bool:
         '''
@@ -678,3 +669,34 @@ class SerialClient():
                         on the type of add-on
         '''
         return self.ricHardware.getAddOn(add_on_name_or_id)
+
+    def preException(self, isFatal: bool) -> None:
+        if isFatal:
+            self.ricIF.close()
+        logger.debug(f"Pre-exception isFatal {isFatal}")
+
+    def _rxDecodedMsg(self, decodedMsg: DecodedMsg, interface: RICInterfaceSerial):
+        if decodedMsg.protocolID == RICProtocols.PROTOCOL_ROSSERIAL:
+            # logger.debug(f"ROSSERIAL message received {len(decodedMsg.payload)}")
+            self.lastSubscribedMsgTime = time.time()
+            if decodedMsg.payload:
+                RICROSSerial.decode(decodedMsg.payload, 0, self.ricHardware.updateWithROSSerialMsg)
+        elif decodedMsg.protocolID == RICProtocols.PROTOCOL_RICREST:
+            logger.debug(f"RIC REST message received {decodedMsg.payload}")
+
+    def _logDebugMsg(self, logMsg: str) -> None:
+        logger.debug(logMsg)
+
+    def _msgTimerCallback(self) -> None:
+        if self.isClosing:
+            return
+        if self.lastSubscribedMsgTime is None or \
+                    time.time() > self.lastSubscribedMsgTime + self.maxTimeBetweenPubs:
+            # Subscribe for publication messages
+            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
+                            '"pubRecs":[' + \
+                                '{"name":"MultiStatus","rateHz":10.0},' + \
+                                '{"name":"PowerStatus","rateHz":1.0},' + \
+                                '{"name":"AddOnStatus","rateHz":10.0}' + \
+                            ']}\0')
+            self.lastSubscribedMsgTime = time.time()

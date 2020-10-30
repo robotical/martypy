@@ -98,6 +98,7 @@ class RICInterfaceSerial:
 
         # Start timer to check message completion
         self.msgTimeoutCheckTimer = threading.Timer(1.0, self._msgTimeoutCheck)
+        self.msgTimeoutCheckTimer.daemon = True
         self.msgTimeoutCheckTimer.start()
         return openOk
 

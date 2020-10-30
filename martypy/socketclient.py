@@ -98,7 +98,6 @@ class SocketClient():
         '''
         return self._discover()
 
-    
     def stop(self, stopCode: int) -> bool:
         '''
         Stop motions
@@ -109,6 +108,14 @@ class SocketClient():
         '''
         M1_STOP_TYPE = ['\x00','\x01','\x02','\x03','\x04','\x05']
         return self._execute('stop', M1_STOP_TYPE[stopCode])
+
+    def hold_position(self, hold_time: int) -> bool:
+        '''
+        Hold at current position
+        Args:
+            hold_time, time to hold position in milli-seconds
+        '''
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
 
     def move_joint(self, joint_id: int, position: float, move_time: int) -> bool:
         '''

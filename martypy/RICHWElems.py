@@ -27,7 +27,7 @@ class RICHwSmartServos:
     def servoStatus(self, servoId: int) -> Dict:
         status = self.status()
         return status.get(servoId, {})
-        
+
 class RICHwIMU:
     def __init__(self) -> None:
         self.latestMsg: bytes = None
@@ -63,6 +63,8 @@ class RICHwPowerStatus:
         self.latestMsgTime = time.time()
 
     def powerStatus(self) -> Dict:
+        if self.latestMsgTime is None:
+            return {}
         return RICROSSerial.extractPowerStatus(self.latestMsg)
 
 class RICHwAddOnStatus:
@@ -92,7 +94,8 @@ class RICHwAddOnStatus:
 
 class RICHwRobotStatus:
     def __init__(self):
-        addons: List[RICHwAddOnStatus] = None
+        self.latestMsg: bytes = None
+        self.latestMsgTime: float = None
 
     def update(self, msgPayload: bytes) -> None:
         if len(msgPayload) != RICROSSerial.ROS_ROBOT_STATUS_BYTES:
@@ -101,6 +104,8 @@ class RICHwRobotStatus:
         self.latestMsgTime = time.time()
 
     def status(self) -> Dict:
+        if self.latestMsgTime is None:
+            return {}
         return RICROSSerial.extractRobotStatus(self.latestMsg)
 
 class RICHWElems:

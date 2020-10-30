@@ -24,7 +24,7 @@ class RICCommsSerial:
         '''
         self.isOpen = False
         self.serialReader = None
-        self.serialPort = None
+        self.serialDevice = None
         self.serialThreadEn = False
         self.rxFrameCB = None
         self.logLineCB = None
@@ -105,12 +105,16 @@ class RICCommsSerial:
             return False
 
         # Open serial port
-        self.serialPort = serial.Serial(serialPort, serialBaud)
+        self.serialDevice = serial.Serial(port=None, baudrate=serialBaud)
+        self.serialDevice.port = serialPort
+        self.serialDevice.rts = 0
+        self.serialDevice.dtr = 0
+        self.serialDevice.open()
 
         # Start receive loop
         self.serialThreadEn = True
         self.serialReader = Thread(target=self._serialRxLoop)
-        self.serialReader.setDaemon(True)
+        self.serialReader.daemon = True
         self.serialReader.start()
         self.isOpen = True
         return True
@@ -126,9 +130,9 @@ class RICCommsSerial:
             time.sleep(0.01)
             self.serialReader.join()
             self.serialReader = None
-        if self.serialPort is not None:
-            self.serialPort.close()
-            self.serialPort = None
+        if self.serialDevice is not None:
+            self.serialDevice.close()
+            self.serialDevice = None
         self.isOpen = False
 
     def send(self, data: bytes) -> None:
@@ -158,11 +162,11 @@ class RICCommsSerial:
         Thread function used to process serial port data
         '''
         while self.serialThreadEn:
-            i = self.serialPort.in_waiting
+            i = self.serialDevice.in_waiting
             if i < 1:
                 time.sleep(0.001)
                 continue
-            byt = self.serialPort.read(i)
+            byt = self.serialDevice.read(i)
             for b in byt:
                 if self.overAscii:
                     if b >= 128:
@@ -194,9 +198,9 @@ class RICCommsSerial:
         if not self.isOpen:
             return
         # logger.debug(f"{time.time()} {''.join('{:02x}'.format(x) for x in bytesToSend)}")
-        if self.serialPort is not None:
+        if self.serialDevice is not None:
             try:
-                self.serialPort.write(bytesToSend)
+                self.serialDevice.write(bytesToSend)
             except SerialException as excp:
                 # The port has connected but now failing to send characters
                 # This may sort itself out or require user intervention
