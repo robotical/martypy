@@ -1,5 +1,4 @@
 from typing import Dict, List, Tuple, Union
-import six
 import sys
 import time
 import socket
@@ -33,20 +32,22 @@ class SocketClient():
 
     NOT_IMPLEMENTED_STR = "Unfortunately this Marty doesn't do that"
 
-    def __init__(self, client_type: str, loc: str, 
+    def __init__(self, method: str, locator: str,
                 port:str = None, timeout:float = 5.0, 
                 debug:bool = False,
                 default_lifelike: bool = True,                
                 *args, **kwargs):
         '''
         Initialise connection to remote Marty over a IPv4 socket by name 'loc' over port 24
-
         Args:
             loc, type str, must either resolve to an IP or be an IP address
-
         Raises:
             MartyConnectException if the socket failed to make the connection to the host
         '''
+        # Get and check connection parameters
+        if '://' in method:
+            method, _, locator = method.partition('://')
+
         if port is None:
             self.port = self.SOCKET_PORT
         else:
@@ -54,7 +55,7 @@ class SocketClient():
 
         self.debug = debug
 
-        self.loc = loc
+        self.loc = locator
         self.timeout = timeout
         self.default_lifelike = default_lifelike
 
@@ -65,9 +66,6 @@ class SocketClient():
 
 
     def start(self):
-        '''
-        Start
-        '''
         # To be able to do anything:
         self.enable_safeties(True)
         self.enable_motors(True)
@@ -81,96 +79,36 @@ class SocketClient():
         self.sock = None
 
     def hello(self):
-        '''
-        Zero joints and wiggle eyebrows
-        '''
         return self._execute('hello')
 
     def get_ready(self):
-        '''
-        Prepare for motion!
-        '''
         return self._execute('hello')
 
     def discover(self):
-        '''
-        Try and find us some Martys!
-        '''
         return self._discover()
 
     def stop(self, stopCode: int) -> bool:
-        '''
-        Stop motions
-        Args:
-            stopCode, int, a member of Marty.STOP_TYPE's values
-        Raises:
-            MartyCommandException if the stop_type is unknown
-        '''
         M1_STOP_TYPE = ['\x00','\x01','\x02','\x03','\x04','\x05']
         return self._execute('stop', M1_STOP_TYPE[stopCode])
 
     def hold_position(self, hold_time: int) -> bool:
-        '''
-        Hold at current position
-        Args:
-            hold_time, time to hold position in milli-seconds
-        '''
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
 
     def move_joint(self, joint_id: int, position: float, move_time: int) -> bool:
-        '''
-        Move a specific joint to a position
-        Args:
-            joint_id: a member of Marty.JOINT_IDS values
-            position: floating point number in degrees
-            move_time: how long this movement should last, in milliseconds
-        '''
         self.move_joint(joint_id, position, move_time)
 
     def get_joint_position(self, joint_id: Union[int, str]) -> float:
-        '''
-        Get the position (angle in degrees) of a joint
-        Args:
-            joint_name_or_num: see the Marty.JOINT_IDS dictionary (can be name or number)
-        '''
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
 
     def get_joint_current(self, joint_name_or_num: Union[int, str]) -> float:
-        '''
-        Get the current (in milli-Amps) of a joint
-        This can be useful in detecting when the joint is working hard and is related
-        to the force which the joint's motor is exerting to stay where it is
-        Args:
-            joint_name_or_num: see the Marty.JOINT_IDS dictionary (can be name or number)
-        Returns:
-            current of the joint in milli-Amps
-            will be 0 if the joint current is unknown
-        '''
         if type(joint_name_or_num) is str:
             raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
         return self.get_motor_current(int(joint_name_or_num))
 
     def get_joint_status(self, joint_name_or_num: Union[int, str]) -> int:
-        '''
-        Get information about a joint
-        This can be helpful to find out if the joint is working correctly and if it is
-        moving at the moment, etc
-        Args:
-            joint_name_or_num: see the Marty.JOINT_IDS dictionary (can be name or number)
-        Returns:
-            a code number which is the sum of codes in the Marty.JOINT_STATUS dictionary
-            will be 0 if the joint status is unknown
-        '''
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
 
     def lean(self, direction: str, amount: float, move_time: int) -> bool:
-        '''
-        Lean over in a direction
-        Args:
-            direction: 'left', 'right', 'forward', 'back', 'auto'
-            amount: percentage of normal lean
-            move_time: how long this movement should last, in milliseconds
-        '''
         try:
             directionNum = self.SIDE_CODES[direction]
         except KeyError:
@@ -183,15 +121,6 @@ class SocketClient():
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0, 
                 step_length:int = 40, move_time: int = 1500) -> bool:
-        '''
-        Walking macro
-        Args:
-            num_steps: int, how many steps to take
-            start_foot: 'left' or 'right', start walking with this foot
-            turn: How much to turn (-128 to 127). 0 is straight.
-            step_length: How far to step (approximately in mm)
-            move_time: how long this movement should last, in milliseconds
-        '''
         try:
             side_c = self.SIDE_CODES[start_foot]
         except KeyError:
@@ -206,13 +135,6 @@ class SocketClient():
                                    side_c)
 
     def eyes(self, joint_id: int, pose_or_angle: Union[str, float], move_time: int = 100) -> bool:
-        '''
-        Move the eyes to a pose or an angle
-        Args:
-            pose_or_angle: 'angry', 'excited', 'normal', 'wide', 'wiggle' or 
-                           angle (in degrees - can be negative),
-            move_time, milliseconds
-        '''
         if type(pose_or_angle) is str:
             try:
                 angle = self.EYE_POSES[pose_or_angle]
@@ -224,13 +146,6 @@ class SocketClient():
         return self.move_joint(joint_id, angle, move_time)
 
     def kick(self, side='right', str = 'right', twist: float = 0, move_time: int = 2000) -> bool:
-        '''
-        Kick with Marty's feet
-        Args:
-            side: 'left' or 'right', which foot to use
-            twist: this parameter is not used (just leave blank or pass 0 value)
-            move_time: how long this movement should last, in milliseconds
-        '''
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('kick', side_c,
@@ -238,13 +153,6 @@ class SocketClient():
                                    dur_lsb, dur_msb)
 
     def arms(self, left_angle: float, right_angle: float, move_time: int) -> bool:
-        '''
-        Move the arms to a position
-        Args:
-            left_angle: Position of the left arm (-128 to 127)
-            right_angle: Position of the right arm (-128 to 127)
-            move_time: how long this movement should last, in milliseconds
-        '''
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('arms',
                                    self._pack_int8(right_angle),
@@ -252,18 +160,10 @@ class SocketClient():
                                    dur_lsb, dur_msb)
 
     def celebrate(self, move_time: int = 4000) -> bool:
-        '''
-        Do a small celebration
-        Args:
-            move_time: how long this movement should last, in milliseconds
-        '''
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('celebrate', dur_lsb, dur_msb)
 
     def circle_dance(self, side: str = 'right', move_time: int = 1500) -> bool:
-        '''
-        Boogy, Marty!
-        '''
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('circle_dance',
@@ -271,27 +171,13 @@ class SocketClient():
                                    dur_lsb, dur_msb)
 
     def dance(self, side: str = 'right', move_time: int = 1500) -> bool:
-        '''
-        Another Boogy, Marty!
-        '''
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
 
     def wiggle(self, move_time: int = 1500) -> bool:
-        '''
-        Wiggle Marty!
-        '''
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
 
     def sidestep(self, side: str, steps: int = 1, step_length: int = 100, 
             move_time: int = 2000) -> bool:
-        '''
-        Take sidesteps
-        Args:
-            side: 'left' or 'right', direction to step in
-            steps: number of steps to take
-            step length: how broad the steps are (up to 127)
-            move_time: how long this movement should last, in milliseconds
-        '''
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('sidestep', side_c,
@@ -302,13 +188,6 @@ class SocketClient():
     def play_sound(self, freq_start: float, 
             freq_end: float, 
             duration: int) -> bool:
-        '''
-        Play a tone
-        Args:
-            freq_start: starting frequency, Hz
-            freq_end:   ending frequency, Hz
-            duration:   milliseconds, maximum 5000
-        '''
         if type(freq_start) is str:
             raise MartyCommandException("first parameter must be a number for Marty V1")
         f_start_lsb, f_start_msb = self._pack_uint16(int(freq_start))
@@ -328,45 +207,19 @@ class SocketClient():
     }
 
     def pinmode_gpio(self, gpio: int, mode: str) -> bool:
-        '''
-        Configure a GPIO pin
-
-        gpio: pin number between 0 and 7
-        mode: choose from: 'digital in','analog in' or 'digital out'
-        '''
         return self._execute('gpio_mode', self._pack_uint8(gpio), self.GPIO_PIN_MODES[mode])
 
     def write_gpio(self, gpio: int, value: int) -> bool:
-        '''
-        Write a value to a GPIO port
-        '''
         byte_array = (self._pack_uint8(gpio),) + self._pack_float(value)
         return self._execute('gpio_write', *byte_array)
 
     def digitalread_gpio(self, gpio: int) -> bool:
-        '''
-        Returns:
-            Returns High/Low state of a GPIO pin
-        Args:
-            GPIO pin number, >= 0 (non-negative)
-        '''
         return bool(self._execute('gpio', self._pack_uint8(gpio)))
 
     def i2c_write(self, *byte_array: int) -> bool:
-        '''
-        Write a bytestream to the i2c port.
-        The first byte should be the address, following from that
-        the datagram folows standard i2c spec
-        '''
         return self._execute('i2c_write', *byte_array)
 
     def i2c_write_to_ric(self, address: int, byte_array: bytes) -> bool:
-        '''
-        Write a formatted bytestream to the i2c port.
-        The bytestream is formatted in the ROS serial format.
-
-        address: the other device's address
-        '''
         data = ['\x1B']         #i2c_write opcode
         data.append(address)    #i2c address
         data.append(byte_array) #message
@@ -374,59 +227,24 @@ class SocketClient():
         return self._execute('i2c_write', *data)
 
     def get_battery_voltage(self) -> float:
-        '''
-        Returns:
-            The battery voltage reading as a float in Volts
-        '''
         return self._execute('battery')
 
     def get_battery_remaining(self) -> float:
-        '''
-        Returns:
-            The battery remaining capacity in percent
-        '''
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
 
     def get_distance_sensor(self) -> float:
-        '''
-        Returns:
-            The distance sensor reading as a float (raw, no units)
-        '''
         return self._execute('distance')
 
     def get_accelerometer(self, axis: str, axisCode: int) -> float:
-        '''
-        Args:
-            axis: (optional) str 'x', 'y' or 'z' - if omitted then return x, y and z values
-            axisCode: 0, 1 or 2 depending on axis (0 if axis is omitted)
-        Returns:
-            If axis is provided then returns the most recently read x, y or z 
-                acceleration value - or 0 if no information is available
-            If axis is not provided returns a tuple with x, y and z values (which may
-                be 0 if no information is available)
-        '''
         M1_ACCEL_AXES = ['\x00','\x01','\x02']
         if axis is None:
             raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
         return self._execute('accel', M1_ACCEL_AXES[axisCode])
 
     def get_motor_current(self, motor_id: int) -> float:
-        '''
-        Args:
-            motor_id, integer >= 0 (non-negative) selects which motor to query
-        Returns:
-            Instantaneous current sense reading from motor `motor_id`
-        '''
         return self._execute('motorcurrent', str(motor_id))
 
     def enable_motors(self, enable: bool = True, clear_queue: bool = True) -> bool:
-        '''
-        Toggle power to motors
-        Args:
-            enable: True/False toggle
-            clear_queue: Default True, prevents unfinished but 'muted' motions
-                         from jumping as soon as motors are enabled
-        '''
         if clear_queue:
             self.stop('clear queue')
         if enable:
@@ -435,90 +253,39 @@ class SocketClient():
             return self._execute('disable_motors') and False
 
     def enable_safeties(self, enable: bool = True) -> bool:
-        '''
-        Tell the board to turn on 'normal' safeties
-        '''
         return self._execute('enable_safeties')
 
     def fall_protection(self, enable: bool = True) -> bool:
-        '''
-        Toggle fall protections
-        Args:
-            enable: True/False toggle
-        '''
         return self._execute('fall_protection', enable)
 
     def motor_protection(self, enable: bool = True) -> bool:
-        '''
-        Toggle motor current protections
-        Args:
-            enable: True/False toggle
-        '''
         return self._execute('motor_protection', enable)
 
     def battery_protection(self, enable: bool = True) -> bool:
-        '''
-        Toggle low battery protections
-        Args:
-            enable: True/False toggle
-        '''
         return self._execute('battery_protection', enable)
 
     def buzz_prevention(self, enable: bool = True) -> bool:
-        '''
-        Toggle motor buzz prevention
-        Args:
-            enable: True/False toggle
-        '''
         return self._execute('buzz_prevention', enable)
 
     def lifelike_behaviour(self, enable: bool = True) -> bool:
-        '''
-        Tell the robot whether it can or can't move now and then in a lifelike way when idle.
-        Args:
-            enable: True/False toggle
-        '''
         return self._execute('lifelike_behaviour', enable)
 
     def set_parameter(self, *byte_array: int) -> bool:
-        '''
-        Set board parameters.
-
-        Args:
-            byte_array: a list in the following format [paramID, params]
-        '''
         return self._execute('set_param', '\x1F', *byte_array)
 
     def save_calibration(self) -> bool:
-        '''
-        Set the current motor positions as the zero positions
-        BE CAREFUL, this can cause unexpected movement or self-interference
-        '''
         return self._execute('save_calibration')
 
     def clear_calibration(self) -> bool:
-        '''
-        Tell the Robot to forget it's calibration
-        BE CAREFUL, this can cause unexpected movement or self-interference
-        '''
         return self._execute('clear_calibration')
 
+    def is_calibrated(self) -> bool:
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+
     def ros_command(self,  *byte_array: int) -> bool:
-        '''
-        Low level proxied access to the ROS Serial API between
-        the modem and main controller
-        '''
         return self._execute('ros_command', *byte_array)
 
     def keyframe (self, time, num_of_msgs, msgs: List) -> List[bytes]:
-        '''
-        Takes in information about movements and generates keyframes
-        returns a list of bytes
-
-        time: time (in seconds) taken to complete movement
-        num_of_msgs: number of commands sent
-        msgs: commands sent in the following format [(ID CMD), (ID CMD), etc...]
-        '''
         processed_keyframe = []
 
         #Number of key frames
@@ -552,34 +319,15 @@ class SocketClient():
         return(processed_keyframe)
 
     def get_chatter(self) -> bytes:
-        '''
-        Return chatter topic data (variable length)
-        '''
         return self._execute('chatter')
 
     def get_firmware_version(self) -> bool:
-        '''
-        Ask the board to print the firmware version over chatter
-        '''
         return self._execute('firmware_version')
 
     def _mute_serial(self) -> bool:
-        '''
-        Mutes the internal serial line on RIC. Depends on platform and API
-        NOTE: Once you've done this, the Robot will ignore you until you cycle power.
-        '''
         return self._execute('mute_serial')
 
-    def ros_serial_formatter(self, int, send: bool = False, *message: int) -> List[int]:
-        '''
-        Formats message into ROS serial format and
-        returns formatted message as a list
-
-        Calls ros_command with the processed message if send is True.
-
-        More information about the ROS serial format can be
-        found here: http://wiki.ros.org/rosserial/Overview/Protocol
-        '''
+    def ros_serial_formatter(self, topicID: int, send: bool = False, *message: int) -> List[int]:
         msg = message
 
         msg_length = len(msg)
@@ -718,6 +466,64 @@ class SocketClient():
         except socket.timeout:
             return found
 
+    def is_moving(self) -> bool:
+        '''
+        Check if Marty is moving
+
+        Args:
+            none
+        Returns:
+            True if Marty is moving
+        '''
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        
+    def is_paused(self) -> bool:
+        '''
+        Check if Marty is paused
+
+        Args:
+            none
+        Returns:
+            True if Marty is paused
+        '''
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+
+    def get_robot_status(self) -> Dict:
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+   
+    def get_joints(self) -> Dict:
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+
+    def get_power_status(self) -> Dict:
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+
+    def get_add_ons_status(self) -> Dict:
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+
+    def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+
+    def get_system_info(self) -> Dict:
+        return {"HardwareVersion":"1.0", "SystemName":"MartyV1","SystemVersion":"1.0.0","SerialNo":"000001","MAC":"000000000000"}
+
+    def set_marty_name(self, name: str) -> bool:
+        return False
+
+    def get_marty_name(self) -> str:
+        return "Marty"
+
+    def is_marty_name_set(self) -> bool:
+        return False
+
+    def get_hw_elems_list(self) -> List:
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+
+    def send_ric_rest_cmd(self, ricRestCmd: str) -> None:
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+
+    def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+
     # Encodes Command Type flag, LSB size, MSB size, Data
     CMD_OPCODES = {
         'battery'            : ['\x01', '\x01', '\x00'],         # OK
@@ -756,7 +562,7 @@ class SocketClient():
         'gpio_mode'          : ['\x02', '\x03', '\x00', '\x19'], #
     }
 
-    def pack(self, characters: bytes) -> six.binary_type:
+    def _pack(self, characters: bytes) -> bytes:
         '''
         Pack characters list into a byte string
         Expects pre-packed chars, use chr or struct.pack to do this
@@ -764,7 +570,7 @@ class SocketClient():
         if self.debug:
             print(list(map(lambda x: '{}:{}'.format(x, type(x)), characters)))
         try:
-            return six.b("".join(characters))
+            return ("".join(characters)).encode()
         except UnicodeEncodeError:
             raise ArgumentOutOfRangeException('Argument(s) overflowed int')
 
@@ -795,8 +601,8 @@ class SocketClient():
         data = list(args[2:])
         datalen_lsb, datalen_msb = struct.pack('<H', len(data))
         payload = [opcode,
-                   chr(six.byte2int([datalen_lsb])),
-                   chr(six.byte2int([datalen_msb]))] + data
+                   chr(datalen_lsb[0]),
+                   chr(datalen_msb[0])] + data
         self.sock.send(self._pack(payload))
         return True
 
@@ -852,7 +658,7 @@ class SocketClient():
         '''
         cmd = args[1]
         self.sock.send(self._pack(self.CMD_OPCODES[cmd]))
-        data_length = six.byte2int(self.sock.recv(1))
+        data_length = self.sock.recv(1)[0]
         data = self.sock.recv(data_length)
         return data
 
@@ -870,7 +676,7 @@ class SocketClient():
             data = struct.pack('<H', num)
         except struct.error as e:
             raise ArgumentOutOfRangeException(e)
-        return chr(six.byte2int(data[:1])), chr(six.byte2int(data[-1::]))
+        return chr(data[0]), chr(data[1])
 
     def _pack_int16(self, num: int) -> Tuple[str,str]:
         '''
@@ -886,7 +692,7 @@ class SocketClient():
             data = struct.pack('<h', num)
         except struct.error as e:
             raise ArgumentOutOfRangeException(e)
-        return chr(six.byte2int(data[:1])), chr(six.byte2int(data[-1::]))
+        return chr(data[0]), chr(data[1])
 
     def _pack_int32(self, num: int) -> Tuple[str,str,str,str]:
         '''
@@ -902,10 +708,10 @@ class SocketClient():
             data = struct.pack('<i', num)
         except struct.error as e:
             raise ArgumentOutOfRangeException(e)
-        return (chr(six.byte2int([data[0]])),
-                chr(six.byte2int([data[1]])),
-                chr(six.byte2int([data[2]])),
-                chr(six.byte2int([data[3]])))
+        return (chr(data[0]),
+                chr(data[1]),
+                chr(data[2]),
+                chr(data[3]))
 
     def _pack_uint8(self, num: int) -> str:
         '''
@@ -921,7 +727,7 @@ class SocketClient():
             data = struct.pack('<B', num)
         except struct.error as e:
             raise ArgumentOutOfRangeException(e)
-        return chr(six.byte2int(data[:1]))
+        return chr(data[0])
 
     def _pack_int8(self, num: int) -> str:
         '''
@@ -937,7 +743,7 @@ class SocketClient():
             data = struct.pack('<b', num)
         except struct.error as e:
             raise ArgumentOutOfRangeException(e)
-        return chr(six.byte2int(data[:1]))
+        return chr(data[0])
 
     def _pack_float(self, num: float) -> Tuple[str,str,str,str]:
         '''
@@ -953,10 +759,10 @@ class SocketClient():
             data = struct.pack('<f', float(num))
         except struct.error as e:
             raise ArgumentOutOfRangeException(e)
-        return (chr(six.byte2int([data[0]])),
-                chr(six.byte2int([data[1]])),
-                chr(six.byte2int([data[2]])),
-                chr(six.byte2int([data[3]])))
+        return (chr(data[0]),
+                chr(data[1]),
+                chr(data[2]),
+                chr(data[3]))
 
     def _execute(self, *args, **kwargs):
         '''
@@ -990,106 +796,3 @@ class SocketClient():
             else:
                 merged.update(d)
         return merged
-
-    def is_moving(self) -> bool:
-        '''
-        Check if Marty is moving
-
-        Args:
-            none
-        Returns:
-            True if Marty is moving
-        '''
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
-        
-    def is_paused(self) -> bool:
-        '''
-        Check if Marty is paused
-
-        Args:
-            none
-        Returns:
-            True if Marty is paused
-        '''
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
-
-    def get_robot_status(self) -> Dict:
-        '''
-        Get status of Marty the Robot
-
-        Args:
-            none
-        Returns:
-            Dictionary containing:
-                "workQCount" number of work items (movements) that are queued up
-                "isMoving": True if Marty is moving
-                "isPaused": True if Marty is paused
-                "isFwUpdating": True if Marty is doing an update
-        '''
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
-   
-    def get_joints(self) -> Dict:
-        '''
-        Get information on all of Marty's joints
-
-        Args:
-            none
-        Returns:
-            Dictionary containing dictionaries (one for each joint) each of which contain:
-                "id": the joint identification number (see Marty.JOINT_IDS)
-                "pos": the angle of the joint
-                "current": the joint current (in milli-Amps)
-                "enabled": True if the servo is enabled
-                "commsOK": True if the servo is communicating ok
-                "status": joint status flags (see Marty.JOINT_STATUS)
-        '''
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
-
-    def get_power_status(self) -> Dict:
-        '''
-        Get information on all of Marty's joints
-
-        Args:
-            none
-        Returns:
-            Dictionary containing:
-                "remCapPC" remaining battery capacity in percent
-                "tempDegC": battery temperature in degrees C
-                "remCapMAH": remaining battery capacity in milli-Amp-Hours
-                "fullCapMAH": capacity of the battery when full in milli-Amp-Hours
-                "currentMA": current the battery is supplying (or being charged with) milli-Amps
-                "power5VOnTimeSecs": number of seconds the power to joints and add-ons has been on
-                "isOnUSBPower": True if Marty is running on power from the USB connector
-                "is5VOn": True if power to the joints and add-ons is turned on
-        '''
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
-
-    def get_add_ons_status(self) -> Dict:
-        '''
-        Get latest information for all add-ons
-
-        Args:
-            none
-        Returns:
-            Dictionary containing dictionaries (one for each add-on) each of which contain:
-                "id": the add-on identification number
-                "valid": True if the data is valid
-                "data": 10 bytes of data from the add-on - the format of this data depends
-                        on the type of add-on
-        '''
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
-
-    def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
-        '''
-        Get latest information for a single add-on
-
-        Args:
-            add_on_name_or_id: either the name or the id (number) of an add-on
-        Returns:
-            Dictionary containing:
-                "id": the add-on identification number
-                "valid": True if the data is valid
-                "data": 10 bytes of data from the add-on - the format of this data depends
-                        on the type of add-on
-        '''
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)

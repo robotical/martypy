@@ -21,7 +21,6 @@ setup(
     url='http://github.com/robotical/martypy',
     license='Apache 2.0',
     install_requires=[
-        'six>=1.12.0',
         'requests>=2.22.0',
     ],
     keywords=[

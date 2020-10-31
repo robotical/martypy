@@ -20,10 +20,8 @@ class ProtocolOverAscii():
         '''
         Function to handle char for decoding
         Returns -1 if char was an escape code - remainder will be returned later
-
         Args:
             ch: byte to decode
-
         Returns:
             decoded byte or -1 if the byte was an escape code (see above)
         '''
@@ -57,10 +55,8 @@ class ProtocolOverAscii():
         Values 0x80-0x8F map to ESCAPE_CODE_2, VALUE_XOR_20H
         Values 0x90-0xff map to ESCAPE_CODE_3, VALUE
         Value ESCAPE_CODE_1 maps to ESCAPE_CODE_1 + VALUE
-
         Args:
             inData: data to encode (bytes)
-
         Returns:
             encoded frame (bytes)
         '''

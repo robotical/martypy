@@ -6,71 +6,52 @@ logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger("TestRob")
 
 # mymarty = Marty('socket://192.168.86.41')
-# mymarty = Marty('usb://COM6', debug=True)
-mymarty = Marty('usb:///dev/tty.SLAB_USBtoUART', debug=True)
+mymarty = Marty("usb", "COM9", debug=True)
+# mymarty = Marty('usb:///dev/tty.SLAB_USBtoUART', debug=True)
 
+jointNames = [
+    'left hip',
+    'left twist',
+    'left knee',
+    'right hip',
+    'right twist',
+    'right knee',
+    'left arm',
+    'right arm', 
+    'eyes'   
+]
 
-# print("Get ready")
-# mymarty.get_ready()
-# time.sleep(5)
+def betweenCommands():
+    time.sleep(0.3)
 
-# print("Circle Dance")
-# mymarty.circle_dance()
-# time.sleep(5)
+def testBoolCmd(cmdStr: str, cmdRslt: bool):
+    print(f"{cmdStr}, rslt = {cmdRslt}")
+    betweenCommands()
 
-# print("Dance")
-# mymarty.dance()
-# time.sleep(5)
+testBoolCmd("Get ready", mymarty.get_ready())
+testBoolCmd("Circle Dance", mymarty.circle_dance())
+testBoolCmd("Dance", mymarty.dance())
+testBoolCmd("Eyes excited", mymarty.eyes('excited'))
+testBoolCmd("Eyes wide", mymarty.eyes('wide'))
+testBoolCmd("Eyes angry", mymarty.eyes('angry'))
+testBoolCmd("Eyes normal", mymarty.eyes('normal'))
+testBoolCmd("Eyes wiggle", mymarty.eyes('wiggle'))
+testBoolCmd("Kick left", mymarty.kick('left'))
+testBoolCmd("Kick right", mymarty.kick('right'))
+testBoolCmd("Stop", mymarty.stop())
+testBoolCmd("Arms 45", mymarty.arms(45, 45, 500))
+testBoolCmd("Arms 0", mymarty.arms(0, 0, 500))
+testBoolCmd("Hold position", mymarty.hold_position(6000))
 
-print("Eyes excited")
-mymarty.eyes('excited')
-time.sleep(2)
+for i in range(9): 
+    testBoolCmd(f"Move joint {i}", mymarty.move_joint(i, i * 10, 500))
+for jointName in jointNames: 
+    testBoolCmd(f"Move joint {jointName}", mymarty.move_joint(jointName, 123, 500))
+testBoolCmd("is_moving", mymarty.is_moving())
 
-print("Eyes wide")
-mymarty.eyes('wide')
-time.sleep(2)
+print("Accelerometer ", mymarty.get_accelerometer())
+print("Joint positions: ", [mymarty.get_joint_position(pos) for pos in range(9)])
 
-print("Eyes angry")
-mymarty.eyes('angry')
-time.sleep(2)
+time.sleep(5)
 
-# print("Eyes normal")
-# mymarty.eyes('normal')
-# time.sleep(1)
-
-# print("Eyes wiggle")
-# mymarty.eyes('wiggle')
-# time.sleep(2)
-
-# time.sleep(2)
-
-# print("Kick left")
-# mymarty.kick('green')
-# time.sleep(3)
-
-# print("Kick right")
-# mymarty.kick('right')
-# time.sleep(2)
-
-# mymarty.stop('ssdf')
-# mymarty.move_joint('asdasd')
-# print(mymarty.is_moving())
-# mymarty.walk()
-# for i in range(10):
-#     print(mymarty.is_moving())
-#     time.sleep(0.5)
-# mymarty.walk()
-# mymarty.arms(45, 45, 500)
-# mymarty.arms(0, 0, 500)
-# mymarty.hold_position(6000)
-# mymarty.arms(45, 45, 500)
-# mymarty.arms(0, 0, 500)
-# mymarty.walk()
-# time.sleep(10)
-time.sleep(2)
-
-# for i in range(5):
-#     # print(mymarty.get_joint_position(0), mymarty.get_accelerometer('x'), mymarty.get_accelerometer('y'), mymarty.get_accelerometer('z'))
-#     print(mymarty.get_joint_position(0), mymarty.get_accelerometer())
-#     time.sleep(1)
-# mymarty.close()
+mymarty.close()

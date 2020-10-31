@@ -127,7 +127,7 @@ class RICROSSerial:
         for _ in range(numGroups):
             servoData = struct.unpack(">BhhB", buf[bufPos:bufPos+cls.ROS_SMART_SERVOS_ATTR_GROUP_BYTES])
             servos[servoData[0]] = {
-                "id": servoData[0],
+                "IDNo": servoData[0],
                 "pos": servoData[1],
                 "current": servoData[2],
                 "flags": servoData[3],
@@ -155,7 +155,7 @@ class RICROSSerial:
             "powerFlags": pst[6],
             "isOnUSBPower": (pst[6] & 0x0001) != 0,
             "is5VOn": (pst[6] & 0x0002) != 0,
-            "id": pst[7]
+            "IDNo": pst[7]
         }
 
     @classmethod
@@ -178,7 +178,7 @@ class RICROSSerial:
         for _ in range(numGroups):
             adb = buf[bufPos:bufPos+cls.ROS_ADDON_GROUP_BYTES]
             addOns[adb[0]] = {
-                "id": adb[0],
+                "IDNo": adb[0],
                 "valid": (adb[1] & 0x80) != 0,
                 "data": adb[2:]
             }

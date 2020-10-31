@@ -6,7 +6,6 @@ from typing import Callable, Dict, Union
 import serial
 import time
 import logging
-import platform
 
 from serial.serialutil import SerialException
 from .LikeHDLC import LikeHDLC
@@ -36,26 +35,15 @@ class RICCommsSerial:
 
     def __del__(self) -> None:
         '''
-        Initialise LikeHDLC
-
-        Args:
-            onFrame: callback function (takes 1 parameter which is a received frame)
-            onError: callback function (0 parameters) when an error occurs
-            asciiEscapes: bool - use the standard HDLC escape codes (which are ASCII values)
-            payloadsAreStrings: bool - received frames are returned as strings (as opposed to bytes)
-
-        Returns:
-            None
+        Destructor
         '''
         self.close()
 
     def setRxFrameCB(self, onFrame: Callable[[Union[bytes, str]], None]) -> None:
         '''
         Set callback on frame received
-
         Args:
             onFrame: callback function (takes 1 parameter which is a received frame)
-
         Returns:
             None
         '''
@@ -64,10 +52,8 @@ class RICCommsSerial:
     def setRxLogLineCB(self, onLogLine: Callable[[str], None]) -> None:
         '''
         Set callback on logging line received
-
         Args:
             onLogLine: callback function (takes 1 parameter which is the line of logging information)
-
         Returns:
             None
         '''
@@ -78,15 +64,12 @@ class RICCommsSerial:
         Open serial port
         Protocol can be plain (if the port is not used for any other purpose) or
         overascii (if the port is also used for logging information)
-
         Args:
             openParams: dict containing params used to open the port - "serialPort", 
                         "serialBaud" and "ifType". "ifType" should be "plain" or 
                         "overascii"
-
         Returns:
             True if open succeeded or port is already open
-
         Throws:
             SerialException: if the serial port cannot be opened
         '''
@@ -121,13 +104,9 @@ class RICCommsSerial:
         # Open serial port
         self.serialDevice = serial.Serial(port=None, baudrate=serialBaud)
         self.serialDevice.port = serialPort
-        if platform.system() == 'Windows':
-            self.serialDevice.rts = 0
-            self.serialDevice.dtr = 0
-        elif platform.system() == 'Darwin':
-            self.serialDevice.dsrdtr = False
-            self.serialDevice.rts = 0
-            self.serialDevice.dtr = 0
+        self.serialDevice.rts = 0
+        self.serialDevice.dtr = 0
+        self.serialDevice.dsrdtr = False
         self.serialDevice.open()
 
         # Start receive loop
@@ -157,13 +136,10 @@ class RICCommsSerial:
     def send(self, data: bytes) -> None:
         '''
         Send data to serial port
-
         Args:
             data: bytes to send on serial port
-
         Returns:
             none
-
         Throws:
             SerialException: if the serial port has an error
         '''

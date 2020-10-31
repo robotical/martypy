@@ -19,13 +19,20 @@ class RICHwSmartServos:
         self.latestMsg = msgPayload
         self.latestMsgTime = time.time()
 
-    def status(self) -> Dict:
+    def status(self, dictOfHwElemsByIdNo: Dict) -> Dict:
         if self.latestMsgTime is None:
             return {}
-        return RICROSSerial.extractSmartServos(self.latestMsg)
+        servosStatus = RICROSSerial.extractSmartServos(self.latestMsg)
+        fieldsToCopy = ["name"]
+        for IDNo in servosStatus:
+            if IDNo in dictOfHwElemsByIdNo:
+                for field in fieldsToCopy:
+                    if field in dictOfHwElemsByIdNo[IDNo]:
+                        servosStatus[IDNo][field] = dictOfHwElemsByIdNo[IDNo][field]
+        return servosStatus
 
-    def servoStatus(self, servoId: int) -> Dict:
-        status = self.status()
+    def servoStatus(self, servoId: int, dictOfHwElemsByIdNo: Dict) -> Dict:
+        status = self.status(dictOfHwElemsByIdNo)
         return status.get(servoId, {})
 
 class RICHwIMU:
@@ -77,12 +84,19 @@ class RICHwAddOnStatus:
         self.latestMsg = msgPayload
         self.latestMsgTime = time.time()
 
-    def status(self) -> Dict:
+    def status(self, dictOfHwElemsByIdNo: Dict) -> Dict:
         if self.latestMsgTime is None:
             return {}
-        return RICROSSerial.extractAddOnStatus(self.latestMsg)
+        addOnStatus = RICROSSerial.extractAddOnStatus(self.latestMsg)
+        fieldsToCopy = ["name", "type", "whoAmITypeCode"]
+        for IDNo in addOnStatus:
+            if IDNo in dictOfHwElemsByIdNo:
+                for field in fieldsToCopy:
+                    if field in dictOfHwElemsByIdNo[IDNo]:
+                        addOnStatus[IDNo][field] = dictOfHwElemsByIdNo[IDNo][field]
+        return addOnStatus
 
-    def addOnStatus(self, addOnNameOrId: Union[int, str]) -> Dict:
+    def addOnStatus(self, addOnNameOrId: Union[int, str], dictOfHwElemsByIdNo: Dict) -> Dict:
         status = self.status()
         addOnId = 0
         if type(addOnNameOrId) is str:
@@ -130,17 +144,17 @@ class RICHWElems:
         elif topicID == RICROSSerial.ROSTOPIC_V2_ROBOT_STATUS:
             self._robotStatus.update(payload)
 
-    def getServos(self) -> List:
-        return self._smartServos.status()
+    def getServos(self, dictOfHwElemsByIdNo: Dict) -> List:
+        servosInfo = self._smartServos.status()
 
-    def getServoPos(self, servoId: int) -> float:
-        return self._smartServos.servoStatus(servoId).get("pos", 0)
+    def getServoPos(self, servoId: int, dictOfHwElemsByIdNo: Dict) -> float:
+        return self._smartServos.servoStatus(servoId, dictOfHwElemsByIdNo).get("pos", 0)
 
-    def getServoCurrent(self, servoId: int) -> float:
-        return self._smartServos.servoStatus(servoId).get("current", 0)
+    def getServoCurrent(self, servoId: int, dictOfHwElemsByIdNo: Dict) -> float:
+        return self._smartServos.servoStatus(servoId, dictOfHwElemsByIdNo).get("current", 0)
 
-    def getServoFlags(self, servoId: int) -> int:
-        return self._smartServos.servoStatus(servoId).get("flags", 0)
+    def getServoFlags(self, servoId: int, dictOfHwElemsByIdNo: Dict) -> int:
+        return self._smartServos.servoStatus(servoId, dictOfHwElemsByIdNo).get("flags", 0)
 
     def getIMUAll(self) -> Tuple[float, float, float]:
         return self._IMU.xyz()
@@ -160,9 +174,9 @@ class RICHWElems:
     def getIsPaused(self) -> bool:
         return self._robotStatus.status().get("isPaused", False)
 
-    def getAddOns(self) -> List:
-        return self._addOnsStatus.status()
+    def getAddOns(self, dictOfHwElemsByIdNo: Dict) -> List:
+        return self._addOnsStatus.status(dictOfHwElemsByIdNo)
 
-    def getAddOn(self, addOnNameOrId: Union[int, str]) -> Dict:
-        return self._addOnsStatus.addOnStatus(addOnNameOrId)
+    def getAddOn(self, addOnNameOrId: Union[int, str], dictOfHwElemsByIdNo: Dict) -> Dict:
+        return self._addOnsStatus.addOnStatus(addOnNameOrId, dictOfHwElemsByIdNo)
 
