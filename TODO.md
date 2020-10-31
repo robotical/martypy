@@ -8,6 +8,7 @@
 - WiFi support
 - BLE support
 - ensure trajectory parameters are correctly bounded (turn parameter, eye/arm max angles, etc)
+- replace testrob with unit-tests
 
 # Items probably not worth implementing as they can be achieved another way
 - enable/disable safeties, fall-detection, motors on Marty 2 (can be done using send_ric_rest_cmd())
