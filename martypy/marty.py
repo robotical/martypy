@@ -4,26 +4,26 @@ Python library to communicate with Marty the Robot V1 and V2 by Robotical
 Getting started:  
 1) Import Marty from the martypy library  
 2) Create a Marty object that connects the way you want  
-3) Tell your marty to walk  
+3) Tell your Marty to dance  
 
 ```python
 from martypy import Marty  
 my_marty = Marty("wifi","192.168.0.53")  
-my_marty.walk()
+my_marty.dance()
 ```
 '''
 from typing import Dict, List, Optional, Union
-from .serialclient import SerialClient
-from .socketclient import SocketClient
+from .ClientSerial import ClientSerial
+from .ClientSocket import ClientSocket
 from .exceptions import (MartyCommandException,
                          MartyConfigException)
 
 class Marty(object):
 
     CLIENT_TYPES = {
-        'socket' : SocketClient,
-        'exp'    : SerialClient,
-        'usb'    : SerialClient,
+        'socket' : ClientSocket,
+        'exp'    : ClientSerial,
+        'usb'    : ClientSerial,
     }
 
     STOP_TYPE = {
@@ -101,12 +101,11 @@ class Marty(object):
                 that the computer should use to communicate with Marty  
 
         Raises:
-            MartyConfigException if the parameters are invalid  
-
-            MartyConnectException if Marty couldn't be contacted
+            * MartyConfigException if the parameters are invalid  
+            * MartyConnectException if Marty couldn't be contacted  
         '''
         # Merge in any clients that have been added and check valid
-        self.CLIENT_TYPES = SocketClient.dict_merge(self.CLIENT_TYPES, client_types)
+        self.CLIENT_TYPES = ClientSocket.dict_merge(self.CLIENT_TYPES, client_types)
         if method not in self.CLIENT_TYPES.keys():
             raise MartyConfigException('Unrecognised URL clientType "{}"'.format(method))
 
@@ -116,65 +115,34 @@ class Marty(object):
         # Get Marty details
         self.client.start()
 
-    def lean(self, direction: str, amount: float, move_time: int) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 1500) -> bool:
         '''
-        Lean over in a direction
-
+        Another Boogy, Marty!
         Args:
-            direction: 'left', 'right', 'forward', 'back', or 'auto'
-            amount: percentage amount to lean
+            side: 'left' or 'right', which side to start on
             move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
         '''
-        return self.client.lean(direction, amount, move_time)
+        return self.client.dance(side, move_time)
 
-    def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0, 
-                step_length:int = 40, move_time: int = 1500) -> bool:
+    def wiggle(self, move_time: int = 1500) -> bool:
         '''
-        Make Marty walk
+        Wiggle Marty!
         Args:
-            num_steps: how many steps to take
-            start_foot: 'left', 'right' or 'auto', start walking with this foot
-            turn: How much to turn (-128 to 127), 0 is straight.
-            step_length: How far to step (approximately in mm)
             move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
         '''
-        return self.client.walk(num_steps, start_foot, turn, step_length, move_time)
-
-    def eyes(self, pose_or_angle: Union[str, float], move_time: int = 100) -> bool:
-        '''
-        Move the eyes to a pose or an angle
-        Args:
-            pose_or_angle: 'angry', 'excited', 'normal', 'wide', or 'wiggle' - alternatively
-                           this can be an angle in degrees (which can be a negative number)
-            move_time: how long this movement should last, in milliseconds
-        '''
-        return self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
-
-    def kick(self, side: str = 'right', twist: float = 0, move_time: int = 2000) -> bool:
-        '''
-        Kick one of Marty's feet
-        Args:
-            side: 'left' or 'right', which foot to use
-            twist: the amount of twisting do do while kicking (in degrees)
-            move_time: how long this movement should last, in milliseconds
-        '''
-        return self.client.kick(side, twist, move_time)
-
-    def arms(self, left_angle: float, right_angle: float, move_time: int) -> bool:
-        '''
-        Move both of Marty's arms to angles you specify
-        Args:
-            left_angle: Angle of the left arm (degrees -100 to 100)
-            right_angle: Position of the right arm (degrees -100 to 100)
-            move_time: how long this movement should last, in milliseconds
-        '''
-        return self.client.arms(left_angle, right_angle, move_time)
+        return self.client.wiggle(move_time)
 
     def celebrate(self, move_time: int = 4000) -> bool:
         '''
         Do a small celebration
         Args:
             move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
         '''
 
         # TODO - add celebrate trajectory to Marty V2
@@ -187,25 +155,81 @@ class Marty(object):
         Args:
             side: 'left' or 'right', which side to start on
             move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
         '''
         return self.client.circle_dance(side, move_time)
 
-    def dance(self, side: str = 'right', move_time: int = 1500) -> bool:
+    def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0, 
+                step_length:int = 40, move_time: int = 1500) -> bool:
         '''
-        Another Boogy, Marty!
+        Make Marty walk
         Args:
-            side: 'left' or 'right', which side to start on
+            num_steps: how many steps to take
+            start_foot: 'left', 'right' or 'auto', start walking with this foot
+            turn: How much to turn (-100 to 100 in degrees), 0 is straight.
+            step_length: How far to step (approximately in mm)
             move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
         '''
-        return self.client.dance(side, move_time)
+        return self.client.walk(num_steps, start_foot, turn, step_length, move_time)
 
-    def wiggle(self, move_time: int = 1500) -> bool:
+    def get_ready(self) -> bool:
         '''
-        Wiggle Marty!
+        Move Marty to the normal standing position
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.get_ready()
+
+    def eyes(self, pose_or_angle: Union[str, float], move_time: int = 100) -> bool:
+        '''
+        Move the eyes to a pose or an angle
         Args:
+            pose_or_angle: 'angry', 'excited', 'normal', 'wide', or 'wiggle' - alternatively
+                           this can be an angle in degrees (which can be a negative number)
             move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
         '''
-        return self.client.wiggle(move_time)
+        return self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
+
+    def kick(self, side: str = 'right', twist: float = 0, move_time: int = 2000) -> bool:
+        '''
+        Kick one of Marty's feet
+        Args:
+            side: 'left' or 'right', which foot to use
+            twist: the amount of twisting do do while kicking (in degrees)
+            move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.kick(side, twist, move_time)
+
+    def arms(self, left_angle: float, right_angle: float, move_time: int) -> bool:
+        '''
+        Move both of Marty's arms to angles you specify
+        Args:
+            left_angle: Angle of the left arm (degrees -100 to 100)
+            right_angle: Position of the right arm (degrees -100 to 100)
+            move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.arms(left_angle, right_angle, move_time)
+
+    def lean(self, direction: str, amount: float, move_time: int) -> bool:
+        '''
+        Lean over in a direction
+        Args:
+            direction: 'left', 'right', 'forward', 'back', or 'auto'
+            amount: percentage amount to lean
+            move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.lean(direction, amount, move_time)
 
     def sidestep(self, side: str, steps: int = 1, step_length: int = 100, 
             move_time: int = 2000) -> bool:
@@ -216,6 +240,8 @@ class Marty(object):
             steps: number of steps to take
             step_length: how broad the steps are (up to 127)
             move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
         '''
         return self.client.sidestep(side, steps, step_length, move_time)
 
@@ -229,14 +255,47 @@ class Marty(object):
             name_or_freq_start: starting frequency, Hz (Marty V1 only)
             freq_end:  ending frequency, Hz (Marty V1 only)
             duration: milliseconds, maximum 5000 (Marty V1 only)
+        Returns:
+            True if Marty accepted the request
         '''
         return self.client.play_sound(name_or_freq_start, freq_end, duration)
+
+    def get_accelerometer(self, axis: Optional[str] = None) -> float:
+        '''
+        Get the latest value from the Marty's accelerometer
+        Args:
+            axis: (optional) 'x', 'y' or 'z' OR no parameter at all (see returns below)
+        Returns:  
+            * The acceleration value from the axis (if axis specified)  
+            * A tuple containing x, y and z values (if no axis)  
+            Note that the returned value will be 0 if no value is available
+        Raises:
+            MartyCommandException if the axis is unknown
+        '''
+        axisCode = 0
+        if (axis is not None) and (type(axis) is str):
+            if axis not in self.ACCEL_AXES:
+                self.client._preException(True)
+                raise MartyCommandException("Axis must be one of {}, not '{}'"
+                                            "".format(set(self.ACCEL_AXES.keys()), axis))
+            axisCode = self.ACCEL_AXES.get(axis, 0)
+        return self.client.get_accelerometer(axis, axisCode)
+
+    def is_moving(self) -> bool:
+        '''
+        Check if Marty is moving
+        Args:
+            none
+        Returns:
+            True if Marty is moving
+        '''
+        return self.client.is_moving()
 
     def stop(self, stop_type: Optional[str] = None) -> bool:
         '''
         Stop Marty's movement  
 
-        You can also control what type of "stop" you want with the parameter stop_type. For instance:  
+        You can also control what way to "stop" you want with the parameter stop_type. For instance:  
         
         * 'clear queue' to finish the current movement before stopping (clear any queued movements)
         * 'clear and stop' stop immediately (and clear queues)
@@ -246,7 +305,7 @@ class Marty(object):
         * 'pause and disable' (Marty V1 only) pause motion and disable the robot
 
         Args:
-            stop_type, the type of "stop: - see the options above
+            stop_type: the way to stop - see the options above
 
         Raises:
             MartyCommandException if the stop_type is unknown
@@ -264,36 +323,25 @@ class Marty(object):
     def resume(self) -> bool:
         '''
         Resume Marty's movement after a pause
-        Args:
-            none
+        Returns:
+            True if Marty accepted the request
         '''
         return self.client.resume()
 
     def hold_position(self, hold_time: int) -> bool:
         '''
         Hold Marty at its current position
-
         Args:
             hold_time, time to hold position in milli-seconds
+        Returns:
+            True if Marty accepted the request
         '''
         # Default to plain "stop"
         return self.client.hold_position(hold_time)
 
-    def is_moving(self) -> bool:
-        '''
-        Check if Marty is moving
-        Args:
-            none
-        Returns:
-            True if Marty is moving
-        '''
-        return self.client.is_moving()
-
     def is_paused(self) -> bool:
         '''
         Check if Marty is paused
-        Args:
-            none
         Returns:
             True if Marty is paused
         '''
@@ -306,6 +354,8 @@ class Marty(object):
             joint_name_or_num: joint to move, see the Marty.JOINT_IDS dictionary (can be name or number)
             position: angle in degrees
             move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
         Raises:
             MartyCommandException if the joint_name_or_num is unknown
         '''
@@ -323,6 +373,8 @@ class Marty(object):
         Get the position (angle in degrees) of a joint
         Args:
             joint_name_or_num: see the Marty.JOINT_IDS dictionary (can be name or number)
+        Returns:
+            Angle of the joint in degrees
         Raises:
             MartyCommandException if the joint_name_or_num is unknown            
         '''
@@ -343,8 +395,7 @@ class Marty(object):
         Args:
             joint_name_or_num: see the Marty.JOINT_IDS dictionary (can be name or number)
         Returns:
-            current of the joint in milli-Amps
-            will be 0 if the joint current is unknown
+            the current of the joint in milli-Amps (this will be 0 if the joint current is unknown)
         Raises:
             MartyCommandException if the joint_name_or_num is unknown
         '''
@@ -379,95 +430,41 @@ class Marty(object):
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
         return self.client.get_joint_status(jointIDNo)
 
-    def pinmode_gpio(self, gpio: int, mode: str) -> bool:
-        '''
-        Configure a GPIO pin
-        gpio: pin number between 0 and 7
-        mode: choose from: 'digital in','analog in' or 'digital out'
-        '''
-        return self.client.pinmode_gpio(gpio, mode)
-
-    def write_gpio(self, gpio:int, value: int) -> bool:
-        '''
-        Write a value to a GPIO port
-        '''
-        return self.client.write_gpio(gpio, value)
-
-    def digitalread_gpio(self, gpio: int) -> bool:
-        '''
-        Returns:
-            Returns High/Low state of a GPIO pin
-        Args:
-            GPIO pin number, >= 0 (non-negative)
-        '''
-        return self.client.digitalread_gpio(gpio)
-
-    def i2c_write(self, *byte_array: int) -> bool:
-        '''
-        Write a bytestream to the i2c port.
-        The first byte should be the address, following from that
-        the datagram folows standard i2c spec
-        '''
-        return self.client.i2c_write(*byte_array)
-
-    def i2c_write_to_ric(self, address: int, byte_array: bytes) -> bool:
-        '''
-        Write a formatted bytestream to the i2c port.
-        The bytestream is formatted in the ROS serial format.
-
-        address: the other device's address
-        '''
-        return self.client.i2c_write_to_ric(address, byte_array)
-
-    def i2c_write_to_rick(self, address: int, byte_array: bytes) -> bool:
-        '''
-        Write a formatted bytestream to the i2c port.
-        The bytestream is formatted in the ROS serial format.
-        address: the other device's address
-        '''
-        return self.client.i2c_write_to_ric(address, byte_array)
-
-    def get_battery_voltage(self) -> float:
-        '''
-        Returns:
-            The battery voltage reading as a float in Volts
-        '''
-        return self.client.get_battery_voltage()
-
-    def get_battery_remaining(self) -> float:
-        '''
-        Returns:
-            The battery remaining capacity in percent
-        '''
-        return self.client.get_battery_remaining()
-
     def get_distance_sensor(self) -> float:
         '''
+        Get the latest value from the distance sensor
         Returns:
             The distance sensor reading as a float (raw, no units)
         '''
         return self.client.distance()
 
-    def get_accelerometer(self, axis: Optional[str] = None) -> float:
+    def get_battery_remaining(self) -> float:
         '''
-        Args:
-            axis: (optional) str 'x', 'y' or 'z' - if omitted then return x, y and z values
+        Get the battery remaining percentage
         Returns:
-            If axis is provided then returns the most recently read x, y or z 
-                acceleration value - or 0 if no information is available
-            If axis is not provided returns a tuple with x, y and z values (which may
-                be 0 if no information is available)
-        Raises:
-            MartyCommandException if the axis is unknown
+            The battery remaining capacity in percent
         '''
-        axisCode = 0
-        if (axis is not None) and (type(axis) is str):
-            if axis not in self.ACCEL_AXES:
-                self.client._preException(True)
-                raise MartyCommandException("Axis must be one of {}, not '{}'"
-                                            "".format(set(self.ACCEL_AXES.keys()), axis))
-            axisCode = self.ACCEL_AXES.get(axis, 0)
-        return self.client.get_accelerometer(axis, axisCode)
+        return self.client.get_battery_remaining()
+
+    def save_calibration(self) -> bool:
+        '''
+        Set the current motor positions as the zero positions
+        BE CAREFUL, this can cause unexpected movement or self-interference
+        '''
+        return self.client.save_calibration()
+
+    def clear_calibration(self) -> bool:
+        '''
+        Tell Marty to forget it's calibration
+        BE CAREFUL, this can cause unexpected movement or self-interference
+        '''
+        return self.client.clear_calibration()
+
+    def is_calibrated(self) -> bool:
+        '''
+        Check if Marty is calibrated
+        '''
+        return self.client.is_calibrated()
 
     def get_motor_current(self, motor_id: int) -> float:
         '''
@@ -517,96 +514,6 @@ class Marty(object):
             enable: True/False toggle
         '''
         return self.client.battery_protection(enable)
-
-    def buzz_prevention(self, enable: bool = True) -> bool:
-        '''
-        Toggle motor buzz prevention
-        Args:
-            enable: True/False toggle
-        '''
-        return self.client.buzz_prevention(enable)
-
-    def lifelike_behaviour(self, enable: bool = True) -> bool:
-        '''
-        Tell the robot whether it can or can't move now and then in a lifelike way when idle.
-        Args:
-            enable: True/False toggle
-        '''
-        return self.client.lifelike_behaviour(enable)
-
-    def set_parameter(self, *byte_array: int) -> bool:
-        '''
-        Set board parameters.
-        Args:
-            byte_array: a list in the following format [paramID, params]
-        '''
-        return self.client.set_parameter(byte_array)
-
-    def save_calibration(self) -> bool:
-        '''
-        Set the current motor positions as the zero positions
-        BE CAREFUL, this can cause unexpected movement or self-interference
-        '''
-        return self.client.save_calibration()
-
-    def clear_calibration(self) -> bool:
-        '''
-        Tell Marty to forget it's calibration
-        BE CAREFUL, this can cause unexpected movement or self-interference
-        '''
-        return self.client.clear_calibration()
-
-    def is_calibrated(self) -> bool:
-        '''
-        Check if Marty is calibrated
-        '''
-        return self.client.is_calibrated()
-
-    def ros_command(self, *byte_array: int) -> bool:
-        '''
-        Low level proxied access to the ROS Serial API between
-        the modem and main controller
-        '''
-        return self.client.ros_command(*byte_array)
-
-    def keyframe (self, time: float, num_of_msgs: int, msgs) -> List[bytes]:
-        '''
-        Takes in information about movements and generates keyframes
-        returns a list of bytes
-        time: time (in seconds) taken to complete movement
-        num_of_msgs: number of commands sent
-        msgs: commands sent in the following format [(ID CMD), (ID CMD), etc...]
-        '''
-        return self.client.keyframe(time, num_of_msgs, msgs)
-
-    def get_chatter(self) -> bytes:
-        '''
-        Return chatter topic data (variable length)
-        '''
-        return self.client.get_chatter()
-
-    def get_firmware_version(self) -> bool:
-        '''
-        Ask the board to print the firmware version over chatter
-        '''
-        return self.client.get_firmware_version()
-
-    def _mute_serial(self) -> bool:
-        '''
-        Mutes the internal serial line on RIC. Depends on platform and API
-        NOTE: Once you've done this, the Robot will ignore you until you cycle power.
-        '''
-        return self.client.mute_serial()
-
-    def ros_serial_formatter(self, topicID: int, send: bool = False, *message: int) -> List[int]:
-        '''
-        Formats message into ROS serial format and
-        returns formatted message as a list
-        Calls ros_command with the processed message if send is True.
-        More information about the ROS serial format can be
-        found here: http://wiki.ros.org/rosserial/Overview/Protocol
-        '''
-        return self.client.ros_serial_formatter(topicID, send, message)
 
     def get_robot_status(self) -> Dict:
         '''
@@ -805,11 +712,154 @@ class Marty(object):
         '''
         return self.client.send_ric_rest_cmd_sync(ricRestCmd)
 
-    def get_ready(self) -> bool:
+    ''' 
+    ============================================================
+    The following commands are for Marty V1 Only
+    ============================================================
+    '''
+
+    def buzz_prevention(self, enable: bool = True) -> bool:
         '''
-        Prepare for motion!
+        Toggle motor buzz prevention
+        Args:
+            enable: True/False toggle
         '''
-        return self.client.get_ready()
+        return self.client.buzz_prevention(enable)
+
+    def lifelike_behaviour(self, enable: bool = True) -> bool:
+        '''
+        Tell the robot whether it can or can't move now and then in a lifelike way when idle.
+        Args:
+            enable: True/False toggle
+        '''
+        return self.client.lifelike_behaviour(enable)
+
+    def ros_command(self, *byte_array: int) -> bool:
+        '''
+        Low level proxied access to the ROS Serial API between
+        the modem and main controller
+        '''
+        return self.client.ros_command(*byte_array)
+
+    def keyframe (self, time: float, num_of_msgs: int, msgs) -> List[bytes]:
+        '''
+        Takes in information about movements and generates keyframes
+        returns a list of bytes
+        time: time (in seconds) taken to complete movement
+        num_of_msgs: number of commands sent
+        msgs: commands sent in the following format [(ID CMD), (ID CMD), etc...]
+        '''
+        return self.client.keyframe(time, num_of_msgs, msgs)
+
+    def get_chatter(self) -> bytes:
+        '''
+        Return chatter topic data (variable length)
+        '''
+        return self.client.get_chatter()
+
+    def get_firmware_version(self) -> bool:
+        '''
+        Ask the board to print the firmware version over chatter
+        '''
+        return self.client.get_firmware_version()
+
+    def _mute_serial(self) -> bool:
+        '''
+        Mutes the internal serial line on RIC. Depends on platform and API
+        NOTE: Once you've done this, the Robot will ignore you until you cycle power.
+        '''
+        return self.client.mute_serial()
+
+    def ros_serial_formatter(self, topicID: int, send: bool = False, *message: int) -> List[int]:
+        '''
+        Formats message into ROS serial format and
+        returns formatted message as a list
+        Calls ros_command with the processed message if send is True.
+        More information about the ROS serial format can be
+        found here: http://wiki.ros.org/rosserial/Overview/Protocol
+        '''
+        return self.client.ros_serial_formatter(topicID, send, message)
+
+    def pinmode_gpio(self, gpio: int, mode: str) -> bool:
+        '''
+        Configure a GPIO pin
+        gpio: pin number between 0 and 7
+        mode: choose from: 'digital in','analog in' or 'digital out'
+        '''
+        return self.client.pinmode_gpio(gpio, mode)
+
+    def write_gpio(self, gpio:int, value: int) -> bool:
+        '''
+        Write a value to a GPIO port
+        '''
+        return self.client.write_gpio(gpio, value)
+
+    def digitalread_gpio(self, gpio: int) -> bool:
+        '''
+        Returns:
+            Returns High/Low state of a GPIO pin
+        Args:
+            GPIO pin number, >= 0 (non-negative)
+        '''
+        return self.client.digitalread_gpio(gpio)
+
+    def set_parameter(self, *byte_array: int) -> bool:
+        '''
+        Set board parameters
+        Args:
+            byte_array: a list in the following format [paramID, params]
+        '''
+        return self.client.set_parameter(byte_array)
+
+    def i2c_write(self, *byte_array: int) -> bool:
+        '''
+        Write a bytestream to the i2c port.
+        The first byte should be the address, following from that
+        the datagram folows standard i2c spec
+        '''
+        return self.client.i2c_write(*byte_array)
+
+    def i2c_write_to_ric(self, address: int, byte_array: bytes) -> bool:
+        '''
+        Write a formatted bytestream to the i2c port.
+        The bytestream is formatted in the ROS serial format.
+
+        address: the other device's address
+        '''
+        return self.client.i2c_write_to_ric(address, byte_array)
+
+    def i2c_write_to_rick(self, address: int, byte_array: bytes) -> bool:
+        '''
+        Write a formatted bytestream to the i2c port.
+        The bytestream is formatted in the ROS serial format.
+        address: the other device's address
+        '''
+        return self.client.i2c_write_to_ric(address, byte_array)
+
+    def get_battery_voltage(self) -> float:
+        '''
+        Returns:
+            The battery voltage reading as a float in Volts
+        '''
+        return self.client.get_battery_voltage()
+
+    def hello(self) -> bool:
+        '''
+        Zero joints and wiggle eyebrows
+        '''
+        return self.client.hello()
+
+    def discover(self) -> List[str]:
+        '''
+        Try and find us some Martys!
+        '''
+        return self.client.discover()
+
+    ''' 
+    ============================================================
+    Helper commands that you probably won't need to use directly
+    ============================================================
+    '''
 
     def __del__(self) -> None:
         '''
@@ -823,16 +873,4 @@ class Marty(object):
         '''
         if self.client:
             self.client.close()
-
-    def hello(self) -> bool:
-        '''
-        Zero joints and wiggle eyebrows
-        '''
-        return self.client.hello()
-
-    def discover(self) -> List[str]:
-        '''
-        Try and find us some Martys!
-        '''
-        return self.client.discover()
 

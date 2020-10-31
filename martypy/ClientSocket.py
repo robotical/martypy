@@ -8,7 +8,7 @@ from .exceptions import (MartyConnectException,
                          ArgumentOutOfRangeException,
                          UnavailableCommandException)
 
-class SocketClient():
+class ClientSocket():
     '''
     Lower level interface class between the `Marty` abstracted
     control class and the RIC socket interface

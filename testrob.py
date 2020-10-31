@@ -1,6 +1,6 @@
 import time
 import logging
-from martypy.marty import Marty
+from martypy.Marty import Marty
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 logger = logging.getLogger("TestRob")

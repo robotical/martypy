@@ -10,7 +10,7 @@ from .exceptions import (MartyConnectException,
 
 logger = logging.getLogger(__name__)
 
-class SerialClient():
+class ClientSerial():
     '''
     Lower level interface class between the `Marty` abstracted
     control class and the RIC serial interface
