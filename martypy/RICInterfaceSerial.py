@@ -127,7 +127,7 @@ class RICInterfaceSerial:
             Response turned into a dictionary (from JSON)
         '''
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTURL(msg)
-        logger.debug(f"cmdRICRESTSync msgNum {msgNum} time {time.time()} msg {msg}")
+        # logger.debug(f"cmdRICRESTSync msgNum {msgNum} time {time.time()} msg {msg}")
         timeNow = time.time()
         with self._msgsOutstandingLock:
             self._msgsOutstanding[msgNum] = {"timeSent": timeNow,"awaited":True}
@@ -168,7 +168,7 @@ class RICInterfaceSerial:
             True if message sent
         '''
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTCmdFrame(msg)
-        logger.debug(f"sendRICRESTCmdFrame msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
+        # logger.debug(f"sendRICRESTCmdFrame msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
         with self._msgsOutstandingLock:
             self._msgsOutstanding[msgNum] = {"timeSent": time.time()}
         self.commsHandler.send(ricRestMsg)
@@ -274,10 +274,10 @@ class RICInterfaceSerial:
             #         break
 
     def _onRxFrameCB(self, frame: bytes) -> None:
-        # logger.debug(f"Frame Rx len {len(frame)}")
+        # logger.debug(f"_onRxFrameCB Rx len {len(frame)}")
         decodedMsg = self.ricProtocols.decodeRICFrame(frame)
         if decodedMsg.msgNum != 0:
-            logger.debug(f"Frame Rx msgNum {decodedMsg.msgNum} {decodedMsg.payload}")
+            # logger.debug(f"_onRxFrameCB msgNum {decodedMsg.msgNum} {decodedMsg.payload}")
             isUnmatched = False
             with self._msgsOutstandingLock:
                 if decodedMsg.msgNum in self._msgsOutstanding:
