@@ -11,6 +11,8 @@ from martypy import Marty
 my_marty = Marty("wifi","192.168.0.53")  
 my_marty.dance()
 ```
+
+The emojis :one: and :two: indicate when the method is available for Marty V1 :one: and Marty V2 :two:
 '''
 from typing import Dict, List, Optional, Union
 from .ClientSerial import ClientSerial
@@ -83,7 +85,7 @@ class Marty(object):
                 client_types: dict = dict(),
                 *args, **kwargs) -> None:
         '''
-        Start a connection to Marty  
+        Start a connection to Marty :one: :two:  
 
         For example:  
 
@@ -122,7 +124,7 @@ class Marty(object):
 
     def dance(self, side: str = 'right', move_time: int = 1500) -> bool:
         '''
-        Another Boogy, Marty!
+        Boogie, Marty! :one: :two:
         Args:
             side: 'left' or 'right', which side to start on
             move_time: how long this movement should last, in milliseconds
@@ -131,19 +133,9 @@ class Marty(object):
         '''
         return self.client.dance(side, move_time)
 
-    def wiggle(self, move_time: int = 1500) -> bool:
-        '''
-        Wiggle Marty!
-        Args:
-            move_time: how long this movement should last, in milliseconds
-        Returns:
-            True if Marty accepted the request
-        '''
-        return self.client.wiggle(move_time)
-
     def celebrate(self, move_time: int = 4000) -> bool:
         '''
-        Do a small celebration
+        Do a small celebration :one: :two:
         Args:
             move_time: how long this movement should last, in milliseconds
         Returns:
@@ -154,9 +146,19 @@ class Marty(object):
 
         return self.client.celebrate(move_time)
 
+    def wiggle(self, move_time: int = 1500) -> bool:
+        '''
+        Wiggle :two:
+        Args:
+            move_time: how long this movement should last, in milliseconds
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.wiggle(move_time)
+
     def circle_dance(self, side: str = 'right', move_time: int = 1500) -> bool:
         '''
-        Boogy, Marty!
+        Circle Dance :two:
         Args:
             side: 'left' or 'right', which side to start on
             move_time: how long this movement should last, in milliseconds
@@ -168,7 +170,7 @@ class Marty(object):
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0, 
                 step_length:int = 40, move_time: int = 1500) -> bool:
         '''
-        Make Marty walk
+        Make Marty walk :one: :two:
         Args:
             num_steps: how many steps to take
             start_foot: 'left', 'right' or 'auto', start walking with this foot
@@ -182,7 +184,7 @@ class Marty(object):
 
     def get_ready(self) -> bool:
         '''
-        Move Marty to the normal standing position
+        Move Marty to the normal standing position :one: :two:
         Returns:
             True if Marty accepted the request
         '''
@@ -190,9 +192,9 @@ class Marty(object):
 
     def eyes(self, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
         '''
-        Move the eyes to a pose or an angle
+        Move the eyes to a pose or an angle :one: :two:
         Args:
-            pose_or_angle: 'angry', 'excited', 'normal', 'wide', or 'wiggle' - alternatively
+            pose_or_angle: 'angry', 'excited', 'normal', 'wide', or 'wiggle' :two: - alternatively
                            this can be an angle in degrees (which can be a negative number)
             move_time: how long this movement should last, in milliseconds
         Returns:
@@ -202,7 +204,7 @@ class Marty(object):
 
     def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2000) -> bool:
         '''
-        Kick one of Marty's feet
+        Kick one of Marty's feet :one: :two:
         Args:
             side: 'left' or 'right', which foot to use
             twist: the amount of twisting do do while kicking (in degrees)
@@ -214,7 +216,7 @@ class Marty(object):
 
     def arms(self, left_angle: int, right_angle: int, move_time: int) -> bool:
         '''
-        Move both of Marty's arms to angles you specify
+        Move both of Marty's arms to angles you specify :one: :two:
         Args:
             left_angle: Angle of the left arm (degrees -100 to 100)
             right_angle: Position of the right arm (degrees -100 to 100)
@@ -226,7 +228,7 @@ class Marty(object):
 
     def lean(self, direction: str, amount: int, move_time: int) -> bool:
         '''
-        Lean over in a direction
+        Lean over in a direction :one: :two:
         Args:
             direction: 'left', 'right', 'forward', 'back', or 'auto'
             amount: percentage amount to lean
@@ -239,7 +241,7 @@ class Marty(object):
     def sidestep(self, side: str, steps: int = 1, step_length: int = 100, 
             move_time: int = 2000) -> bool:
         '''
-        Take sidesteps
+        Take sidesteps :one: :two:
         Args:
             side: 'left' or 'right', direction to step in
             steps: number of steps to take
@@ -254,12 +256,12 @@ class Marty(object):
             freq_end: Optional[int] = None, 
             duration: Optional[int] = None) -> bool:
         '''
-        Play a named sound (Marty V2) or make a tone (Marty V1)
+        Play a named sound (Marty V2 :two:) or make a tone (Marty V1 :one:)
         Args:
-            name_or_freq_start: name of the sound (Marty V2 only)
-            name_or_freq_start: starting frequency, Hz (Marty V1 only)
-            freq_end:  ending frequency, Hz (Marty V1 only)
-            duration: milliseconds, maximum 5000 (Marty V1 only)
+            name_or_freq_start: name of the sound :two:
+            name_or_freq_start: starting frequency, Hz :one:
+            freq_end:  ending frequency, Hz :one:
+            duration: milliseconds, maximum 5000 :one:
         Returns:
             True if Marty accepted the request
         '''
@@ -267,12 +269,12 @@ class Marty(object):
 
     def get_accelerometer(self, axis: Optional[str] = None) -> float:
         '''
-        Get the latest value from the Marty's accelerometer
+        Get the latest value from the Marty's accelerometer :one: :two:
         Args:
             axis: (optional) 'x', 'y' or 'z' OR no parameter at all (see returns below)
         Returns:  
             * The acceleration value from the axis (if axis specified)  
-            * A tuple containing x, y and z values (if no axis)  
+            * A tuple containing x, y and z values (if no axis) :two:
             Note that the returned value will be 0 if no value is available
         Raises:
             MartyCommandException if the axis is unknown
@@ -288,7 +290,7 @@ class Marty(object):
 
     def is_moving(self) -> bool:
         '''
-        Check if Marty is moving
+        Check if Marty is moving :two:
         Args:
             none
         Returns:
@@ -298,16 +300,16 @@ class Marty(object):
 
     def stop(self, stop_type: Optional[str] = None) -> bool:
         '''
-        Stop Marty's movement  
+        Stop Marty's movement  :one: :two:  
 
         You can also control what way to "stop" you want with the parameter stop_type. For instance:  
         
         * 'clear queue' to finish the current movement before stopping (clear any queued movements)
         * 'clear and stop' stop immediately (and clear queues)
-        * 'clear and disable' (Marty V1 only) stop and disable the robot
+        * 'clear and disable' :one: stop and disable the robot
         * 'clear and zero' stop and move back to get_ready pose
         * 'pause' pause motion
-        * 'pause and disable' (Marty V1 only) pause motion and disable the robot
+        * 'pause and disable' :one: pause motion and disable the robot
 
         Args:
             stop_type: the way to stop - see the options above
@@ -327,7 +329,7 @@ class Marty(object):
 
     def resume(self) -> bool:
         '''
-        Resume Marty's movement after a pause
+        Resume Marty's movement after a pause :two:
         Returns:
             True if Marty accepted the request
         '''
@@ -335,7 +337,7 @@ class Marty(object):
 
     def hold_position(self, hold_time: int) -> bool:
         '''
-        Hold Marty at its current position
+        Hold Marty at its current position :two:
         Args:
             hold_time, time to hold position in milli-seconds
         Returns:
@@ -346,7 +348,7 @@ class Marty(object):
 
     def is_paused(self) -> bool:
         '''
-        Check if Marty is paused
+        Check if Marty is paused :two:
         Returns:
             True if Marty is paused
         '''
@@ -354,7 +356,7 @@ class Marty(object):
 
     def move_joint(self, joint_name_or_num: Union[int, str], position: int, move_time: int) -> bool:
         '''
-        Move a specific joint to a position
+        Move a specific joint to a position :one: :two:
         Args:
             joint_name_or_num: joint to move, see the Marty.JOINT_IDS dictionary (can be name or number)
             position: angle in degrees
@@ -375,7 +377,7 @@ class Marty(object):
 
     def get_joint_position(self, joint_name_or_num: Union[int, str]) -> float:
         '''
-        Get the position (angle in degrees) of a joint
+        Get the position (angle in degrees) of a joint :two:
         Args:
             joint_name_or_num: see the Marty.JOINT_IDS dictionary (can be name or number)
         Returns:
@@ -394,7 +396,7 @@ class Marty(object):
 
     def get_joint_current(self, joint_name_or_num: Union[int, str]) -> float:
         '''
-        Get the current (in milli-Amps) of a joint
+        Get the current (in milli-Amps) of a joint :one: :two:
         This can be useful in detecting when the joint is working hard and is related
         to the force which the joint's motor is exerting to stay where it is
         Args:
@@ -415,7 +417,7 @@ class Marty(object):
 
     def get_joint_status(self, joint_name_or_num: Union[int, str]) -> int:
         '''
-        Get information about a joint
+        Get information about a joint :two:
         This can be helpful to find out if the joint is working correctly and if it is
         moving at the moment, etc
         Args:
@@ -437,7 +439,7 @@ class Marty(object):
 
     def get_distance_sensor(self) -> float:
         '''
-        Get the latest value from the distance sensor
+        Get the latest value from the distance sensor :one: :two:
         Returns:
             The distance sensor reading (will return 0 if no distance sensor is found)
         '''
@@ -445,7 +447,7 @@ class Marty(object):
 
     def get_battery_remaining(self) -> float:
         '''
-        Get the battery remaining percentage
+        Get the battery remaining percentage :two:
         Returns:
             The battery remaining capacity in percent
         '''
@@ -453,76 +455,27 @@ class Marty(object):
 
     def save_calibration(self) -> bool:
         '''
-        Set the current motor positions as the zero positions
+        Set the current motor positions as the zero positions :one: :two:
         BE CAREFUL, this can cause unexpected movement or self-interference
         '''
         return self.client.save_calibration()
 
     def clear_calibration(self) -> bool:
         '''
-        Tell Marty to forget it's calibration
+        Tell Marty to forget it's calibration :one: :two:
         BE CAREFUL, this can cause unexpected movement or self-interference
         '''
         return self.client.clear_calibration()
 
     def is_calibrated(self) -> bool:
         '''
-        Check if Marty is calibrated
+        Check if Marty is calibrated :two:
         '''
         return self.client.is_calibrated()
 
-    def get_motor_current(self, motor_id: int) -> float:
-        '''
-        Args:
-            motor_id, integer >= 0 (non-negative) selects which motor to query
-        Returns:
-            Instantaneous current sense reading from motor `motor_id`
-        '''
-        return self.get_joint_current(motor_id)
-
-    def enable_motors(self, enable: bool = True, clear_queue: bool = True) -> bool:
-        '''
-        Toggle power to motors
-        Args:
-            enable: True/False toggle
-            clear_queue: Default True, prevents unfinished but 'muted' motions
-                         from jumping as soon as motors are enabled
-        '''
-        return self.client.enable_motors(enable, clear_queue)
-
-    def enable_safeties(self, enable: bool = True) -> bool:
-        '''
-        Tell the board to turn on 'normal' safeties
-        '''
-        return self.client.enable_safeties(enable)
-
-    def fall_protection(self, enable: bool = True) -> bool:
-        '''
-        Toggle fall protections
-        Args:
-            enable: True/False toggle
-        '''
-        return self.client.fall_protection(enable)
-
-    def motor_protection(self, enable: bool = True) -> bool:
-        '''
-        Toggle motor current protections
-        Args:
-            enable: True/False toggle
-        '''
-        return self.client.motor_protection(enable)
-
-    def battery_protection(self, enable: bool = True) -> bool:
-        '''
-        Toggle low battery protections
-        Args:
-            enable: True/False toggle
-        '''
-        return self.client.battery_protection(enable)
-
     def get_robot_status(self) -> Dict:
         '''
-        Get status of Marty the Robot
+        Get status of Marty the Robot :two:
         Args:
             none
         Returns:
@@ -534,9 +487,9 @@ class Marty(object):
         '''
         return self.client.get_robot_status()
 
-    def get_joints(self) -> Dict:
+    def get_joints(self) -> Dict: 
         '''
-        Get information on all of Marty's joints
+        Get information on all of Marty's joints :two:
         Args:
             none
         Returns:
@@ -553,7 +506,7 @@ class Marty(object):
 
     def get_power_status(self) -> Dict:
         '''
-        Get information on all of Marty's joints
+        Get information on Marty's battery and power supply :two:
         Args:
             none
         Returns:
@@ -571,7 +524,7 @@ class Marty(object):
     
     def get_add_ons_status(self) -> Dict:
         '''
-        Get latest information for all add-ons
+        Get latest information for all add-ons :two:
         Args:
             none
         Returns:
@@ -588,7 +541,7 @@ class Marty(object):
 
     def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
         '''
-        Get latest information for a single add-on
+        Get latest information for a single add-on :two:
         Args:
             add_on_name_or_id: either the name or the id (number) of an add-on
         Returns:
@@ -602,28 +555,7 @@ class Marty(object):
 
     def get_system_info(self) -> Dict:
         '''
-        Get information about Marty
-        Args:
-            none
-        Returns:
-            Dictionary containing:
-                "HardwareVersion": string containing the version of Marty hardware
-                                "1.0" for Marty V1
-                                "2.0" for Marty V2
-                                other values for later versions of Marty
-                "SystemName": the name of the physical hardware in Marty - this will be 
-                              RicFirmwareESP32 for Marty V2 and
-                              MartyV1 for Marty V1
-                "SystemVersion": a string in semantic versioning format with the version
-                                 of Marty firmware (e.g. "1.2.3")
-                "SerialNo": serial number of this Marty
-                "MAC": the base MAC address of the Marty
-        '''
-        return self.client.get_system_info()
-
-    def get_system_info(self) -> Dict:
-        '''
-        Get information about Marty
+        Get information about Marty :two:
         Args:
             none
         Returns:
@@ -644,7 +576,7 @@ class Marty(object):
 
     def set_marty_name(self, name: str) -> bool:
         '''
-        Set Marty's name
+        Set Marty's name :two:
         Args:
             name to call Marty
         Returns:
@@ -654,7 +586,7 @@ class Marty(object):
 
     def get_marty_name(self) -> str:
         '''
-        Get Marty's name
+        Get Marty's name :two:
         Args:
             none
         Returns:
@@ -664,7 +596,7 @@ class Marty(object):
 
     def is_marty_name_set(self) -> bool:
         '''
-        Check if Marty's name is set
+        Check if Marty's name is set :two:
         Args:
             none
         Returns:
@@ -674,7 +606,7 @@ class Marty(object):
 
     def get_hw_elems_list(self) -> List:
         '''
-        Get a list of all of the hardware elements on Marty
+        Get a list of all of the hardware elements on Marty :two:
         Args:
             none
         Returns:
@@ -695,7 +627,8 @@ class Marty(object):
 
     def send_ric_rest_cmd(self, ricRestCmd: str) -> None:
         '''
-        Send a command in RIC REST format to Marty
+        Send a command in RIC REST format to Marty :two:  
+
         This is a special purpose command which you can use to do advanced
         control of Marty
         Args:
@@ -707,7 +640,8 @@ class Marty(object):
 
     def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
         '''
-        Send a command in RIC REST format to Marty and wait for reply
+        Send a command in RIC REST format to Marty and wait for reply :two:  
+
         This is a special purpose command which you can use to do advanced
         control of Marty
         Args:
@@ -717,15 +651,65 @@ class Marty(object):
         '''
         return self.client.send_ric_rest_cmd_sync(ricRestCmd)
 
+    def get_motor_current(self, motor_id: int) -> float:
+        '''
+        Get current flowing through a joint motor :one: :two:
+        Args:
+            motor_id, integer >= 0 (non-negative) selects which motor to query
+        Returns:
+            Instantaneous current sense reading from motor `motor_id`
+        '''
+        return self.get_joint_current(motor_id)
+
     ''' 
     ============================================================
     The following commands are for Marty V1 Only
     ============================================================
     '''
 
+    def enable_motors(self, enable: bool = True, clear_queue: bool = True) -> bool:
+        '''
+        Toggle power to motors :one:
+        Args:
+            enable: True/False toggle
+            clear_queue: Default True, prevents unfinished but 'muted' motions
+                         from jumping as soon as motors are enabled
+        '''
+        return self.client.enable_motors(enable, clear_queue)
+
+    def enable_safeties(self, enable: bool = True) -> bool:
+        '''
+        Tell the board to turn on 'normal' safeties :one:
+        '''
+        return self.client.enable_safeties(enable)
+
+    def fall_protection(self, enable: bool = True) -> bool:
+        '''
+        Toggle fall protections :one:
+        Args:
+            enable: True/False toggle
+        '''
+        return self.client.fall_protection(enable)
+
+    def motor_protection(self, enable: bool = True) -> bool:
+        '''
+        Toggle motor current protections :one:
+        Args:
+            enable: True/False toggle
+        '''
+        return self.client.motor_protection(enable)
+
+    def battery_protection(self, enable: bool = True) -> bool:
+        '''
+        Toggle low battery protections :one:
+        Args:
+            enable: True/False toggle
+        '''
+        return self.client.battery_protection(enable)
+
     def buzz_prevention(self, enable: bool = True) -> bool:
         '''
-        Toggle motor buzz prevention
+        Toggle motor buzz prevention :one:
         Args:
             enable: True/False toggle
         '''
@@ -733,7 +717,7 @@ class Marty(object):
 
     def lifelike_behaviour(self, enable: bool = True) -> bool:
         '''
-        Tell the robot whether it can or can't move now and then in a lifelike way when idle.
+        Tell the robot whether it can or can't move now and then in a lifelike way when idle. :one:
         Args:
             enable: True/False toggle
         '''
@@ -741,36 +725,37 @@ class Marty(object):
 
     def ros_command(self, *byte_array: int) -> bool:
         '''
-        Low level proxied access to the ROS Serial API between
-        the modem and main controller
+        Low level proxied access to the ROS Serial API between 
+        the modem and main controller :one:
         '''
         return self.client.ros_command(*byte_array)
 
     def keyframe (self, time: float, num_of_msgs: int, msgs) -> List[bytes]:
         '''
         Takes in information about movements and generates keyframes
-        returns a list of bytes
-        time: time (in seconds) taken to complete movement
-        num_of_msgs: number of commands sent
-        msgs: commands sent in the following format [(ID CMD), (ID CMD), etc...]
+        returns a list of bytes :one:
+        Args:
+            time: time (in seconds) taken to complete movement
+            num_of_msgs: number of commands sent
+            msgs: commands sent in the following format [(ID CMD), (ID CMD), etc...]
         '''
         return self.client.keyframe(time, num_of_msgs, msgs)
 
     def get_chatter(self) -> bytes:
         '''
-        Return chatter topic data (variable length)
+        Return chatter topic data (variable length) :one:
         '''
         return self.client.get_chatter()
 
     def get_firmware_version(self) -> bool:
         '''
-        Ask the board to print the firmware version over chatter
+        Ask the board to print the firmware version over chatter :one:
         '''
         return self.client.get_firmware_version()
 
     def _mute_serial(self) -> bool:
         '''
-        Mutes the internal serial line on RIC. Depends on platform and API
+        Mutes the internal serial line on RIC. Depends on platform and API :one:
         NOTE: Once you've done this, the Robot will ignore you until you cycle power.
         '''
         return self.client.mute_serial()
@@ -778,7 +763,8 @@ class Marty(object):
     def ros_serial_formatter(self, topicID: int, send: bool = False, *message: int) -> List[int]:
         '''
         Formats message into ROS serial format and
-        returns formatted message as a list
+        returns formatted message as a list :one:  
+
         Calls ros_command with the processed message if send is True.
         More information about the ROS serial format can be
         found here: http://wiki.ros.org/rosserial/Overview/Protocol
@@ -787,30 +773,32 @@ class Marty(object):
 
     def pinmode_gpio(self, gpio: int, mode: str) -> bool:
         '''
-        Configure a GPIO pin
-        gpio: pin number between 0 and 7
-        mode: choose from: 'digital in','analog in' or 'digital out'
+        Configure a GPIO pin :one:
+        Args:
+            gpio: pin number between 0 and 7
+            mode: choose from: 'digital in','analog in' or 'digital out'
         '''
         return self.client.pinmode_gpio(gpio, mode)
 
     def write_gpio(self, gpio:int, value: int) -> bool:
         '''
-        Write a value to a GPIO port
+        Write a value to a GPIO port :one:
         '''
         return self.client.write_gpio(gpio, value)
 
     def digitalread_gpio(self, gpio: int) -> bool:
         '''
-        Returns:
-            Returns High/Low state of a GPIO pin
+        Read from GPIO :one:
         Args:
             GPIO pin number, >= 0 (non-negative)
+        Returns:
+            Returns High/Low state of a GPIO pin
         '''
         return self.client.digitalread_gpio(gpio)
 
     def set_parameter(self, *byte_array: int) -> bool:
         '''
-        Set board parameters
+        Set board parameters :one:
         Args:
             byte_array: a list in the following format [paramID, params]
         '''
@@ -818,7 +806,8 @@ class Marty(object):
 
     def i2c_write(self, *byte_array: int) -> bool:
         '''
-        Write a bytestream to the i2c port.
+        Write a bytestream to the i2c port. :one:  
+
         The first byte should be the address, following from that
         the datagram folows standard i2c spec
         '''
@@ -826,7 +815,8 @@ class Marty(object):
 
     def i2c_write_to_ric(self, address: int, byte_array: bytes) -> bool:
         '''
-        Write a formatted bytestream to the i2c port.
+        Write a formatted bytestream to the i2c port. :one:  
+
         The bytestream is formatted in the ROS serial format.
 
         address: the other device's address
@@ -835,7 +825,8 @@ class Marty(object):
 
     def i2c_write_to_rick(self, address: int, byte_array: bytes) -> bool:
         '''
-        Write a formatted bytestream to the i2c port.
+        Write a formatted bytestream to the i2c port. :one:  
+
         The bytestream is formatted in the ROS serial format.
         address: the other device's address
         '''
@@ -843,6 +834,7 @@ class Marty(object):
 
     def get_battery_voltage(self) -> float:
         '''
+        Get the voltage of the battery :one:
         Returns:
             The battery voltage reading as a float in Volts
         '''
@@ -850,13 +842,13 @@ class Marty(object):
 
     def hello(self) -> bool:
         '''
-        Zero joints and wiggle eyebrows
+        Zero joints and wiggle eyebrows :one:
         '''
         return self.client.hello()
 
     def discover(self) -> List[str]:
         '''
-        Try and find us some Martys!
+        Try and find us some Martys! :one:
         '''
         return self.client.discover()
 

@@ -1,4 +1,6 @@
 exclude *.py
-include CHANGES
+include CHANGES.md
 include setup.py
 include README.md
+include LICENSE.md
+include build/docs/content/docs/api-documentation.md

@@ -5,7 +5,15 @@ processors:
   - type: smart
   - type: crossref
 renderer:
-  type: mkdocs
+  type: hugo
+  config:
+    title: martypy
+    theme: antarctica
+    theme: {clone_url: "https://github.com/alex-shpak/hugo-book.git"}
+    enableemoji: true
+  # The "book" theme only renders pages in "content/docs" into the nav.
+  content_directory: content/docs
+  default_preamble: {menu: main}
   pages:
     - title: Home
       name: index
@@ -13,7 +21,3 @@ renderer:
     - title: API Documentation
       contents:
         - 'martypy.Marty*'
-  mkdocs_config:
-    mkdocs_config:
-      site_name: Marty Python Library (martypy)
-      theme: readthedocs
