@@ -141,9 +141,6 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-
-        # TODO - add celebrate trajectory to Marty V2
-
         return self.client.celebrate(move_time)
 
     def wiggle(self, move_time: int = 1500) -> bool:
