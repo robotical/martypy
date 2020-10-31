@@ -1,17 +1,16 @@
 '''
-Marty
-Python 3 library to communicate with Marty V1 and V2 by Robotical
+Python library to communicate with Marty the Robot V1 and V2 by Robotical
 
-Getting started:
-1) Import Marty from the martypy library
-2) Create a Marty object that connects the way you want
-3) Tell your marty to walk
+Getting started:  
+1) Import Marty from the martypy library  
+2) Create a Marty object that connects the way you want  
+3) Tell your marty to walk  
 
-.. code-block:: python
-from martypy import Marty
-my_marty = Marty("wifi","192.168.0.53")
+```python
+from martypy import Marty  
+my_marty = Marty("wifi","192.168.0.53")  
 my_marty.walk()
-...
+```
 '''
 from typing import Dict, List, Optional, Union
 from .serialclient import SerialClient
@@ -84,27 +83,26 @@ class Marty(object):
                 client_types: dict = dict(),
                 *args, **kwargs) -> None:
         '''
-        Start a connection with Marty
-        For example:
-            (1) to connect to Marty via WiFi on IP Address 192.168.0.53
-                use Marty("wifi", "192.168.86.53")
-            (2) on a Windows computer with Marty connected by USB cable to COM2
-                use Marty("usb", "COM2")
-            (3) on a Mac computer with Marty connected by USB cable to /dev/tty.SLAB_USBtoUART
-                use Marty("usb", "/dev/tty.SLAB_USBtoUART")
-            (4) on a Raspberry Pi computer with Marty connected by expansion cable to /dev/ttyAMA0
-                use Marty("exp", "/dev/ttyAMA0")
+        Start a connection to Marty  
+
+        For example:  
+
+            * ```Marty("wifi", "192.168.86.53")``` to connect to Marty via WiFi on IP Address 192.168.0.53  
+            * ```Marty("usb", "COM2")``` on a Windows computer with Marty connected by USB cable to COM2  
+            * ```Marty("usb", "/dev/tty.SLAB_USBtoUART")``` on a Mac computer with Marty connected by USB cable to /dev/tty.SLAB_USBtoUART  
+            * ```Marty("exp", "/dev/ttyAMA0")``` on a Raspberry Pi computer with Marty connected by expansion cable to /dev/ttyAMA0  
 
         Args:
-            method: string, method of connecting to Marty - it may be: "usb",
+            method: method of connecting to Marty - it may be: "usb",
                 "wifi", "socket" (Marty V1) or "exp" (expansion port used to connect
-                to a Raspberry Pi, etc)
-            locator: string, depending on the method of connection (above) this is the
-                serial port, IP Address or network name of Marty - that the computer uses
-                to communicate with Marty.
+                to a Raspberry Pi, etc)  
+            locator: location to connect to, depending on the method of connection this 
+                is the serial port name, network (IP) Address or network name of Marty 
+                that the computer should use to communicate with Marty  
 
         Raises:
-            MartyConfigException if the parameters are invalid
+            MartyConfigException if the parameters are invalid  
+
             MartyConnectException if Marty couldn't be contacted
         '''
         # Merge in any clients that have been added and check valid
@@ -121,9 +119,10 @@ class Marty(object):
     def lean(self, direction: str, amount: float, move_time: int) -> bool:
         '''
         Lean over in a direction
+
         Args:
-            direction: 'left', 'right', 'forward', 'back', 'auto'
-            amount: percentage of normal lean
+            direction: 'left', 'right', 'forward', 'back', or 'auto'
+            amount: percentage amount to lean
             move_time: how long this movement should last, in milliseconds
         '''
         return self.client.lean(direction, amount, move_time)
@@ -131,9 +130,9 @@ class Marty(object):
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0, 
                 step_length:int = 40, move_time: int = 1500) -> bool:
         '''
-        Walking macro
+        Make Marty walk
         Args:
-            num_steps: int, how many steps to take
+            num_steps: how many steps to take
             start_foot: 'left', 'right' or 'auto', start walking with this foot
             turn: How much to turn (-128 to 127), 0 is straight.
             step_length: How far to step (approximately in mm)
@@ -145,28 +144,28 @@ class Marty(object):
         '''
         Move the eyes to a pose or an angle
         Args:
-            pose_or_angle: 'angry', 'excited', 'normal', 'wide', 'wiggle' or 
-                           angle (in degrees - can be negative),
-            move_time, milliseconds
+            pose_or_angle: 'angry', 'excited', 'normal', 'wide', or 'wiggle' - alternatively
+                           this can be an angle in degrees (which can be a negative number)
+            move_time: how long this movement should last, in milliseconds
         '''
         return self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
 
     def kick(self, side: str = 'right', twist: float = 0, move_time: int = 2000) -> bool:
         '''
-        Kick with Marty's feet
+        Kick one of Marty's feet
         Args:
             side: 'left' or 'right', which foot to use
-            twist: this parameter is not used (just leave blank or pass 0 value)
+            twist: the amount of twisting do do while kicking (in degrees)
             move_time: how long this movement should last, in milliseconds
         '''
         return self.client.kick(side, twist, move_time)
 
     def arms(self, left_angle: float, right_angle: float, move_time: int) -> bool:
         '''
-        Move the arms to a position
+        Move both of Marty's arms to angles you specify
         Args:
-            left_angle: Position of the left arm (-128 to 127)
-            right_angle: Position of the right arm (-128 to 127)
+            left_angle: Angle of the left arm (degrees -100 to 100)
+            right_angle: Position of the right arm (degrees -100 to 100)
             move_time: how long this movement should last, in milliseconds
         '''
         return self.client.arms(left_angle, right_angle, move_time)
@@ -185,18 +184,26 @@ class Marty(object):
     def circle_dance(self, side: str = 'right', move_time: int = 1500) -> bool:
         '''
         Boogy, Marty!
+        Args:
+            side: 'left' or 'right', which side to start on
+            move_time: how long this movement should last, in milliseconds
         '''
         return self.client.circle_dance(side, move_time)
 
     def dance(self, side: str = 'right', move_time: int = 1500) -> bool:
         '''
         Another Boogy, Marty!
+        Args:
+            side: 'left' or 'right', which side to start on
+            move_time: how long this movement should last, in milliseconds
         '''
         return self.client.dance(side, move_time)
 
     def wiggle(self, move_time: int = 1500) -> bool:
         '''
         Wiggle Marty!
+        Args:
+            move_time: how long this movement should last, in milliseconds
         '''
         return self.client.wiggle(move_time)
 
@@ -207,7 +214,7 @@ class Marty(object):
         Args:
             side: 'left' or 'right', direction to step in
             steps: number of steps to take
-            step length: how broad the steps are (up to 127)
+            step_length: how broad the steps are (up to 127)
             move_time: how long this movement should last, in milliseconds
         '''
         return self.client.sidestep(side, steps, step_length, move_time)
@@ -217,27 +224,29 @@ class Marty(object):
             duration: Optional[int] = None) -> bool:
         '''
         Play a named sound (Marty V2) or make a tone (Marty V1)
-        Args (Marty V2):
-            name_or_freq_start: name of sound
-        Args (Marty V1):
-            name_or_freq_start: starting frequency, Hz
-            freq_end:  ending frequency, Hz
-            duration: milliseconds, maximum 5000
+        Args:
+            name_or_freq_start: name of the sound (Marty V2 only)
+            name_or_freq_start: starting frequency, Hz (Marty V1 only)
+            freq_end:  ending frequency, Hz (Marty V1 only)
+            duration: milliseconds, maximum 5000 (Marty V1 only)
         '''
         return self.client.play_sound(name_or_freq_start, freq_end, duration)
 
     def stop(self, stop_type: Optional[str] = None) -> bool:
         '''
-        Stop Marty's movement
+        Stop Marty's movement  
+
+        You can also control what type of "stop" you want with the parameter stop_type. For instance:  
+        
+        * 'clear queue' to finish the current movement before stopping (clear any queued movements)
+        * 'clear and stop' stop immediately (and clear queues)
+        * 'clear and disable' (Marty V1 only) stop and disable the robot
+        * 'clear and zero' stop and move back to get_ready pose
+        * 'pause' pause motion
+        * 'pause and disable' (Marty V1 only) pause motion and disable the robot
 
         Args:
-            stop_type, can be:
-                'clear queue'       clear movement queue only (so finish the current movement)
-                'clear and stop'    clear movement queue and servo queues (freeze in-place)
-                'clear and disable' clear everything and disable motors
-                'clear and zero'    clear everything, and make robot return to zero
-                'pause'             pause, but keep servo and movequeue intact and motors enabled
-                'pause and disable' as pause, but disable motors too
+            stop_type, the type of "stop: - see the options above
 
         Raises:
             MartyCommandException if the stop_type is unknown
@@ -252,8 +261,17 @@ class Marty(object):
             stopInfo = self.STOP_TYPE.get(stop_type, stopInfo)
         return self.client.stop(stopInfo)
 
+    def resume(self) -> bool:
+        '''
+        Resume Marty's movement after a pause
+        Args:
+            none
+        '''
+        return self.client.resume()
+
     def hold_position(self, hold_time: int) -> bool:
-        '''Hold Marty at its current position
+        '''
+        Hold Marty at its current position
 
         Args:
             hold_time, time to hold position in milli-seconds

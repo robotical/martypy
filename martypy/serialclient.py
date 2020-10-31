@@ -124,6 +124,9 @@ class SerialClient():
             self.ricIF.cmdRICRESTRslt("traj/" + trajCmd)
         return isOk
 
+    def resume(self) -> bool:
+        return self.ricIF.cmdRICRESTRslt("robot/resume")
+    
     def hold_position(self, hold_time: int) -> bool:
         return self.ricIF.cmdRICRESTRslt(f"traj/hold?move_time={hold_time}")
 

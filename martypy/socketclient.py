@@ -91,6 +91,9 @@ class SocketClient():
         M1_STOP_TYPE = ['\x00','\x01','\x02','\x03','\x04','\x05']
         return self._execute('stop', M1_STOP_TYPE[stopCode])
 
+    def resume(self) -> bool:
+        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+
     def hold_position(self, hold_time: int) -> bool:
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
 
