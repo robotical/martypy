@@ -5,7 +5,7 @@ import time
 from .RICProtocols import DecodedMsg, RICProtocols
 from .RICInterfaceSerial import RICInterfaceSerial
 from .RICHWElems import RICHWElems
-from .exceptions import (MartyConnectException,
+from .Exceptions import (MartyConnectException,
                          MartyCommandException)
 
 logger = logging.getLogger(__name__)
@@ -112,13 +112,13 @@ class ClientSerial():
     def discover(self) -> List[str]:
         return []
 
-    def stop(self, stopInfo: int) -> bool:
+    def stop(self, stop_type: str, stopCode: int) -> bool:
         robotRestCmd = "stop"
         trajCmd = ""
-        if stopInfo == 0: robotRestCmd = "stopAfterMove"
-        elif stopInfo == 2: robotRestCmd = "panic"
-        elif stopInfo == 3: trajCmd = "getReady"
-        elif stopInfo == 4 or stopInfo == 5: robotRestCmd = "pause"
+        if stopCode == 0: robotRestCmd = "stopAfterMove"
+        elif stopCode == 2: robotRestCmd = "panic"
+        elif stopCode == 3: trajCmd = "getReady"
+        elif stopCode == 4 or stopCode == 5: robotRestCmd = "pause"
         isOk = self.ricIF.cmdRICRESTRslt("robot/" + robotRestCmd)
         if len(trajCmd) > 0:
             self.ricIF.cmdRICRESTRslt("traj/" + trajCmd)
@@ -130,7 +130,7 @@ class ClientSerial():
     def hold_position(self, hold_time: int) -> bool:
         return self.ricIF.cmdRICRESTRslt(f"traj/hold?move_time={hold_time}")
 
-    def move_joint(self, joint_id: int, position: float, move_time: int) -> bool:
+    def move_joint(self, joint_id: int, position: int, move_time: int) -> bool:
         return self.ricIF.cmdRICRESTRslt(f"traj/joint?jointID={joint_id}&angle={position}&moveTime={move_time}")
 
     def get_joint_position(self, joint_id: Union[int, str]) -> float:
@@ -142,7 +142,7 @@ class ClientSerial():
     def get_joint_status(self, joint_id: Union[int, str]) -> int:
         return self.ricHardware.getServoFlags(joint_id, self.ricHwElemsInfoByIDNo)
 
-    def lean(self, direction: str, amount: float, move_time: int) -> bool:
+    def lean(self, direction: str, amount: int, move_time: int) -> bool:
         try:
             directionNum = self.SIDE_CODES[direction]
         except KeyError:
@@ -160,7 +160,7 @@ class ClientSerial():
                                         "".format(set(self.SIDE_CODES.keys()), start_foot))
         return self.ricIF.cmdRICRESTRslt(f"traj/step/{num_steps}?side={sideNum}&stepLength={step_length}&turn={turn}&moveTime={move_time}")
 
-    def eyes(self, joint_id: int, pose_or_angle: Union[str, float], move_time: int = 100) -> bool:
+    def eyes(self, joint_id: int, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
         if type(pose_or_angle) is str:
             try:
                 eyesTrajectory = self.EYE_POSES[pose_or_angle]
@@ -170,13 +170,13 @@ class ClientSerial():
             return self.ricIF.cmdRICRESTRslt(f"traj/{eyesTrajectory}")
         return self.move_joint(joint_id, pose_or_angle, move_time)
 
-    def kick(self, side: str = 'right', twist: float = 0, move_time: int = 2000) -> bool:
+    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2000) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
         return self.ricIF.cmdRICRESTRslt(f"traj/kick?side={self.SIDE_CODES[side]}&moveTime={move_time}")
 
-    def arms(self, left_angle: float, right_angle: float, move_time: int) -> bool:
+    def arms(self, left_angle: int, right_angle: int, move_time: int) -> bool:
         self.move_joint(6, left_angle, move_time)
         return self.move_joint(7, right_angle, move_time)
 

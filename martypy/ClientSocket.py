@@ -3,7 +3,7 @@ import sys
 import time
 import socket
 import struct
-from .exceptions import (MartyConnectException,
+from .Exceptions import (MartyConnectException,
                          MartyCommandException,
                          ArgumentOutOfRangeException,
                          UnavailableCommandException)
@@ -44,10 +44,6 @@ class ClientSocket():
         Raises:
             MartyConnectException if the socket failed to make the connection to the host
         '''
-        # Get and check connection parameters
-        if '://' in method:
-            method, _, locator = method.partition('://')
-
         if port is None:
             self.port = self.SOCKET_PORT
         else:
@@ -87,7 +83,7 @@ class ClientSocket():
     def discover(self):
         return self._discover()
 
-    def stop(self, stopCode: int) -> bool:
+    def stop(self, stop_type: str, stopCode: int) -> bool:
         M1_STOP_TYPE = ['\x00','\x01','\x02','\x03','\x04','\x05']
         return self._execute('stop', M1_STOP_TYPE[stopCode])
 
@@ -97,8 +93,17 @@ class ClientSocket():
     def hold_position(self, hold_time: int) -> bool:
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
 
-    def move_joint(self, joint_id: int, position: float, move_time: int) -> bool:
-        self.move_joint(joint_id, position, move_time)
+    def move_joint(self, joint_id: int, position: int, move_time: int) -> bool:
+        '''
+        Move a specific joint to a position
+        Args:
+            move_time: how long this movement should last, in milliseconds
+        '''
+        dur_lsb, dur_msb = self._pack_uint16(move_time)
+        return self._execute('move_joint',
+                                   self._pack_uint8(joint_id),
+                                   self._pack_int8(position),
+                                   dur_lsb, dur_msb)
 
     def get_joint_position(self, joint_id: Union[int, str]) -> float:
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
@@ -111,7 +116,7 @@ class ClientSocket():
     def get_joint_status(self, joint_name_or_num: Union[int, str]) -> int:
         raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
 
-    def lean(self, direction: str, amount: float, move_time: int) -> bool:
+    def lean(self, direction: str, amount: int, move_time: int) -> bool:
         try:
             directionNum = self.SIDE_CODES[direction]
         except KeyError:
@@ -137,7 +142,7 @@ class ClientSocket():
                                    self._pack_int8(step_length),
                                    side_c)
 
-    def eyes(self, joint_id: int, pose_or_angle: Union[str, float], move_time: int = 100) -> bool:
+    def eyes(self, joint_id: int, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
         if type(pose_or_angle) is str:
             try:
                 angle = self.EYE_POSES[pose_or_angle]
@@ -148,14 +153,14 @@ class ClientSocket():
             angle = pose_or_angle
         return self.move_joint(joint_id, angle, move_time)
 
-    def kick(self, side='right', str = 'right', twist: float = 0, move_time: int = 2000) -> bool:
+    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2000) -> bool:
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('kick', side_c,
                                    self._pack_int8(twist),
                                    dur_lsb, dur_msb)
 
-    def arms(self, left_angle: float, right_angle: float, move_time: int) -> bool:
+    def arms(self, left_angle: int, right_angle: int, move_time: int) -> bool:
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('arms',
                                    self._pack_int8(right_angle),
@@ -188,7 +193,7 @@ class ClientSocket():
                                    dur_lsb, dur_msb,
                                    self._pack_int8(step_length))
 
-    def play_sound(self, freq_start: float, 
+    def play_sound(self, freq_start: Union[float, str], 
             freq_end: float, 
             duration: int) -> bool:
         if type(freq_start) is str:
@@ -249,7 +254,7 @@ class ClientSocket():
 
     def enable_motors(self, enable: bool = True, clear_queue: bool = True) -> bool:
         if clear_queue:
-            self.stop('clear queue')
+            self.stop('clear queue', 0)
         if enable:
             return self._execute('enable_motors') and True
         else:
@@ -288,7 +293,7 @@ class ClientSocket():
     def ros_command(self,  *byte_array: int) -> bool:
         return self._execute('ros_command', *byte_array)
 
-    def keyframe (self, time, num_of_msgs, msgs: List) -> List[bytes]:
+    def keyframe (self, time: float, num_of_msgs: int, msgs: List) -> List[bytes]:
         processed_keyframe = []
 
         #Number of key frames

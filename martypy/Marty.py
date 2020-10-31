@@ -15,7 +15,7 @@ my_marty.dance()
 from typing import Dict, List, Optional, Union
 from .ClientSerial import ClientSerial
 from .ClientSocket import ClientSocket
-from .exceptions import (MartyCommandException,
+from .Exceptions import (MartyCommandException,
                          MartyConfigException)
 
 class Marty(object):
@@ -79,7 +79,7 @@ class Marty(object):
 
     def __init__(self, 
                 method: str,
-                locator: str,
+                locator: str = "",
                 client_types: dict = dict(),
                 *args, **kwargs) -> None:
         '''
@@ -105,9 +105,14 @@ class Marty(object):
             * MartyConnectException if Marty couldn't be contacted  
         '''
         # Merge in any clients that have been added and check valid
+        self.client = None
         self.CLIENT_TYPES = ClientSocket.dict_merge(self.CLIENT_TYPES, client_types)
+
+        # Get and check connection parameters
+        if '://' in method:
+            method, _, locator = method.partition('://')
         if method not in self.CLIENT_TYPES.keys():
-            raise MartyConfigException('Unrecognised URL clientType "{}"'.format(method))
+            raise MartyConfigException('Unrecognised method "{}"'.format(method))
 
         # Initialise the client class used to communicate with Marty
         self.client = self.CLIENT_TYPES[method](method, locator, *args, **kwargs)
@@ -183,7 +188,7 @@ class Marty(object):
         '''
         return self.client.get_ready()
 
-    def eyes(self, pose_or_angle: Union[str, float], move_time: int = 100) -> bool:
+    def eyes(self, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
         '''
         Move the eyes to a pose or an angle
         Args:
@@ -195,7 +200,7 @@ class Marty(object):
         '''
         return self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
 
-    def kick(self, side: str = 'right', twist: float = 0, move_time: int = 2000) -> bool:
+    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2000) -> bool:
         '''
         Kick one of Marty's feet
         Args:
@@ -207,7 +212,7 @@ class Marty(object):
         '''
         return self.client.kick(side, twist, move_time)
 
-    def arms(self, left_angle: float, right_angle: float, move_time: int) -> bool:
+    def arms(self, left_angle: int, right_angle: int, move_time: int) -> bool:
         '''
         Move both of Marty's arms to angles you specify
         Args:
@@ -219,7 +224,7 @@ class Marty(object):
         '''
         return self.client.arms(left_angle, right_angle, move_time)
 
-    def lean(self, direction: str, amount: float, move_time: int) -> bool:
+    def lean(self, direction: str, amount: int, move_time: int) -> bool:
         '''
         Lean over in a direction
         Args:
@@ -245,8 +250,8 @@ class Marty(object):
         '''
         return self.client.sidestep(side, steps, step_length, move_time)
 
-    def play_sound(self, name_or_freq_start: Union[str,float], 
-            freq_end: Optional[float] = None, 
+    def play_sound(self, name_or_freq_start: Union[str,int], 
+            freq_end: Optional[int] = None, 
             duration: Optional[int] = None) -> bool:
         '''
         Play a named sound (Marty V2) or make a tone (Marty V1)
@@ -311,14 +316,14 @@ class Marty(object):
             MartyCommandException if the stop_type is unknown
         '''
         # Default to plain "stop"
-        stopInfo = 1 
+        stopCode = 1 
         if stop_type is not None:
             if stop_type not in self.STOP_TYPE:
                 self.client._preException(True)
-                raise MartyCommandException("Unknown Stop Type '{}', not in Marty.STOP_TYPE"
+                raise MartyCommandException("Unknown stop_type '{}', not in Marty.STOP_TYPE"
                                             "".format(stop_type))
-            stopInfo = self.STOP_TYPE.get(stop_type, stopInfo)
-        return self.client.stop(stopInfo)
+            stopCode = self.STOP_TYPE.get(stop_type, stopCode)
+        return self.client.stop(stop_type, stopCode)
 
     def resume(self) -> bool:
         '''
@@ -347,7 +352,7 @@ class Marty(object):
         '''
         return self.client.is_paused()
 
-    def move_joint(self, joint_name_or_num: Union[int, str], position: float, move_time: int) -> bool:
+    def move_joint(self, joint_name_or_num: Union[int, str], position: int, move_time: int) -> bool:
         '''
         Move a specific joint to a position
         Args:
@@ -434,7 +439,7 @@ class Marty(object):
         '''
         Get the latest value from the distance sensor
         Returns:
-            The distance sensor reading as a float (raw, no units)
+            The distance sensor reading (will return 0 if no distance sensor is found)
         '''
         return self.client.distance()
 
@@ -865,7 +870,7 @@ class Marty(object):
         '''
         Marty is stopping
         '''
-        self.client.close()
+        self.close()
 
     def close(self) -> None:
         '''
@@ -873,4 +878,3 @@ class Marty(object):
         '''
         if self.client:
             self.client.close()
-
