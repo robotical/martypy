@@ -1,27 +1,24 @@
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+import setuptools
 
 with open('README.md') as f:
     readme = f.read()
 
-
-setup(
+setuptools.setup(
     name="martypy",
     version="2.0",
     description="Python library to communicate with Marty the Robot V1 and V2",
     long_description=readme,
+    long_description_content_type="text/markdown",
     author="Robotical",
     author_email="hello@robotical.io",
     copyright="Robotical",
     maintainer='Robotical',
     maintainer_email='hello@robotical.io',
-    packages=['martypy'],
+    packages=setuptools.find_packages(),
     url='http://github.com/robotical/martypy',
     license='Apache 2.0',
     install_requires=[
-        'requests>=2.22.0',
+        'pyserial==3.4',
     ],
     keywords=[
         'ros',
@@ -30,7 +27,7 @@ setup(
         'marty the robot',
         'robotical',
     ],
-    classifiers=(
+    classifiers= [
         # As from https://pypi.python.org/pypi?%3Aaction=list_classifiers
         # 'Development Status :: 1 - Planning',
         # 'Development Status :: 2 - Pre-Alpha',
@@ -39,16 +36,14 @@ setup(
         'Development Status :: 5 - Production/Stable',
         # 'Development Status :: 6 - Mature',
         # 'Development Status :: 7 - Inactive',
-        'Programming Language :: Python',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
-        #'Environment :: Web Environment',
-        #'Operating System :: POSIX',
+        "Operating System :: OS Independent",
         'License :: OSI Approved :: Apache Software License',
-    )
+    ]
 )
 
 # To Publish:
