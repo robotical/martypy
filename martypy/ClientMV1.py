@@ -9,7 +9,7 @@ from .Exceptions import (MartyConnectException,
                          ArgumentOutOfRangeException,
                          UnavailableCommandException)
 
-class ClientMV1():
+class ClientMV1(ClientGeneric):
     '''
     Lower level interface class between the `Marty` abstracted
     control class and the RIC socket interface

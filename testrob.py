@@ -45,9 +45,9 @@ logger.addHandler(handler)
 
 mymarty = None
 try:
-    mymarty = Marty('wifi', '192.168.86.11', subscribeRateHz=1.0)
+    mymarty = Marty('wifi', '192.168.86.11')
+    # mymarty = Marty('wifi', '192.168.86.11', subscribeRateHz=1.0)
     # mymarty = Marty('socket://192.168.86.41')
-    # mymarty = Marty('wifi', '192.168.86.11')
     # mymarty = Marty("usb", "COM9", debug=True)
     # mymarty = Marty('usb:///dev/tty.SLAB_USBtoUART', debug=True)
 except Exception as excp:
@@ -58,6 +58,8 @@ mymarty.register_logging_callback(loggingCB)
 
 martySysInfo = mymarty.get_system_info()
 martyVersion2 = martySysInfo.get("HardwareVersion", "1.0") == "2.0"
+
+logger.info(f"Marty has {len(mymarty.get_hw_elems_list())} hardware parts")
 
 logger.info(f"Calibration flag {mymarty.is_calibrated()}")
 testBoolCmd("Calibration flag clear", mymarty.clear_calibration())

@@ -622,7 +622,7 @@ class Marty(object):
                 "versionStr": version string of hardware element in semantic versioning (semver) format
                 "commsOK": 1 if the element is communicating ok, 0 if not
         '''
-        return self.client.get_hw_elem_status()
+        return self.client.get_hw_elems_list()
 
     def send_ric_rest_cmd(self, ricRestCmd: str) -> None:
         '''

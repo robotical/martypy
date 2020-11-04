@@ -13,7 +13,7 @@ from .Exceptions import (MartyConnectException,
 
 logger = logging.getLogger(__name__)
 
-class ClientMV2():
+class ClientMV2(ClientGeneric):
     '''
     Lower level connector to Marty V2
     '''
