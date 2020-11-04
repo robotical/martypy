@@ -1,7 +1,7 @@
 
 from .Marty import Marty
-from .ClientSocket import ClientSocket
-from .ClientSerial import ClientSerial
+from .ClientMV1 import ClientMV1
+from .ClientMV2 import ClientMV2
 from .Exceptions import *
 
 __version__ = '2.0'

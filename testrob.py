@@ -1,13 +1,8 @@
 import time
 import logging
+import os
+import sys
 from martypy import Marty
-
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
-logger = logging.getLogger("TestRob")
-
-# mymarty = Marty('socket://192.168.86.41')
-mymarty = Marty("usb", "COM9", debug=True)
-# mymarty = Marty('usb:///dev/tty.SLAB_USBtoUART', debug=True)
 
 jointNames = [
     'left hip',
@@ -25,11 +20,53 @@ def betweenCommands():
     time.sleep(3)
 
 def testBoolCmd(cmdStr: str, cmdRslt: bool):
-    print(f"{cmdStr}, rslt = {cmdRslt}")
+    logger.info(f"{cmdStr}, rslt = {cmdRslt}")
     betweenCommands()
+
+def loggingCB(logStr: str) -> None:
+    logger.debug(logStr)
+
+# Check the log folder exists
+logsFolder = "logs"
+if not os.path.exists(logsFolder):
+    os.mkdir(logsFolder)
+
+# Log file name
+logFileName = "MartyPyLogTest_" + time.strftime("%Y%m%d-%H%M%S") + ".log"
+logFileName = os.path.join(logsFolder, logFileName)
+print("Logging to file " + logFileName)
+
+# Setup logging
+logging.basicConfig(filename=logFileName, format='%(levelname)s: %(asctime)s %(funcName)s(%(lineno)d) -- %(message)s', level=logging.DEBUG)
+logger = logging.getLogger("MartyPyTest")
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+
+mymarty = None
+try:
+    mymarty = Marty('wifi', '192.168.86.11', subscribeRateHz=1.0)
+    # mymarty = Marty('socket://192.168.86.41')
+    # mymarty = Marty('wifi', '192.168.86.11')
+    # mymarty = Marty("usb", "COM9", debug=True)
+    # mymarty = Marty('usb:///dev/tty.SLAB_USBtoUART', debug=True)
+except Exception as excp:
+    logger.debug("Couldn't connect to marty")
+    exit()
+
+mymarty.register_logging_callback(loggingCB)
 
 martySysInfo = mymarty.get_system_info()
 martyVersion2 = martySysInfo.get("HardwareVersion", "1.0") == "2.0"
+
+logger.info(f"Calibration flag {mymarty.is_calibrated()}")
+testBoolCmd("Calibration flag clear", mymarty.clear_calibration())
+logger.info(f"Calibration flag should be False ... {mymarty.is_calibrated()}")
+assert not mymarty.is_calibrated()
+testBoolCmd("Calibration flag set", mymarty.save_calibration())
+logger.info(f"Calibration flag should be True ... {mymarty.is_calibrated()}")
+time.sleep(0.1)
+assert mymarty.is_calibrated()
 
 testBoolCmd("Get ready", mymarty.get_ready())
 testBoolCmd("Circle Dance", mymarty.circle_dance())
@@ -43,21 +80,25 @@ testBoolCmd("Stop", mymarty.stop())
 testBoolCmd("Arms 45", mymarty.arms(45, 45, 500))
 testBoolCmd("Arms 0", mymarty.arms(0, 0, 500))
 
+testBoolCmd("Arms 0", mymarty.play_sound("disbelief"))
+testBoolCmd("Arms 0", mymarty.play_sound("excited"))
+testBoolCmd("Arms 0", mymarty.play_sound("screenfree"))
+
 for i in range(9): 
     testBoolCmd(f"Move joint {i}", mymarty.move_joint(i, i * 10, 500))
 for jointName in jointNames: 
     testBoolCmd(f"Move joint {jointName}", mymarty.move_joint(jointName, 123, 500))
 
-print("Accelerometer x", mymarty.get_accelerometer('x'))
-print("Accelerometer y", mymarty.get_accelerometer('y'))
-print("Accelerometer z", mymarty.get_accelerometer('z'))
+logger.info(f"Accelerometer x {mymarty.get_accelerometer('x')}")
+logger.info(f"Accelerometer y { mymarty.get_accelerometer('y')}")
+logger.info(f"Accelerometer z { mymarty.get_accelerometer('z')}")
 
 if martyVersion2:
     testBoolCmd("Dance", mymarty.dance())
     testBoolCmd("Eyes wiggle", mymarty.eyes('wiggle'))
     testBoolCmd("Hold position", mymarty.hold_position(6000))
     testBoolCmd("is_moving", mymarty.is_moving())
-    print("Joint positions: ", [mymarty.get_joint_position(pos) for pos in range(9)])
+    logger.info("Joint positions: ", [mymarty.get_joint_position(pos) for pos in range(9)])
 
 time.sleep(5)
 

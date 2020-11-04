@@ -160,13 +160,11 @@ class LikeHDLC:
             payloadsAreStrings: bool = False) -> None:
         '''
         Initialise LikeHDLC
-
         Args:
             onFrame: callback function (takes 1 parameter which is a received frame)
             onError: callback function (0 parameters) when an error occurs
             asciiEscapes: bool - use the standard HDLC escape codes (which are ASCII values)
             payloadsAreStrings: bool - received frames are returned as strings (as opposed to bytes)
-
         Returns:
             None
         '''
@@ -185,10 +183,8 @@ class LikeHDLC:
         
         '''
         Get statistics on HDLC conversion
-
         Args:
             none
-
         Returns:
             None
         '''
@@ -197,10 +193,8 @@ class LikeHDLC:
     def clearStats(self) -> None:
         '''
         Clear statistics on HDLC operation
-
         Args:
             none
-
         Returns:
             None
         '''
@@ -208,11 +202,9 @@ class LikeHDLC:
 
     def decodeData(self, b: int) -> None:
         '''
-        Get statistics on HDLC conversion
-
+        Add a byte to be decoded
         Args:
-            b: the byte to add to the current decoding frame
-
+            b byte to add
         Returns:
             None
         '''

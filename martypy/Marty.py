@@ -14,18 +14,20 @@ my_marty.dance()
 
 The emojis :one: and :two: indicate when the method is available for Marty V1 :one: and Marty V2 :two:
 '''
-from typing import Dict, List, Optional, Union
-from .ClientSerial import ClientSerial
-from .ClientSocket import ClientSocket
+from typing import Callable, Dict, List, Optional, Union
+from .ClientGeneric import ClientGeneric
+from .ClientMV2 import ClientMV2
+from .ClientMV1 import ClientMV1
 from .Exceptions import (MartyCommandException,
                          MartyConfigException)
 
 class Marty(object):
 
     CLIENT_TYPES = {
-        'socket' : ClientSocket,
-        'exp'    : ClientSerial,
-        'usb'    : ClientSerial,
+        'socket' : ClientMV1,
+        'exp'    : ClientMV2,
+        'usb'    : ClientMV2,
+        'wifi'   : ClientMV2,
     }
 
     STOP_TYPE = {
@@ -82,7 +84,7 @@ class Marty(object):
     def __init__(self, 
                 method: str,
                 locator: str = "",
-                client_types: dict = dict(),
+                extra_client_types: dict = dict(),
                 *args, **kwargs) -> None:
         '''
         Start a connection to Marty :one: :two:  
@@ -99,25 +101,25 @@ class Marty(object):
                 "wifi", "socket" (Marty V1) or "exp" (expansion port used to connect
                 to a Raspberry Pi, etc)  
             locator: location to connect to, depending on the method of connection this 
-                is the serial port name, network (IP) Address or network name of Marty 
-                that the computer should use to communicate with Marty  
+                is the serial port name, network (IP) Address or network name (hostname) of Marty 
+                that the computer should use to communicate with Marty
 
         Raises:
             * MartyConfigException if the parameters are invalid  
-            * MartyConnectException if Marty couldn't be contacted  
+            * MartyConnectException if Marty couldn't be contacted
         '''
-        # Merge in any clients that have been added and check valid
+        # Merge in any extra clients that have been added and check valid
         self.client = None
-        self.CLIENT_TYPES = ClientSocket.dict_merge(self.CLIENT_TYPES, client_types)
+        self.CLIENT_TYPES = ClientGeneric.dict_merge(self.CLIENT_TYPES, extra_client_types)
 
         # Get and check connection parameters
         if '://' in method:
             method, _, locator = method.partition('://')
-        if method not in self.CLIENT_TYPES.keys():
+        if method.lower() not in self.CLIENT_TYPES.keys():
             raise MartyConfigException('Unrecognised method "{}"'.format(method))
 
         # Initialise the client class used to communicate with Marty
-        self.client = self.CLIENT_TYPES[method](method, locator, *args, **kwargs)
+        self.client = self.CLIENT_TYPES[method.lower()](method.lower(), locator, *args, **kwargs)
 
         # Get Marty details
         self.client.start()
@@ -255,7 +257,7 @@ class Marty(object):
         '''
         Play a named sound (Marty V2 :two:) or make a tone (Marty V1 :one:)
         Args:
-            name_or_freq_start: name of the sound :two:
+            name_or_freq_start: name of the sound, e.g. 'excited' or 'no_way' :two:
             name_or_freq_start: starting frequency, Hz :one:
             freq_end:  ending frequency, Hz :one:
             duration: milliseconds, maximum 5000 :one:
@@ -867,3 +869,7 @@ class Marty(object):
         '''
         if self.client:
             self.client.close()
+
+    def register_logging_callback(self, loggingCallback: Callable[[str], None]) -> None:
+        if self.client:
+            self.client.register_logging_callback(loggingCallback)

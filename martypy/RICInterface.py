@@ -1,29 +1,27 @@
 '''
-RICInterfaceSerial
+RICInterface
 '''
 from __future__ import annotations
-from martypy.RICHWElems import RICHwAddOnStatus
+from typing import Callable, Dict
 import time
 import threading
-from typing import Callable, Dict
 import logging
 import json
 from .RICProtocols import DecodedMsg, RICProtocols
-from .RICCommsSerial import RICCommsSerial
+from .RICCommsBase import RICCommsBase
 from .ValueAverager import ValueAverager
 
 logger = logging.getLogger(__name__)
 
-class RICInterfaceSerial:
+class RICInterface:
     '''
-    RICInterfaceSerial
-    RIC access via a serial interface
+    RICInterface
     '''
-    def __init__(self) -> None:
+    def __init__(self, commsHandler: RICCommsBase) -> None:
         '''
-        Initialise RICInterfaceSerial
+        Initialise RICInterface
         '''
-        self.commsHandler = RICCommsSerial()
+        self.commsHandler = commsHandler
         self.ricProtocols = RICProtocols()
         self.decodedMsgCB = None
         self.logLineCB = None
@@ -31,43 +29,11 @@ class RICInterfaceSerial:
         self._msgsOutstanding: Dict = {}
         self._msgsOutstandingLock = threading.Lock()
         self.roundTripInfo = ValueAverager()
-        self.msgRespTimeoutSecs = 3
+        self.msgRespTimeoutSecs = 1.5
 
     def __del__(self) -> None:
         self.commsHandler.close()
 
-    def close(self) -> None:
-        self.commsHandler.close()
-
-    def setDecodedMsgCB(self, onDecodedMsg: Callable[[DecodedMsg, RICInterfaceSerial], None]) -> None:
-        '''
-        Set callback on decoded message received from RIC
-        Args:
-            cb: callback function (takes 2 parameters: decoded message and this object)
-        Returns:
-            None
-        '''
-        self.decodedMsgCB = onDecodedMsg
-
-    def setLogLineCB(self, onLogLine: Callable[[str], None]) -> None:
-        '''
-        Set callback on logging line received
-        Args:
-            onLogLine: callback function (takes 1 parameter which is the line of logging information)
-        Returns:
-            None
-        '''
-        self.logLineCB = onLogLine
-
-    def setTimerCB(self, onMsgTimerCB: Callable[[], None]) -> None:
-        '''
-        Set callback which can be used to check for message types (e.g. publish) 
-        Args:
-            onMsgTimerCB: callback function (takes 0 parameters)
-        Returns:
-            None
-        '''
-        self.msgTimerCB = onMsgTimerCB
 
     def open(self, openParams: Dict) -> bool:
         '''
@@ -103,6 +69,36 @@ class RICInterfaceSerial:
         '''
         self.commsHandler.close()
 
+    def setDecodedMsgCB(self, onDecodedMsg: Callable[[DecodedMsg, RICInterface], None]) -> None:
+        '''
+        Set callback on decoded message received from RIC
+        Args:
+            cb: callback function (takes 2 parameters: decoded message and this object)
+        Returns:
+            None
+        '''
+        self.decodedMsgCB = onDecodedMsg
+
+    def setLogLineCB(self, onLogLine: Callable[[str], None]) -> None:
+        '''
+        Set callback on logging line received
+        Args:
+            onLogLine: callback function (takes 1 parameter which is the line of logging information)
+        Returns:
+            None
+        '''
+        self.logLineCB = onLogLine
+
+    def setTimerCB(self, onMsgTimerCB: Callable[[], None]) -> None:
+        '''
+        Set callback which can be used to check for message types (e.g. publish) 
+        Args:
+            onMsgTimerCB: callback function (takes 0 parameters)
+        Returns:
+            None
+        '''
+        self.msgTimerCB = onMsgTimerCB
+
     def sendRICRESTURL(self, msg: str) -> bool:
         '''
         Send RICREST URL message
@@ -114,7 +110,7 @@ class RICInterfaceSerial:
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTURL(msg)
         with self._msgsOutstandingLock:
             self._msgsOutstanding[msgNum] = {"timeSent": time.time()}
-        logger.debug(f"sendRICRESTURL msgNum {msgNum} time {time.time()} msg {msg}")
+        # logger.debug(f"sendRICRESTURL msgNum {msgNum} time {time.time()} msg {msg}")
         self.commsHandler.send(ricRestMsg)
         return True
 
@@ -127,24 +123,30 @@ class RICInterfaceSerial:
             Response turned into a dictionary (from JSON)
         '''
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTURL(msg)
-        # logger.debug(f"cmdRICRESTSync msgNum {msgNum} time {time.time()} msg {msg}")
-        timeNow = time.time()
+        # logger.debug(f"msgNum {msgNum} msg {msg}")
+        msgSendTime = time.time()
         with self._msgsOutstandingLock:
-            self._msgsOutstanding[msgNum] = {"timeSent": timeNow,"awaited":True}
+            self._msgsOutstanding[msgNum] = {"timeSent": msgSendTime,"awaited":True}
         self.commsHandler.send(ricRestMsg)
         # Wait for result
-        while time.time() < timeNow + self.msgRespTimeoutSecs:
+        while time.time() < msgSendTime + self.msgRespTimeoutSecs:
             with self._msgsOutstandingLock:
+                # Should be an outstanding message - if not there's a problem
                 if msgNum not in self._msgsOutstanding:
                     return {"rslt":"failResponse"}
+                # Check if response received
                 if self._msgsOutstanding[msgNum].get("respValid", False):
                     try:
-                        resp = self._msgsOutstanding[msgNum].get("resp", None)
-                        if resp:
-                            return json.loads(resp.payload.rstrip('\0'))
-                        return {}
+                        # Get response
+                        respStr = self._msgsOutstanding[msgNum].get("resp", None)
+                        respObj = {}
+                        if respStr:
+                            respObj = json.loads(respStr.payload.rstrip('\0'))
+                        debugMsgRespTime = self._msgsOutstanding[msgNum].get("respTime", 0)
+                        # logger.debug(f"msgNum {msgNum} msg {msg} resp {json.dumps(respObj)} sendTime {msgSendTime} respTime {debugMsgRespTime}")
+                        return respObj
                     except Exception as excp:
-                        logger.debug(f"cmdRICRESTSync response is not JSON {excp}", )
+                        logger.debug(f"msgNum {msgNum} response is not JSON {excp}", )
             time.sleep(0.01)
         return {"rslt":"failTimeout"}
 
@@ -263,16 +265,6 @@ class RICInterfaceSerial:
                             f'"fileName":"{filename}","fileLen":{str(binaryImageLen)},' + \
                             f'"blockCount":{str(numBlocks)}' + '}\0')
 
-            # logger.debug(f"Endframe sent")
-
-            # # Check for end frame acknowledged
-            # prevTime = time.time()
-            # while True:
-            #     if uploadAck:
-            #         break
-            #     if time.time() - prevTime > 2:
-            #         break
-
     def _onRxFrameCB(self, frame: bytes) -> None:
         # logger.debug(f"_onRxFrameCB Rx len {len(frame)}")
         decodedMsg = self.ricProtocols.decodeRICFrame(frame)
@@ -288,6 +280,7 @@ class RICInterfaceSerial:
                     else:
                         self._msgsOutstanding[decodedMsg.msgNum]["resp"] = decodedMsg
                         self._msgsOutstanding[decodedMsg.msgNum]["respValid"] = True
+                        self._msgsOutstanding[decodedMsg.msgNum]["respTime"] = time.time()
                 else:
                     isUnmatched = True
             if isUnmatched:

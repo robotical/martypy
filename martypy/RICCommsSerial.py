@@ -6,14 +6,15 @@ from typing import Callable, Dict, Union
 import serial
 import time
 import logging
-
 from serial.serialutil import SerialException
+from .RICCommsBase import RICCommsBase
 from .LikeHDLC import LikeHDLC
 from .ProtocolOverAscii import ProtocolOverAscii
+from .Exceptions import MartyConnectException
 
 logger = logging.getLogger(__name__)
 
-class RICCommsSerial:
+class RICCommsSerial(RICCommsBase):
     '''
     RICCommsSerial
     Provides a serial interface for RIC communications
@@ -22,12 +23,11 @@ class RICCommsSerial:
         '''
         Initialise RICCommsSerial
         '''
+        super().__init__()
         self.isOpen = False
-        self.serialReader = None
-        self.serialDevice = None
-        self.serialThreadEn = False
-        self.rxFrameCB = None
-        self.logLineCB = None
+        self.serialReaderThread: Thread = None
+        self.serialDevice: serial.Serial = None
+        self.serialThreadEnabled = False
         self._hdlc = LikeHDLC(self._onHDLCFrame, self._onHDLCError)
         self.overAscii = False
         self.serialLogLine = ""
@@ -39,39 +39,20 @@ class RICCommsSerial:
         '''
         self.close()
 
-    def setRxFrameCB(self, onFrame: Callable[[Union[bytes, str]], None]) -> None:
-        '''
-        Set callback on frame received
-        Args:
-            onFrame: callback function (takes 1 parameter which is a received frame)
-        Returns:
-            None
-        '''
-        self.rxFrameCB = onFrame
-
-    def setRxLogLineCB(self, onLogLine: Callable[[str], None]) -> None:
-        '''
-        Set callback on logging line received
-        Args:
-            onLogLine: callback function (takes 1 parameter which is the line of logging information)
-        Returns:
-            None
-        '''
-        self.logLineCB = onLogLine
-
     def open(self, openParams: Dict) -> bool:
         '''
-        Open serial port
+        Open connection
         Protocol can be plain (if the port is not used for any other purpose) or
-        overascii (if the port is also used for logging information)
+                 overascii (if the port is also used for logging information)
         Args:
-            openParams: dict containing params used to open the port - "serialPort", 
-                        "serialBaud" and "ifType". "ifType" should be "plain" or 
-                        "overascii"
+            openParams: dict containing params used to open the connection, may include
+                        "serialPort", 
+                        "serialBaud",
+                        "ifType" == "plain" or "overascii"
         Returns:
-            True if open succeeded or port is already open
+            True if open succeeded or already open
         Throws:
-            SerialException: if the serial port cannot be opened
+            MartyConnectException: if connection cannot be opened
         '''
         # Check not already open
         if self.isOpen:
@@ -89,18 +70,21 @@ class RICCommsSerial:
             return False
 
         # Open serial port
-        self.serialDevice = serial.Serial(port=None, baudrate=serialBaud)
-        self.serialDevice.port = serialPort
-        self.serialDevice.rts = 0
-        self.serialDevice.dtr = 0
-        self.serialDevice.dsrdtr = False
-        self.serialDevice.open()
+        try:
+            self.serialDevice = serial.Serial(port=None, baudrate=serialBaud)
+            self.serialDevice.port = serialPort
+            self.serialDevice.rts = 0
+            self.serialDevice.dtr = 0
+            self.serialDevice.dsrdtr = False
+            self.serialDevice.open()
+        except Exception as excp:
+            raise MartyConnectException("Serial port problem") from excp
 
         # Start receive loop
-        self.serialThreadEn = True
-        self.serialReader = Thread(target=self._serialRxLoop)
-        self.serialReader.daemon = True
-        self.serialReader.start()
+        self.serialThreadEnabled = True
+        self.serialReaderThread = Thread(target=self._serialRxLoop)
+        self.serialReaderThread.daemon = True
+        self.serialReaderThread.start()
         self.isOpen = True
         return True
 
@@ -110,11 +94,13 @@ class RICCommsSerial:
         '''
         if not self.isOpen:
             return
-        if self.serialReader is not None:
-            self.serialThreadEn = False
+        # Stop thread function
+        if self.serialReaderThread is not None:
+            self.serialThreadEnabled = False
             time.sleep(0.01)
-            self.serialReader.join()
-            self.serialReader = None
+            self.serialReaderThread.join()
+            self.serialReaderThread = None
+        # Close port
         if self.serialDevice is not None:
             self.serialDevice.close()
             self.serialDevice = None
@@ -128,22 +114,25 @@ class RICCommsSerial:
         Returns:
             none
         Throws:
-            SerialException: if the serial port has an error
+            MartyConnectException: if the connection has an error
         '''
         # logger.debug(f"Sending to IF len {len(bytesToSend)} {str(bytesToSend)}")
         hdlcEncoded = self._hdlc.encode(data)
-        if self.overAscii:
-            encodedFrame = ProtocolOverAscii.encode(hdlcEncoded)
-            self._sendBytesToIF(encodedFrame)
-            # logger.debug(f"{time.time()} {''.join('{:02x}'.format(x) for x in encodedFrame)}")
-        else:
-            self._sendBytesToIF(hdlcEncoded)
+        try:
+            if self.overAscii:
+                encodedFrame = ProtocolOverAscii.encode(hdlcEncoded)
+                self._sendBytesToIF(encodedFrame)
+                # logger.debug(f"send {''.join('{:02x}'.format(x) for x in encodedFrame)}")
+            else:
+                self._sendBytesToIF(hdlcEncoded)
+        except Exception as excp:
+            raise MartyConnectException("Serial send problem") from excp
 
     def _serialRxLoop(self) -> None:
         '''
         Thread function used to process serial port data
         '''
-        while self.serialThreadEn:
+        while self.serialThreadEnabled:
             i = self.serialDevice.in_waiting
             if i < 1:
                 time.sleep(0.001)
@@ -165,7 +154,7 @@ class RICCommsSerial:
                             self.serialLogLine += chr(b)
                 else:
                     self._hdlc.decodeData(b)
-            # logger.debug(f"{time.time()} {''.join('{:02x}'.format(x) for x in byt)}")
+            # logger.debug(f"CommsSerial rx {''.join('{:02x}'.format(x) for x in byt)}")
         # logger.debug("Exiting serialRxLoop")
 
     def _onHDLCFrame(self, frame: bytes) -> None:
@@ -179,7 +168,7 @@ class RICCommsSerial:
         # logger.debug(f"Sending to IF len {len(bytesToSend)} {str(bytesToSend)}")
         if not self.isOpen:
             return
-        # logger.debug(f"{time.time()} {''.join('{:02x}'.format(x) for x in bytesToSend)}")
+        # logger.debug(f"CommsSerial sendBytesToIF {''.join('{:02x}'.format(x) for x in bytesToSend)}")
         if self.serialDevice is not None:
             try:
                 self.serialDevice.write(bytesToSend)

@@ -1,14 +1,15 @@
-from typing import Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Tuple, Union
 import sys
 import time
 import socket
 import struct
+from .ClientGeneric import ClientGeneric
 from .Exceptions import (MartyConnectException,
                          MartyCommandException,
                          ArgumentOutOfRangeException,
                          UnavailableCommandException)
 
-class ClientSocket():
+class ClientMV1():
     '''
     Lower level interface class between the `Marty` abstracted
     control class and the RIC socket interface
@@ -29,8 +30,6 @@ class ClientSocket():
         'normal': 0,
         'wide': 90
     }
-
-    NOT_IMPLEMENTED_STR = "Unfortunately this Marty doesn't do that"
 
     def __init__(self, method: str, locator: str,
                 port:str = None, timeout:float = 5.0, 
@@ -88,10 +87,10 @@ class ClientSocket():
         return self._execute('stop', M1_STOP_TYPE[stopCode])
 
     def resume(self) -> bool:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def hold_position(self, hold_time: int) -> bool:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def move_joint(self, joint_id: int, position: int, move_time: int) -> bool:
         '''
@@ -106,15 +105,15 @@ class ClientSocket():
                                    dur_lsb, dur_msb)
 
     def get_joint_position(self, joint_id: Union[int, str]) -> float:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def get_joint_current(self, joint_name_or_num: Union[int, str]) -> float:
         if type(joint_name_or_num) is str:
-            raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+            raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
         return self.get_motor_current(int(joint_name_or_num))
 
     def get_joint_status(self, joint_name_or_num: Union[int, str]) -> int:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def lean(self, direction: str, amount: int, move_time: int) -> bool:
         try:
@@ -179,10 +178,10 @@ class ClientSocket():
                                    dur_lsb, dur_msb)
 
     def dance(self, side: str = 'right', move_time: int = 1500) -> bool:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def wiggle(self, move_time: int = 1500) -> bool:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def sidestep(self, side: str, steps: int = 1, step_length: int = 100, 
             move_time: int = 2000) -> bool:
@@ -238,7 +237,7 @@ class ClientSocket():
         return self._execute('battery')
 
     def get_battery_remaining(self) -> float:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def get_distance_sensor(self) -> float:
         return self._execute('distance')
@@ -246,7 +245,7 @@ class ClientSocket():
     def get_accelerometer(self, axis: str, axisCode: int) -> float:
         M1_ACCEL_AXES = ['\x00','\x01','\x02']
         if axis is None:
-            raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+            raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
         return self._execute('accel', M1_ACCEL_AXES[axisCode])
 
     def get_motor_current(self, motor_id: int) -> float:
@@ -288,7 +287,7 @@ class ClientSocket():
         return self._execute('clear_calibration')
 
     def is_calibrated(self) -> bool:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def ros_command(self,  *byte_array: int) -> bool:
         return self._execute('ros_command', *byte_array)
@@ -483,7 +482,7 @@ class ClientSocket():
         Returns:
             True if Marty is moving
         '''
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
         
     def is_paused(self) -> bool:
         '''
@@ -494,22 +493,22 @@ class ClientSocket():
         Returns:
             True if Marty is paused
         '''
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def get_robot_status(self) -> Dict:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
    
     def get_joints(self) -> Dict:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def get_power_status(self) -> Dict:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def get_add_ons_status(self) -> Dict:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def get_system_info(self) -> Dict:
         return {"HardwareVersion":"1.0", "SystemName":"MartyV1","SystemVersion":"1.0.0","SerialNo":"000001","MAC":"000000000000"}
@@ -524,13 +523,13 @@ class ClientSocket():
         return False
 
     def get_hw_elems_list(self) -> List:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def send_ric_rest_cmd(self, ricRestCmd: str) -> None:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
-        raise MartyCommandException(self.NOT_IMPLEMENTED_STR)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     # Encodes Command Type flag, LSB size, MSB size, Data
     CMD_OPCODES = {
@@ -790,17 +789,8 @@ class ClientSocket():
         Take {str:func} command names & handlers in a dict
         and register them with the COMMANDS_LUT
         '''
-        self.COMMANDS_LUT = self.dict_merge(self.COMMANDS_LUT, handlers)
+        self.COMMANDS_LUT = ClientGeneric.dict_merge(self.COMMANDS_LUT, handlers)
 
-    @classmethod
-    def dict_merge(cls, *dicts):
-        '''
-        Merge all provided dicts into one dict
-        '''
-        merged = {}
-        for d in dicts:
-            if not isinstance(d, dict):
-                raise ValueError('Value should be a dict')
-            else:
-                merged.update(d)
-        return merged
+    def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
+        return
+        

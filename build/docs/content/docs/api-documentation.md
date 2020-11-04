@@ -32,7 +32,7 @@ class Marty(object)
 #### \_\_init\_\_
 
 ```python
- | __init__(method: str, locator: str = "", client_types: dict = dict(), *args, **kwargs) -> None
+ | __init__(method: str, locator: str = "", extra_client_types: dict = dict(), *args, **kwargs) -> None
 ```
 
 Start a connection to Marty :one: :two:
@@ -50,7 +50,7 @@ For example:
   "wifi", "socket" (Marty V1) or "exp" (expansion port used to connect
   to a Raspberry Pi, etc)
 - `locator` - location to connect to, depending on the method of connection this
-  is the serial port name, network (IP) Address or network name of Marty
+  is the serial port name, network (IP) Address or network name (hostname) of Marty
   that the computer should use to communicate with Marty
   
 
@@ -270,7 +270,7 @@ Play a named sound (Marty V2 :two:) or make a tone (Marty V1 :one:)
 
 **Arguments**:
 
-- `name_or_freq_start` - name of the sound :two:
+- `name_or_freq_start` - name of the sound, e.g. 'excited' or 'no_way' :two:
 - `name_or_freq_start` - starting frequency, Hz :one:
 - `freq_end` - ending frequency, Hz :one:
 - `duration` - milliseconds, maximum 5000 :one:
