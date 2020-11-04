@@ -29,11 +29,13 @@ class RICInterface:
         self._msgsOutstanding: Dict = {}
         self._msgsOutstandingLock = threading.Lock()
         self.roundTripInfo = ValueAverager()
+        self.statsMatched = 0
+        self.statsUnMatched = 0
+        self.statsUnNumbered = 0
         self.msgRespTimeoutSecs = 1.5
 
     def __del__(self) -> None:
         self.commsHandler.close()
-
 
     def open(self, openParams: Dict) -> bool:
         '''
@@ -184,7 +186,7 @@ class RICInterface:
         Returns:
             True if message sent
         '''
-        ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTFileBlock(msg)
+        ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTFileBlock(data)
         # logger.debug(f"sendRICRESTFileBlock msgNum {msgNum} len {len(ricRestMsg)}")
         with self._msgsOutstandingLock:
             self._msgsOutstanding[msgNum] = {"timeSent": time.time()}
@@ -265,6 +267,14 @@ class RICInterface:
                             f'"fileName":"{filename}","fileLen":{str(binaryImageLen)},' + \
                             f'"blockCount":{str(numBlocks)}' + '}\0')
 
+    def getStats(self) -> Dict:
+        return {
+            "roundTripAvgS":self.roundTripInfo.getAvg(),
+            "unmatched":self.statsUnMatched,
+            "matched":self.statsMatched,
+            "unnumbered":self.statsUnNumbered,
+        }
+
     def _onRxFrameCB(self, frame: bytes) -> None:
         # logger.debug(f"_onRxFrameCB Rx len {len(frame)}")
         decodedMsg = self.ricProtocols.decodeRICFrame(frame)
@@ -281,10 +291,14 @@ class RICInterface:
                         self._msgsOutstanding[decodedMsg.msgNum]["resp"] = decodedMsg
                         self._msgsOutstanding[decodedMsg.msgNum]["respValid"] = True
                         self._msgsOutstanding[decodedMsg.msgNum]["respTime"] = time.time()
+                    self.statsMatched += 1
                 else:
                     isUnmatched = True
+                    self.statsUnMatched += 1
             if isUnmatched:
                 logger.debug(f"Unmatched msgNum {decodedMsg.msgNum}")
+        else:
+            self.statsUnNumbered += 1
         if self.decodedMsgCB is not None:
             self.decodedMsgCB(decodedMsg, self)
 

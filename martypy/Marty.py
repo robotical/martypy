@@ -873,3 +873,6 @@ class Marty(object):
     def register_logging_callback(self, loggingCallback: Callable[[str], None]) -> None:
         if self.client:
             self.client.register_logging_callback(loggingCallback)
+
+    def get_interface_stats(self) -> Dict:
+        return self.client.get_interface_stats()

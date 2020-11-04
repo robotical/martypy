@@ -351,6 +351,9 @@ class ClientMV2(ClientGeneric):
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
         self.loggingCallback = loggingCallback
 
+    def get_interface_stats(self) -> Dict:
+        return self.ricIF.getStats()
+
     def _preException(self, isFatal: bool) -> None:
         if isFatal:
             self.ricIF.close()

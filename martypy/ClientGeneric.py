@@ -296,3 +296,8 @@ class ClientGeneric(ABC):
     @abstractmethod
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
         pass
+
+    @abstractmethod
+    def get_interface_stats(self) -> Dict:
+        return {}
+        

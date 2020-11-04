@@ -2,6 +2,7 @@ import time
 import logging
 import os
 import sys
+import json
 from martypy import Marty
 
 jointNames = [
@@ -45,13 +46,13 @@ logger.addHandler(handler)
 
 mymarty = None
 try:
-    mymarty = Marty('wifi', '192.168.86.11')
-    # mymarty = Marty('wifi', '192.168.86.11', subscribeRateHz=1.0)
+    # mymarty = Marty('wifi', '192.168.86.11')
+    mymarty = Marty('wifi', '192.168.86.11', subscribeRateHz=0)
     # mymarty = Marty('socket://192.168.86.41')
     # mymarty = Marty("usb", "COM9", debug=True)
     # mymarty = Marty('usb:///dev/tty.SLAB_USBtoUART', debug=True)
 except Exception as excp:
-    logger.debug("Couldn't connect to marty")
+    logger.debug(f"Couldn't connect to marty {excp}")
     exit()
 
 mymarty.register_logging_callback(loggingCB)
@@ -70,6 +71,8 @@ logger.info(f"Calibration flag should be True ... {mymarty.is_calibrated()}")
 time.sleep(0.1)
 assert mymarty.is_calibrated()
 
+logger.info(f"Marty interface stats {json.dumps(mymarty.get_interface_stats())}")
+
 testBoolCmd("Get ready", mymarty.get_ready())
 testBoolCmd("Circle Dance", mymarty.circle_dance())
 testBoolCmd("Eyes excited", mymarty.eyes('excited'))
@@ -85,6 +88,8 @@ testBoolCmd("Arms 0", mymarty.arms(0, 0, 500))
 testBoolCmd("Arms 0", mymarty.play_sound("disbelief"))
 testBoolCmd("Arms 0", mymarty.play_sound("excited"))
 testBoolCmd("Arms 0", mymarty.play_sound("screenfree"))
+
+logger.info(f"Marty interface stats {json.dumps(mymarty.get_interface_stats())}")
 
 for i in range(9): 
     testBoolCmd(f"Move joint {i}", mymarty.move_joint(i, i * 10, 500))
