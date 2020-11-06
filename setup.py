@@ -1,12 +1,12 @@
-import setuptools
+from setuptools import setup, find_packages
 
 with open('README.md') as f:
     readme = f.read()
 
-setuptools.setup(
+setup(
     name="martypy",
     version="2.0",
-    description="Python library to communicate with Marty the Robot V1 and V2",
+    description="Python library for Marty the Robot V1 and V2",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Robotical",
@@ -14,12 +14,17 @@ setuptools.setup(
     copyright="Robotical",
     maintainer='Robotical',
     maintainer_email='hello@robotical.io',
-    packages=setuptools.find_packages(),
+    packages=find_packages(),
     url='http://github.com/robotical/martypy',
     license='Apache 2.0',
     install_requires=[
-        'pyserial==3.4',
+        'pyserial',
     ],
+    extras_require={
+        "tests": [
+            "pytest",
+        ],
+    },
     keywords=[
         'ros',
         'robot',

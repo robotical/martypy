@@ -39,13 +39,10 @@ class RICInterface:
 
     def open(self, openParams: Dict) -> bool:
         '''
-        Open serial interface to RIC
-        Protocol can be plain (if the port is not used for any other purpose) or
-        overascii (if the port is also used for logging information)
+        Open interface to RIC
         Args:
-            openParams: dict containing params used to open the port - "serialPort", 
-                        "serialBaud" and "ifType". "ifType" should be "plain" or 
-                        "overascii"
+            openParams: dict containing params used to open the connection
+                    (see RICCommsBase and derived classes for details)
         Returns:
             True if open succeeded or port is already open
         Throws:
@@ -329,7 +326,7 @@ class RICInterface:
                 self._msgsOutstanding.pop(msgIdx)
         
         # Restart timer
-        if self.commsHandler is not None and self.commsHandler.isOpen:
+        if self.commsHandler is not None and self.commsHandler.isOpen():
             self.msgTimeoutCheckTimer = threading.Timer(1.0, self._msgTimeoutCheck)
             self.msgTimeoutCheckTimer.start()
 
@@ -337,3 +334,5 @@ class RICInterface:
         if self.msgTimerCB:
             self.msgTimerCB()
 
+    def getTestOutput(self) -> dict:
+        return self.commsHandler.getTestOutput()

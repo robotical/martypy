@@ -47,8 +47,8 @@ logger.addHandler(handler)
 mymarty = None
 try:
     # mymarty = Marty('wifi', '192.168.86.11')
-    mymarty = Marty('wifi', '192.168.86.11', subscribeRateHz=0)
-    # mymarty = Marty('socket://192.168.86.41')
+    # mymarty = Marty('wifi', '192.168.86.11', subscribeRateHz=0)
+    mymarty = Marty('socket://192.168.86.41')
     # mymarty = Marty("usb", "COM9", debug=True)
     # mymarty = Marty('usb:///dev/tty.SLAB_USBtoUART', debug=True)
 except Exception as excp:
@@ -60,16 +60,21 @@ mymarty.register_logging_callback(loggingCB)
 martySysInfo = mymarty.get_system_info()
 martyVersion2 = martySysInfo.get("HardwareVersion", "1.0") == "2.0"
 
-logger.info(f"Marty has {len(mymarty.get_hw_elems_list())} hardware parts")
+if martyVersion2:
+    logger.info(f"Marty has {len(mymarty.get_hw_elems_list())} hardware parts")
 
-logger.info(f"Calibration flag {mymarty.is_calibrated()}")
+if martyVersion2:
+    logger.info(f"Calibration flag {mymarty.is_calibrated()}")
 testBoolCmd("Calibration flag clear", mymarty.clear_calibration())
-logger.info(f"Calibration flag should be False ... {mymarty.is_calibrated()}")
-assert not mymarty.is_calibrated()
+if martyVersion2:
+    logger.info(f"Calibration flag should be False ... {mymarty.is_calibrated()}")
+    assert not mymarty.is_calibrated()
 testBoolCmd("Calibration flag set", mymarty.save_calibration())
-logger.info(f"Calibration flag should be True ... {mymarty.is_calibrated()}")
+if martyVersion2:
+    logger.info(f"Calibration flag should be True ... {mymarty.is_calibrated()}")
 time.sleep(0.1)
-assert mymarty.is_calibrated()
+if martyVersion2:
+    assert mymarty.is_calibrated()
 
 logger.info(f"Marty interface stats {json.dumps(mymarty.get_interface_stats())}")
 

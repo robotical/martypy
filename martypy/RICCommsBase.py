@@ -26,6 +26,14 @@ class RICCommsBase:
         '''
         self.close()
 
+    def isOpen(self) -> bool:
+        '''
+        Check if comms open
+        Returns:
+            True if comms open
+        '''
+        return False
+
     def setRxFrameCB(self, onFrame: Callable[[Union[bytes, str]], None]) -> None:
         '''
         Set callback on frame received
@@ -81,3 +89,7 @@ class RICCommsBase:
             MartyConnectException: if the connection has an error
         '''
         pass
+
+    def getTestOutput(self) -> dict:
+        return {}
+        

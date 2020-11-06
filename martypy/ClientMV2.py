@@ -4,6 +4,7 @@ import time
 from .ClientGeneric import ClientGeneric
 from .RICCommsSerial import RICCommsSerial
 from .RICCommsWiFi import RICCommsWiFi
+from .RICCommsTest import RICCommsTest
 from .RICProtocols import DecodedMsg, RICProtocols
 from .RICROSSerial import RICROSSerial
 from .RICInterface import RICInterface
@@ -28,8 +29,10 @@ class ClientMV2(ClientGeneric):
         '''
         Initialise connection to remote Marty
         Args:
-            client_type: wifi (for WiFi), usb (for usb serial) or exp (for expansion serial)
-            locator: str, ipAddress, hostname, serial-port, etc depending on method
+            client_type: 'wifi' (for WiFi), 'usb' (for usb serial), 'exp' (for expansion serial),
+                'test' (output is available via get_test_output())
+            locator: str, ipAddress, hostname, serial-port, name of test file etc 
+                    depending on method
             serialBaud: serial baud rate
             port: IP port for websockets
             wsPath: path to use for websocket connection
@@ -47,9 +50,10 @@ class ClientMV2(ClientGeneric):
         self.ricHwElemsInfoByIDNo = {}
         self.ricHwElemsList = []
         self.loggingCallback = None
+        self._initComplete = False
 
         # Handle the method of connection
-        if method is not None and method == "usb" or method == "exp":
+        if method == "usb" or method == "exp":
             ifType = "overascii" if method == "usb" else "plain"
             if serialBaud is None:
                 serialBaud = 115200 if method == "usb" else 921600
@@ -59,6 +63,11 @@ class ClientMV2(ClientGeneric):
                 "ifType": ifType,
             }
             self.ricIF = RICInterface(RICCommsSerial())
+        elif method == "test":
+            rifConfig = {
+                "testFileName": locator
+            }
+            self.ricIF = RICInterface(RICCommsTest())
         else:
             rifConfig = {
                 "ipAddrOrHostname": locator,
@@ -84,6 +93,7 @@ class ClientMV2(ClientGeneric):
     def start(self):
         self.ricSystemInfo = self.ricIF.cmdRICRESTSync("v")
         self._updateHwElemsInfo()
+        self._initComplete = True
 
     def close(self):
         if self.isClosing:
@@ -144,7 +154,7 @@ class ClientMV2(ClientGeneric):
         try:
             directionNum = ClientGeneric.SIDE_CODES[direction]
         except KeyError:
-            self._preException(True)
+            self.preException(True)
             raise MartyCommandException("Direction must be one of {}, not '{}'"
                                         "".format(set(ClientGeneric.SIDE_CODES.keys()), direction))
         return self.ricIF.cmdRICRESTRslt(f"traj/lean?side={directionNum}&leanAngle={amount}&moveTime={move_time}")
@@ -354,7 +364,7 @@ class ClientMV2(ClientGeneric):
     def get_interface_stats(self) -> Dict:
         return self.ricIF.getStats()
 
-    def _preException(self, isFatal: bool) -> None:
+    def preException(self, isFatal: bool) -> None:
         if isFatal:
             self.ricIF.close()
         logger.debug(f"Pre-exception isFatal {isFatal}")
@@ -376,7 +386,7 @@ class ClientMV2(ClientGeneric):
     def _msgTimerCallback(self) -> None:
         if self.isClosing:
             return
-        if (self.subscribeRateHz != 0) and \
+        if (self._initComplete and self.subscribeRateHz != 0) and \
                  (self.lastSubscribedMsgTime is None or \
                     time.time() > self.lastSubscribedMsgTime + self.maxTimeBetweenPubs):
             # Subscribe for publication messages
@@ -396,3 +406,6 @@ class ClientMV2(ClientGeneric):
             for el in self.ricHwElemsList:
                 if "IDNo" in el:
                     self.ricHwElemsInfoByIDNo[el["IDNo"]] = el
+
+    def get_test_output(self) -> dict:
+        return self.ricIF.getTestOutput()

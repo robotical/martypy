@@ -22,7 +22,7 @@ class RICCommsWiFi(RICCommsBase):
         Initialise RICCommsWiFi
         '''
         super().__init__()
-        self.isOpen = False
+        self._isOpen = False
         self.webSocketThread: Thread = None
         self.webSocket: WebSocket = None
         self.webSocketThreadEnabled = False
@@ -34,6 +34,14 @@ class RICCommsWiFi(RICCommsBase):
         Destructor
         '''
         self.close()
+
+    def isOpen(self) -> bool:
+        '''
+        Check if comms open
+        Returns:
+            True if comms open
+        '''
+        return self.isOpen
 
     def open(self, openParams: Dict) -> bool:
         '''
@@ -49,7 +57,7 @@ class RICCommsWiFi(RICCommsBase):
             MartyConnectException: if a connection cannot be opened
         '''
         # Check not already open
-        if self.isOpen:
+        if self._isOpen:
             return True
 
         # Get params
@@ -76,14 +84,14 @@ class RICCommsWiFi(RICCommsBase):
         self.webSocketThread = Thread(target=self._webSocketThreadFn)
         self.webSocketThread.daemon = True
         self.webSocketThread.start()
-        self.isOpen = True
+        self._isOpen = True
         return True
 
     def close(self) -> None:
         '''
         Close connection
         '''
-        if not self.isOpen:
+        if not self._isOpen:
             return
         # Stop thread function
         if self.webSocketThread is not None:
@@ -95,7 +103,7 @@ class RICCommsWiFi(RICCommsBase):
         if self.webSocket is not None:
             self.webSocket.close()
             self.webSocket = None
-        self.isOpen = False
+        self._isOpen = False
 
     def send(self, data: bytes) -> None:
         '''
@@ -123,7 +131,7 @@ class RICCommsWiFi(RICCommsBase):
         
     def _sendBytesToIF(self, bytesToSend: bytes) -> None:
         # logger.debug(f"Sending to IF len {len(bytesToSend)} {str(bytesToSend)}")
-        if not self.isOpen:
+        if not self._isOpen:
             return
         # logger.debug(f"CommsWiFi sendBytesToIF {''.join('{:02x}'.format(x) for x in bytesToSend)}")
         if self.webSocket is not None:
@@ -161,3 +169,7 @@ class RICCommsWiFi(RICCommsBase):
 
     def _onWSError(self, err: str) -> None:
         logger.debug(f"CommsWiFi WS error {err}")
+
+    def getTestOutput(self) -> dict:
+        return {}
+        

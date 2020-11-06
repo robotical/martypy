@@ -301,3 +301,10 @@ class ClientGeneric(ABC):
     def get_interface_stats(self) -> Dict:
         return {}
         
+    @abstractmethod
+    def preException(self, isFatal: bool) -> None:
+        pass
+
+    @abstractmethod
+    def get_test_output(self) -> dict:
+        return ""

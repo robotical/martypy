@@ -28,6 +28,7 @@ class Marty(object):
         'exp'    : ClientMV2,
         'usb'    : ClientMV2,
         'wifi'   : ClientMV2,
+        'test'   : ClientMV2,
     }
 
     STOP_TYPE = {
@@ -109,14 +110,16 @@ class Marty(object):
             * MartyConnectException if Marty couldn't be contacted
         '''
         # Merge in any extra clients that have been added and check valid
-        self.client = None
+        self.client: ClientGeneric = None
         self.CLIENT_TYPES = ClientGeneric.dict_merge(self.CLIENT_TYPES, extra_client_types)
 
         # Get and check connection parameters
+        if type(method) is not str:
+            raise MartyConfigException(f'Method must be one of {self.CLIENT_TYPES.keys()}')
         if '://' in method:
             method, _, locator = method.partition('://')
         if method.lower() not in self.CLIENT_TYPES.keys():
-            raise MartyConfigException('Unrecognised method "{}"'.format(method))
+            raise MartyConfigException(f'Unrecognised method "{method}"')
 
         # Initialise the client class used to communicate with Marty
         self.client = self.CLIENT_TYPES[method.lower()](method.lower(), locator, *args, **kwargs)
@@ -281,7 +284,7 @@ class Marty(object):
         axisCode = 0
         if (axis is not None) and (type(axis) is str):
             if axis not in self.ACCEL_AXES:
-                self.client._preException(True)
+                self.client.preException(True)
                 raise MartyCommandException("Axis must be one of {}, not '{}'"
                                             "".format(set(self.ACCEL_AXES.keys()), axis))
             axisCode = self.ACCEL_AXES.get(axis, 0)
@@ -320,7 +323,7 @@ class Marty(object):
         stopCode = 1 
         if stop_type is not None:
             if stop_type not in self.STOP_TYPE:
-                self.client._preException(True)
+                self.client.preException(True)
                 raise MartyCommandException("Unknown stop_type '{}', not in Marty.STOP_TYPE"
                                             "".format(stop_type))
             stopCode = self.STOP_TYPE.get(stop_type, stopCode)
@@ -368,7 +371,7 @@ class Marty(object):
         jointIDNo = joint_name_or_num
         if type(joint_name_or_num) is str:
             if joint_name_or_num not in self.JOINT_IDS:
-                self.client._preException(True)
+                self.client.preException(True)
                 raise MartyCommandException("Joint must be one of {}, not '{}'"
                                             "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
@@ -387,7 +390,7 @@ class Marty(object):
         jointIDNo = joint_name_or_num
         if type(joint_name_or_num) is str:
             if joint_name_or_num not in self.JOINT_IDS:
-                self.client._preException(True)
+                self.client.preException(True)
                 raise MartyCommandException("Joint must be one of {}, not '{}'"
                                             "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
@@ -408,7 +411,7 @@ class Marty(object):
         jointIDNo = joint_name_or_num
         if type(joint_name_or_num) is str:
             if joint_name_or_num not in self.JOINT_IDS:
-                self.client._preException(True)
+                self.client.preException(True)
                 raise MartyCommandException("Joint must be one of {}, not '{}'"
                                             "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
@@ -430,7 +433,7 @@ class Marty(object):
         jointIDNo = joint_name_or_num
         if type(joint_name_or_num) is str:
             if joint_name_or_num not in self.JOINT_IDS:
-                self.client._preException(True)
+                self.client.preException(True)
                 raise MartyCommandException("Joint must be one of {}, not '{}'"
                                             "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
@@ -876,3 +879,6 @@ class Marty(object):
 
     def get_interface_stats(self) -> Dict:
         return self.client.get_interface_stats()
+
+    def get_test_output(self) -> str:
+        return self.client.get_test_output()

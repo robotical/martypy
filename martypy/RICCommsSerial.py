@@ -24,7 +24,7 @@ class RICCommsSerial(RICCommsBase):
         Initialise RICCommsSerial
         '''
         super().__init__()
-        self.isOpen = False
+        self._isOpen = False
         self.serialReaderThread: Thread = None
         self.serialDevice: serial.Serial = None
         self.serialThreadEnabled = False
@@ -38,6 +38,14 @@ class RICCommsSerial(RICCommsBase):
         Destructor
         '''
         self.close()
+
+    def isOpen(self) -> bool:
+        '''
+        Check if comms open
+        Returns:
+            True if comms open
+        '''
+        return self._isOpen
 
     def open(self, openParams: Dict) -> bool:
         '''
@@ -55,7 +63,7 @@ class RICCommsSerial(RICCommsBase):
             MartyConnectException: if connection cannot be opened
         '''
         # Check not already open
-        if self.isOpen:
+        if self._isOpen:
             return True
 
         # Get params
@@ -85,14 +93,14 @@ class RICCommsSerial(RICCommsBase):
         self.serialReaderThread = Thread(target=self._serialRxLoop)
         self.serialReaderThread.daemon = True
         self.serialReaderThread.start()
-        self.isOpen = True
+        self._isOpen = True
         return True
 
     def close(self) -> None:
         '''
         Close serial port
         '''
-        if not self.isOpen:
+        if not self._isOpen:
             return
         # Stop thread function
         if self.serialReaderThread is not None:
@@ -104,7 +112,7 @@ class RICCommsSerial(RICCommsBase):
         if self.serialDevice is not None:
             self.serialDevice.close()
             self.serialDevice = None
-        self.isOpen = False
+        self._isOpen = False
 
     def send(self, data: bytes) -> None:
         '''
@@ -166,7 +174,7 @@ class RICCommsSerial(RICCommsBase):
         
     def _sendBytesToIF(self, bytesToSend: bytes) -> None:
         # logger.debug(f"Sending to IF len {len(bytesToSend)} {str(bytesToSend)}")
-        if not self.isOpen:
+        if not self._isOpen:
             return
         # logger.debug(f"CommsSerial sendBytesToIF {''.join('{:02x}'.format(x) for x in bytesToSend)}")
         if self.serialDevice is not None:
@@ -177,3 +185,7 @@ class RICCommsSerial(RICCommsBase):
                 # This may sort itself out or require user intervention
                 self.serialPortErrors += 1
                 pass
+
+    def getTestOutput(self) -> dict:
+        return {}
+        

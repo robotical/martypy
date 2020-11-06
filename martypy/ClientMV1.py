@@ -569,7 +569,7 @@ class ClientMV1(ClientGeneric):
         'gpio_mode'          : ['\x02', '\x03', '\x00', '\x19'], #
     }
 
-    def _pack(self, characters: bytes) -> bytes:
+    def _pack(self, characters: List[str]) -> bytes:
         '''
         Pack characters list into a byte string
         Expects pre-packed chars, use chr or struct.pack to do this
@@ -577,7 +577,7 @@ class ClientMV1(ClientGeneric):
         if self.debug:
             print(list(map(lambda x: '{}:{}'.format(x, type(x)), characters)))
         try:
-            return ("".join(characters)).encode()
+            return ("".join(characters)).encode("latin-1")
         except UnicodeEncodeError:
             raise ArgumentOutOfRangeException('Argument(s) overflowed int')
 
@@ -796,3 +796,6 @@ class ClientMV1(ClientGeneric):
         
     def get_interface_stats(self) -> Dict:
         return {}
+
+    def get_test_output(self) -> dict:
+        return ""
