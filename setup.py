@@ -1,28 +1,30 @@
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup, find_packages
 
 with open('README.md') as f:
     readme = f.read()
 
-
 setup(
     name="martypy",
-    version="1.3",
-    description="Client library for Marty the Robot by Robotical Ltd",
+    version="2.0",
+    description="Python library for Marty the Robot V1 and V2",
     long_description=readme,
-    author="Robotical Ltd",
+    long_description_content_type="text/markdown",
+    author="Robotical",
     author_email="hello@robotical.io",
-    maintainer='Robotical Ltd',
+    copyright="Robotical",
+    maintainer='Robotical',
     maintainer_email='hello@robotical.io',
-    packages=['martypy'],
+    packages=find_packages(),
     url='http://github.com/robotical/martypy',
     license='Apache 2.0',
     install_requires=[
-        'six>=1.12.0',
-        'requests>=2.22.0',
+        'pyserial',
     ],
+    extras_require={
+        "tests": [
+            "pytest",
+        ],
+    },
     keywords=[
         'ros',
         'robot',
@@ -30,7 +32,7 @@ setup(
         'marty the robot',
         'robotical',
     ],
-    classifiers=(
+    classifiers= [
         # As from https://pypi.python.org/pypi?%3Aaction=list_classifiers
         # 'Development Status :: 1 - Planning',
         # 'Development Status :: 2 - Pre-Alpha',
@@ -39,20 +41,14 @@ setup(
         'Development Status :: 5 - Production/Stable',
         # 'Development Status :: 6 - Mature',
         # 'Development Status :: 7 - Inactive',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
-        #'Environment :: Web Environment',
-        #'Operating System :: POSIX',
+        "Operating System :: OS Independent",
         'License :: OSI Approved :: Apache Software License',
-    )
+    ]
 )
 
 # To Publish:

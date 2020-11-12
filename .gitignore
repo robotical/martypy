@@ -3,6 +3,7 @@ VENV/
 VENV2/
 venv/
 env/
+.venv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -15,7 +16,6 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
-build/
 develop-eggs/
 dist/
 downloads/
@@ -105,3 +105,16 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Crazy gitignore!
+build/*
+!build/docs
+build/docs/*
+!build/docs/content
+build/docs/content/*
+!build/docs/content/docs
+build/docs/content/docs/*
+!*build/docs/content/docs/api-documentation.md
+
+# logs
+logs

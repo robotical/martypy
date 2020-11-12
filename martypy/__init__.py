@@ -1,10 +1,9 @@
 
-from .marty import Marty
-from .genericclient import GenericClient
-from .socketclient import SocketClient
-from .serialclient import SerialClient
-from .testclient import TestClient
-from .utils import *
-from .exceptions import *
+from .Marty import Marty
+from .ClientMV1 import ClientMV1
+from .ClientMV2 import ClientMV2
+from .RICCommsSerial import RICCommsSerial
+from .RICCommsWiFi import RICCommsWiFi
+from .Exceptions import *
 
-__version__ = '1.3'
+__version__ = '2.0'
