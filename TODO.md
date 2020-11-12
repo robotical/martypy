@@ -5,9 +5,7 @@
 - implement colour sensor get/clear? on Marty 2
 - implement IR feet handling on Marty 2
 - discover returns empty list on Marty 2, maybe something better is a good idea?
-- BLE support
 - ensure trajectory parameters are correctly bounded (turn parameter, eye/arm max angles, etc)
-- replace testrob with unit-tests
 
 # Items probably not worth implementing as they can be achieved another way
 - enable/disable safeties, fall-detection, motors on Marty 2 (can be done using send_ric_rest_cmd())

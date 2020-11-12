@@ -1,5 +1,7 @@
 Version 2.0
 : Added Marty V2 support
+: Removed unnecessary imports
+: Dropped Python 2 support
 
 Version 1.2
 : Addresses security issues in `requests` and `urllib3` dependencies
