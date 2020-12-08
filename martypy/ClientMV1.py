@@ -32,9 +32,9 @@ class ClientMV1(ClientGeneric):
     }
 
     def __init__(self, method: str, locator: str,
-                port:str = None, timeout:float = 5.0, 
+                port:str = None, timeout:float = 5.0,
                 debug:bool = False,
-                default_lifelike: bool = True,                
+                default_lifelike: bool = True,
                 *args, **kwargs):
         '''
         Initialise connection to remote Marty over a IPv4 socket by name 'loc' over port 24
@@ -67,7 +67,7 @@ class ClientMV1(ClientGeneric):
 
         if self.default_lifelike:
             self.lifelike_behaviour(True)
-        
+
     def close(self):
         if self.sock:
             self.sock.close()
@@ -126,7 +126,7 @@ class ClientMV1(ClientGeneric):
                                    self._pack_int8(amount),
                                    dur_lsb, dur_msb)
 
-    def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0, 
+    def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
                 step_length:int = 40, move_time: int = 1500) -> bool:
         try:
             side_c = self.SIDE_CODES[start_foot]
@@ -183,7 +183,7 @@ class ClientMV1(ClientGeneric):
     def wiggle(self, move_time: int = 1500) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 100, 
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 100,
             move_time: int = 2000) -> bool:
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
@@ -192,8 +192,8 @@ class ClientMV1(ClientGeneric):
                                    dur_lsb, dur_msb,
                                    self._pack_int8(step_length))
 
-    def play_sound(self, freq_start: Union[float, str], 
-            freq_end: float, 
+    def play_sound(self, freq_start: Union[float, str],
+            freq_end: float,
             duration: int) -> bool:
         if type(freq_start) is str:
             raise MartyCommandException("first parameter must be a number for Marty V1")
@@ -483,7 +483,7 @@ class ClientMV1(ClientGeneric):
             True if Marty is moving
         '''
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
-        
+
     def is_paused(self) -> bool:
         '''
         Check if Marty is paused
@@ -497,7 +497,7 @@ class ClientMV1(ClientGeneric):
 
     def get_robot_status(self) -> Dict:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
-   
+
     def get_joints(self) -> Dict:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
@@ -793,9 +793,12 @@ class ClientMV1(ClientGeneric):
 
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
         return
-        
+
     def get_interface_stats(self) -> Dict:
         return {}
+
+    def preException(self, isFatal: bool) -> None:
+        pass
 
     def get_test_output(self) -> dict:
         return ""
