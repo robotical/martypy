@@ -1,3 +1,6 @@
+Version 2.1
+: Fixes a bug when connecting to Marty V1
+
 Version 2.0
 : Added Marty V2 support
 : Removed unnecessary imports
