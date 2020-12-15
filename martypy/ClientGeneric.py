@@ -64,7 +64,7 @@ class ClientGeneric(ABC):
     @abstractmethod
     def resume(self) -> bool:
         return False
-    
+
     @abstractmethod
     def hold_position(self, hold_time: int) -> bool:
         return False
@@ -95,11 +95,11 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod
-    def eyes(self, joint_id: int, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
+    def eyes(self, joint_id: int, pose_or_angle: Union[str, int], move_time: int = 1000) -> bool:
         return False
 
     @abstractmethod
-    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2000) -> bool:
+    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool:
         return False
 
     @abstractmethod
@@ -111,20 +111,20 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod
-    def circle_dance(self, side: str = 'right', move_time: int = 1500) -> bool:
+    def circle_dance(self, side: str = 'right', move_time: int = 2500) -> bool:
         return False
 
     @abstractmethod
-    def dance(self, side: str = 'right', move_time: int = 1500) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
         return False
 
     @abstractmethod
-    def wiggle(self, move_time: int = 1500) -> bool:
+    def wiggle(self, move_time: int = 5000) -> bool:
         return False
 
     @abstractmethod
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 100, 
-            move_time: int = 2000) -> bool:
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 100,
+            move_time: int = 1000) -> bool:
         return False
 
     @abstractmethod
@@ -172,7 +172,7 @@ class ClientGeneric(ABC):
     @abstractmethod
     def enable_motors(self, enable: bool = True, clear_queue: bool = True) -> bool:
         return False
-                  
+
     @abstractmethod
     def enable_safeties(self, enable: bool = True) -> bool:
         return False
@@ -300,7 +300,7 @@ class ClientGeneric(ABC):
     @abstractmethod
     def get_interface_stats(self) -> Dict:
         return {}
-        
+
     @abstractmethod
     def preException(self, isFatal: bool) -> None:
         pass
