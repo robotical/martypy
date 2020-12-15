@@ -90,8 +90,8 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod
-    def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0, 
-                step_length:int = 40, move_time: int = 1500) -> bool:
+    def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
+                step_length:int = 15, move_time: int = 1500) -> bool:
         return False
 
     @abstractmethod
@@ -123,7 +123,7 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 100,
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
             move_time: int = 1000) -> bool:
         return False
 
