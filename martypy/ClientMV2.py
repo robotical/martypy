@@ -160,7 +160,7 @@ class ClientMV2(ClientGeneric):
         return self.ricIF.cmdRICRESTRslt(f"traj/lean?side={directionNum}&leanAngle={amount}&moveTime={move_time}")
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
-                step_length:int = 15, move_time: int = 1500) -> bool:
+                step_length:int = 25, move_time: int = 1500) -> bool:
         try:
             sideNum = ClientGeneric.SIDE_CODES[start_foot]
         except KeyError:

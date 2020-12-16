@@ -170,7 +170,7 @@ class Marty(object):
         return self.client.circle_dance(side, move_time)
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
-                step_length:int = 15, move_time: int = 1500) -> bool:
+                step_length:int = 25, move_time: int = 1500) -> bool:
         '''
         Make Marty walk :one: :two:
         Args:

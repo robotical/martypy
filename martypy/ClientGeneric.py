@@ -91,7 +91,7 @@ class ClientGeneric(ABC):
 
     @abstractmethod
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
-                step_length:int = 15, move_time: int = 1500) -> bool:
+                step_length:int = 25, move_time: int = 1500) -> bool:
         return False
 
     @abstractmethod
