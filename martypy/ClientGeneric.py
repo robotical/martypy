@@ -4,8 +4,8 @@ from typing import Callable, Dict, List, Optional, Union
 class ClientGeneric(ABC):
 
     SIDE_CODES = {
-        'left'    : 1,
-        'right'   : 0,
+        'left'    : 0,
+        'right'   : 1,
         'forward' : 3,
         'back'    : 2,
         'auto'    : 0,
