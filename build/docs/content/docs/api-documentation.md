@@ -63,7 +63,7 @@ For example:
 #### dance
 
 ```python
- | dance(side: str = 'right', move_time: int = 1500) -> bool
+ | dance(side: str = 'right', move_time: int = 4500) -> bool
 ```
 
 Boogie, Marty! :one: :two:
@@ -98,7 +98,7 @@ Do a small celebration :one: :two:
 #### wiggle
 
 ```python
- | wiggle(move_time: int = 1500) -> bool
+ | wiggle(move_time: int = 5000) -> bool
 ```
 
 Wiggle :two:
@@ -115,7 +115,7 @@ Wiggle :two:
 #### circle\_dance
 
 ```python
- | circle_dance(side: str = 'right', move_time: int = 1500) -> bool
+ | circle_dance(side: str = 'right', move_time: int = 2500) -> bool
 ```
 
 Circle Dance :two:
@@ -133,7 +133,7 @@ Circle Dance :two:
 #### walk
 
 ```python
- | walk(num_steps: int = 2, start_foot: str = 'auto', turn: int = 0, step_length: int = 40, move_time: int = 1500) -> bool
+ | walk(num_steps: int = 2, start_foot: str = 'auto', turn: int = 0, step_length: int = 25, move_time: int = 1500) -> bool
 ```
 
 Make Marty walk :one: :two:
@@ -167,7 +167,7 @@ Move Marty to the normal standing position :one: :two:
 #### eyes
 
 ```python
- | eyes(pose_or_angle: Union[str, int], move_time: int = 100) -> bool
+ | eyes(pose_or_angle: Union[str, int], move_time: int = 1000) -> bool
 ```
 
 Move the eyes to a pose or an angle :one: :two:
@@ -186,7 +186,7 @@ Move the eyes to a pose or an angle :one: :two:
 #### kick
 
 ```python
- | kick(side: str = 'right', twist: int = 0, move_time: int = 2000) -> bool
+ | kick(side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool
 ```
 
 Kick one of Marty's feet :one: :two:
@@ -243,7 +243,7 @@ Lean over in a direction :one: :two:
 #### sidestep
 
 ```python
- | sidestep(side: str, steps: int = 1, step_length: int = 100, move_time: int = 2000) -> bool
+ | sidestep(side: str, steps: int = 1, step_length: int = 50, move_time: int = 1000) -> bool
 ```
 
 Take sidesteps :one: :two:

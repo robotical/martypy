@@ -127,7 +127,7 @@ class Marty(object):
         # Get Marty details
         self.client.start()
 
-    def dance(self, side: str = 'right', move_time: int = 1500) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
         '''
         Boogie, Marty! :one: :two:
         Args:
@@ -148,7 +148,7 @@ class Marty(object):
         '''
         return self.client.celebrate(move_time)
 
-    def wiggle(self, move_time: int = 1500) -> bool:
+    def wiggle(self, move_time: int = 5000) -> bool:
         '''
         Wiggle :two:
         Args:
@@ -158,7 +158,7 @@ class Marty(object):
         '''
         return self.client.wiggle(move_time)
 
-    def circle_dance(self, side: str = 'right', move_time: int = 1500) -> bool:
+    def circle_dance(self, side: str = 'right', move_time: int = 2500) -> bool:
         '''
         Circle Dance :two:
         Args:
@@ -169,8 +169,8 @@ class Marty(object):
         '''
         return self.client.circle_dance(side, move_time)
 
-    def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0, 
-                step_length:int = 40, move_time: int = 1500) -> bool:
+    def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
+                step_length:int = 25, move_time: int = 1500) -> bool:
         '''
         Make Marty walk :one: :two:
         Args:
@@ -192,7 +192,7 @@ class Marty(object):
         '''
         return self.client.get_ready()
 
-    def eyes(self, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
+    def eyes(self, pose_or_angle: Union[str, int], move_time: int = 1000) -> bool:
         '''
         Move the eyes to a pose or an angle :one: :two:
         Args:
@@ -204,7 +204,7 @@ class Marty(object):
         '''
         return self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
 
-    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2000) -> bool:
+    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool:
         '''
         Kick one of Marty's feet :one: :two:
         Args:
@@ -240,8 +240,8 @@ class Marty(object):
         '''
         return self.client.lean(direction, amount, move_time)
 
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 100, 
-            move_time: int = 2000) -> bool:
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
+            move_time: int = 1000) -> bool:
         '''
         Take sidesteps :one: :two:
         Args:
