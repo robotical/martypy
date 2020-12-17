@@ -18,10 +18,10 @@ class ClientMV2(ClientGeneric):
     '''
     Lower level connector to Marty V2
     '''
-    def __init__(self, 
-                method: str, 
+    def __init__(self,
+                method: str,
                 locator: str,
-                serialBaud: int = None, 
+                serialBaud: int = None,
                 port = 80,
                 wsPath = "/ws",
                 subscribeRateHz = 10.0,
@@ -31,7 +31,7 @@ class ClientMV2(ClientGeneric):
         Args:
             client_type: 'wifi' (for WiFi), 'usb' (for usb serial), 'exp' (for expansion serial),
                 'test' (output is available via get_test_output())
-            locator: str, ipAddress, hostname, serial-port, name of test file etc 
+            locator: str, ipAddress, hostname, serial-port, name of test file etc
                     depending on method
             serialBaud: serial baud rate
             port: IP port for websockets
@@ -134,7 +134,7 @@ class ClientMV2(ClientGeneric):
 
     def resume(self) -> bool:
         return self.ricIF.cmdRICRESTRslt("robot/resume")
-    
+
     def hold_position(self, hold_time: int) -> bool:
         return self.ricIF.cmdRICRESTRslt(f"traj/hold?move_time={hold_time}")
 
@@ -159,7 +159,7 @@ class ClientMV2(ClientGeneric):
                                         "".format(set(ClientGeneric.SIDE_CODES.keys()), direction))
         return self.ricIF.cmdRICRESTRslt(f"traj/lean?side={directionNum}&leanAngle={amount}&moveTime={move_time}")
 
-    def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0, 
+    def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
                 step_length:int = 40, move_time: int = 1500) -> bool:
         try:
             sideNum = ClientGeneric.SIDE_CODES[start_foot]
@@ -191,7 +191,7 @@ class ClientMV2(ClientGeneric):
     def celebrate(self, move_time: int = 4000) -> bool:
 
         # TODO - add celebrate trajectory to Marty V2
-        
+
         return self.ricIF.cmdRICRESTRslt("traj/celebrate")
 
     def circle_dance(self, side: str = 'right', move_time: int = 1500) -> bool:
@@ -209,15 +209,15 @@ class ClientMV2(ClientGeneric):
     def wiggle(self, move_time: int = 1500) -> bool:
         return self.ricIF.cmdRICRESTRslt(f"traj/wiggle?moveTime={move_time}")
 
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 100, 
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 100,
             move_time: int = 2000) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
         return self.ricIF.cmdRICRESTRslt("traj/sidestep?side={ClientGeneric.SIDE_CODES[side]}&stepLength={step_length}&moveTime={move_time}")
 
-    def play_sound(self, name_or_freq_start: Union[str,float], 
-            freq_end: Optional[float] = None, 
+    def play_sound(self, name_or_freq_start: Union[str,float],
+            freq_end: Optional[float] = None,
             duration: Optional[int] = None) -> bool:
         if not name_or_freq_start.lower().endswith(".raw"):
                 name_or_freq_start += ".raw"
@@ -256,7 +256,7 @@ class ClientMV2(ClientGeneric):
 
     def enable_motors(self, enable: bool = True, clear_queue: bool = True) -> bool:
         return True
-                  
+
     def enable_safeties(self, enable: bool = True) -> bool:
         return True
 
@@ -334,7 +334,7 @@ class ClientMV2(ClientGeneric):
 
     def set_marty_name(self, name: str) -> bool:
         escapedName = name.replace('"', '').replace('\n','')
-        return self.ricIF.cmdRICRESTRslt(f"friendlyname/{name}")
+        return self.ricIF.cmdRICRESTRslt(f"friendlyname/{escapedName}")
 
     def get_marty_name(self) -> str:
         result = self.ricIF.cmdRICRESTSync("friendlyname")
