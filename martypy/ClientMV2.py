@@ -18,10 +18,10 @@ class ClientMV2(ClientGeneric):
     '''
     Lower level connector to Marty V2
     '''
-    def __init__(self, 
-                method: str, 
+    def __init__(self,
+                method: str,
                 locator: str,
-                serialBaud: int = None, 
+                serialBaud: int = None,
                 port = 80,
                 wsPath = "/ws",
                 subscribeRateHz = 10.0,
@@ -31,7 +31,7 @@ class ClientMV2(ClientGeneric):
         Args:
             client_type: 'wifi' (for WiFi), 'usb' (for usb serial), 'exp' (for expansion serial),
                 'test' (output is available via get_test_output())
-            locator: str, ipAddress, hostname, serial-port, name of test file etc 
+            locator: str, ipAddress, hostname, serial-port, name of test file etc
                     depending on method
             serialBaud: serial baud rate
             port: IP port for websockets
@@ -161,12 +161,16 @@ class ClientMV2(ClientGeneric):
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
                 step_length:int = 25, move_time: int = 1500) -> bool:
-        try:
-            sideNum = ClientGeneric.SIDE_CODES[start_foot]
-        except KeyError:
-            raise MartyCommandException("Direction must be one of {}, not '{}'"
-                                        "".format(set(ClientGeneric.SIDE_CODES.keys()), start_foot))
-        return self.ricIF.cmdRICRESTRslt(f"traj/step/{num_steps}?side={sideNum}&stepLength={step_length}&turn={turn}&moveTime={move_time}")
+        side_url_param = ''
+        if start_foot != 'auto':
+            try:
+                sideNum = ClientGeneric.SIDE_CODES[start_foot]
+            except KeyError:
+                raise MartyCommandException("Direction must be one of {}, not '{}'"
+                                            "".format(set(ClientGeneric.SIDE_CODES.keys()), start_foot))
+            side_url_param = f'&side={sideNum}'
+        return self.ricIF.cmdRICRESTRslt(f"traj/step/{num_steps}?stepLength={step_length}&turn={turn}"
+                                         f"&moveTime={move_time}" + side_url_param)
 
     def eyes(self, joint_id: int, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
         if type(pose_or_angle) is str:
@@ -182,7 +186,7 @@ class ClientMV2(ClientGeneric):
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
-        return self.ricIF.cmdRICRESTRslt(f"traj/kick?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/kick?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}&turn={twist}")
 
     def arms(self, left_angle: int, right_angle: int, move_time: int) -> bool:
         self.move_joint(6, left_angle, move_time)
@@ -214,10 +218,11 @@ class ClientMV2(ClientGeneric):
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
-        return self.ricIF.cmdRICRESTRslt("traj/sidestep?side={ClientGeneric.SIDE_CODES[side]}&stepLength={step_length}&moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/sidestep/{steps}?side={ClientGeneric.SIDE_CODES[side]}"
+                                         f"&stepLength={step_length}&moveTime={move_time}")
 
-    def play_sound(self, name_or_freq_start: Union[str,float], 
-            freq_end: Optional[float] = None, 
+    def play_sound(self, name_or_freq_start: Union[str,float],
+            freq_end: Optional[float] = None,
             duration: Optional[int] = None) -> bool:
         if not name_or_freq_start.lower().endswith(".raw"):
                 name_or_freq_start += ".raw"
@@ -334,7 +339,7 @@ class ClientMV2(ClientGeneric):
 
     def set_marty_name(self, name: str) -> bool:
         escapedName = name.replace('"', '').replace('\n','')
-        return self.ricIF.cmdRICRESTRslt(f"friendlyname/{name}")
+        return self.ricIF.cmdRICRESTRslt(f"friendlyname/{escapedName}")
 
     def get_marty_name(self) -> str:
         result = self.ricIF.cmdRICRESTSync("friendlyname")
