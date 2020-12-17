@@ -141,7 +141,9 @@ Make Marty walk :one: :two:
 **Arguments**:
 
 - `num_steps` - how many steps to take
-- `start_foot` - 'left', 'right' or 'auto', start walking with this foot
+- `start_foot` - 'left', 'right' or 'auto', start walking with this foot Note: :two: Unless
+  you specify 'auto', all steps are taken with the same foot so
+  it only makes sense to use the start_foot argument with `num_steps=1`.
 - `turn` - How much to turn (-100 to 100 in degrees), 0 is straight.
 - `step_length` - How far to step (approximately in mm)
 - `move_time` - how long this movement should last, in milliseconds
