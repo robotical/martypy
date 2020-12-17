@@ -214,7 +214,8 @@ class ClientMV2(ClientGeneric):
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
-        return self.ricIF.cmdRICRESTRslt("traj/sidestep?side={ClientGeneric.SIDE_CODES[side]}&stepLength={step_length}&moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/sidestep/{steps}?side={ClientGeneric.SIDE_CODES[side]}"
+                                         f"&stepLength={step_length}&moveTime={move_time}")
 
     def play_sound(self, name_or_freq_start: Union[str,float],
             freq_end: Optional[float] = None,
