@@ -6,8 +6,8 @@ class ClientGeneric(ABC):
     SIDE_CODES = {
         'left'    : 0,
         'right'   : 1,
-        'forward' : 3,
-        'back'    : 2,
+        'forward' : 2,
+        'back'    : 3,
         'auto'    : 0,
     }
 
