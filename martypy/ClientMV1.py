@@ -127,7 +127,7 @@ class ClientMV1(ClientGeneric):
                                    dur_lsb, dur_msb)
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
-                step_length:int = 40, move_time: int = 1500) -> bool:
+                step_length:int = 25, move_time: int = 1500) -> bool:
         try:
             side_c = self.SIDE_CODES[start_foot]
         except KeyError:
@@ -141,7 +141,7 @@ class ClientMV1(ClientGeneric):
                                    self._pack_int8(step_length),
                                    side_c)
 
-    def eyes(self, joint_id: int, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
+    def eyes(self, joint_id: int, pose_or_angle: Union[str, int], move_time: int = 1000) -> bool:
         if type(pose_or_angle) is str:
             try:
                 angle = self.EYE_POSES[pose_or_angle]
@@ -152,7 +152,7 @@ class ClientMV1(ClientGeneric):
             angle = pose_or_angle
         return self.move_joint(joint_id, angle, move_time)
 
-    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2000) -> bool:
+    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool:
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('kick', side_c,
@@ -170,21 +170,21 @@ class ClientMV1(ClientGeneric):
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('celebrate', dur_lsb, dur_msb)
 
-    def circle_dance(self, side: str = 'right', move_time: int = 1500) -> bool:
+    def circle_dance(self, side: str = 'right', move_time: int = 2500) -> bool:
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('circle_dance',
                                    side_c,
                                    dur_lsb, dur_msb)
 
-    def dance(self, side: str = 'right', move_time: int = 1500) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def wiggle(self, move_time: int = 1500) -> bool:
+    def wiggle(self, move_time: int = 5000) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 100,
-            move_time: int = 2000) -> bool:
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
+            move_time: int = 1000) -> bool:
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('sidestep', side_c,

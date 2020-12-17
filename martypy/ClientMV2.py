@@ -160,7 +160,7 @@ class ClientMV2(ClientGeneric):
         return self.ricIF.cmdRICRESTRslt(f"traj/lean?side={directionNum}&leanAngle={amount}&moveTime={move_time}")
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
-                step_length:int = 40, move_time: int = 1500) -> bool:
+                step_length:int = 25, move_time: int = 1500) -> bool:
         side_url_param = ''
         if start_foot != 'auto':
             try:
@@ -182,7 +182,7 @@ class ClientMV2(ClientGeneric):
             return self.ricIF.cmdRICRESTRslt(f"traj/{eyesTrajectory}")
         return self.move_joint(joint_id, pose_or_angle, move_time)
 
-    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2000) -> bool:
+    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
@@ -198,23 +198,23 @@ class ClientMV2(ClientGeneric):
 
         return self.ricIF.cmdRICRESTRslt("traj/celebrate")
 
-    def circle_dance(self, side: str = 'right', move_time: int = 1500) -> bool:
+    def circle_dance(self, side: str = 'right', move_time: int = 2500) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
         return self.ricIF.cmdRICRESTRslt(f"traj/circle?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}")
 
-    def dance(self, side: str = 'right', move_time: int = 1500) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
         return self.ricIF.cmdRICRESTRslt(f"traj/dance?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}")
 
-    def wiggle(self, move_time: int = 1500) -> bool:
+    def wiggle(self, move_time: int = 5000) -> bool:
         return self.ricIF.cmdRICRESTRslt(f"traj/wiggle?moveTime={move_time}")
 
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 100,
-            move_time: int = 2000) -> bool:
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
+            move_time: int = 1000) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
