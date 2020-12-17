@@ -186,7 +186,7 @@ class ClientMV2(ClientGeneric):
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
-        return self.ricIF.cmdRICRESTRslt(f"traj/kick?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/kick?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}&turn={twist}")
 
     def arms(self, left_angle: int, right_angle: int, move_time: int) -> bool:
         self.move_joint(6, left_angle, move_time)
