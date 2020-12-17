@@ -161,12 +161,16 @@ class ClientMV2(ClientGeneric):
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
                 step_length:int = 40, move_time: int = 1500) -> bool:
-        try:
-            sideNum = ClientGeneric.SIDE_CODES[start_foot]
-        except KeyError:
-            raise MartyCommandException("Direction must be one of {}, not '{}'"
-                                        "".format(set(ClientGeneric.SIDE_CODES.keys()), start_foot))
-        return self.ricIF.cmdRICRESTRslt(f"traj/step/{num_steps}?side={sideNum}&stepLength={step_length}&turn={turn}&moveTime={move_time}")
+        side_url_param = ''
+        if start_foot != 'auto':
+            try:
+                sideNum = ClientGeneric.SIDE_CODES[start_foot]
+            except KeyError:
+                raise MartyCommandException("Direction must be one of {}, not '{}'"
+                                            "".format(set(ClientGeneric.SIDE_CODES.keys()), start_foot))
+            side_url_param = f'&side={sideNum}'
+        return self.ricIF.cmdRICRESTRslt(f"traj/step/{num_steps}?stepLength={step_length}&turn={turn}"
+                                         f"&moveTime={move_time}" + side_url_param)
 
     def eyes(self, joint_id: int, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
         if type(pose_or_angle) is str:
