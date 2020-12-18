@@ -1,3 +1,11 @@
+Version 2.2.0 :
+- Better defaults for movement commands
+- Various bugfixes including:
+  - The `walk()` command alternates steps by default
+  - You can use one `sidestep()` command to take multiple side-steps
+  - The `twist` argument to the `kick()` command now works
+  - We got a bit confused about which is left and which is right but Marty explained it to us!
+
 Version 2.1
 : Fixes a bug when connecting to Marty V1
 
