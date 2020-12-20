@@ -12,7 +12,7 @@ my_marty = Marty("wifi","192.168.0.53")
 my_marty.dance()
 ```
 
-The emojis :one: and :two: indicate when the method is available for Marty V1 :one: and Marty V2 :two:
+The tags :one: and :two: indicate when the method is available for Marty V1 :one: and Marty V2 :two:
 '''
 from typing import Callable, Dict, List, Optional, Union
 from .ClientGeneric import ClientGeneric
@@ -92,10 +92,10 @@ class Marty(object):
 
         For example:  
 
-            * ```Marty("wifi", "192.168.86.53")``` to connect to Marty via WiFi on IP Address 192.168.0.53  
-            * ```Marty("usb", "COM2")``` on a Windows computer with Marty connected by USB cable to COM2  
-            * ```Marty("usb", "/dev/tty.SLAB_USBtoUART")``` on a Mac computer with Marty connected by USB cable to /dev/tty.SLAB_USBtoUART  
-            * ```Marty("exp", "/dev/ttyAMA0")``` on a Raspberry Pi computer with Marty connected by expansion cable to /dev/ttyAMA0  
+            * `Marty("wifi", "192.168.86.53")` to connect to Marty via WiFi on IP Address 192.168.0.53
+            * `Marty("usb", "COM2")` on a Windows computer with Marty connected by USB cable to COM2
+            * `Marty("usb", "/dev/tty.SLAB_USBtoUART")` on a Mac computer with Marty connected by USB cable to /dev/tty.SLAB_USBtoUART
+            * `Marty("exp", "/dev/ttyAMA0")` on a Raspberry Pi computer with Marty connected by expansion cable to /dev/ttyAMA0
 
         Args:
             method: method of connecting to Marty - it may be: "usb",
