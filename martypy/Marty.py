@@ -14,6 +14,7 @@ my_marty.dance()
 
 The tags :one: and :two: indicate when the method is available for Marty V1 :one: and Marty V2 :two:
 '''
+import time
 from typing import Callable, Dict, List, Optional, Union
 from .ClientGeneric import ClientGeneric
 from .ClientMV2 import ClientMV2
@@ -86,6 +87,7 @@ class Marty(object):
                 method: str,
                 locator: str = "",
                 extra_client_types: dict = dict(),
+                is_blocking: bool = False,
                 *args, **kwargs) -> None:
         '''
         Start a connection to Marty :one: :two:  
@@ -109,6 +111,9 @@ class Marty(object):
             * MartyConfigException if the parameters are invalid  
             * MartyConnectException if Marty couldn't be contacted
         '''
+
+        self._is_blocking: bool = is_blocking
+
         # Merge in any extra clients that have been added and check valid
         self.client: ClientGeneric = None
         self.CLIENT_TYPES = ClientGeneric.dict_merge(self.CLIENT_TYPES, extra_client_types)
@@ -136,7 +141,10 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.dance(side, move_time)
+        result = self.client.dance(side, move_time)
+        if result and self._is_blocking:
+            time.sleep(move_time/1000.0)
+        return result
 
     def celebrate(self, move_time: int = 4000) -> bool:
         '''
@@ -146,7 +154,10 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.celebrate(move_time)
+        result = self.client.celebrate(move_time)
+        if result and self._is_blocking:
+            time.sleep(move_time/1000.0)
+        return result
 
     def wiggle(self, move_time: int = 5000) -> bool:
         '''
@@ -156,7 +167,10 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.wiggle(move_time)
+        result = self.client.wiggle(move_time)
+        if result and self._is_blocking:
+            time.sleep(move_time/1000.0)
+        return result
 
     def circle_dance(self, side: str = 'right', move_time: int = 2500) -> bool:
         '''
@@ -167,7 +181,10 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.circle_dance(side, move_time)
+        result = self.client.circle_dance(side, move_time)
+        if result and self._is_blocking:
+            time.sleep(move_time/1000.0)
+        return result
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
                 step_length:int = 25, move_time: int = 1500) -> bool:
@@ -184,7 +201,11 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.walk(num_steps, start_foot, turn, step_length, move_time)
+        result = self.client.walk(num_steps, start_foot, turn, step_length, move_time)
+        if result and self._is_blocking:
+            num_steps = max(1, min(num_steps, 10))  # Clip num_steps
+            time.sleep(num_steps*move_time/1000.0)
+        return result
 
     def get_ready(self) -> bool:
         '''
@@ -192,7 +213,10 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.get_ready()
+        result = self.client.get_ready()
+        if result and self._is_blocking:
+            time.sleep(4)
+        return result
 
     def eyes(self, pose_or_angle: Union[str, int], move_time: int = 1000) -> bool:
         '''
@@ -204,7 +228,10 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
+        result = self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
+        if result and self._is_blocking:
+            time.sleep(move_time/1000.0)
+        return result
 
     def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool:
         '''
@@ -216,7 +243,10 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.kick(side, twist, move_time)
+        result = self.client.kick(side, twist, move_time)
+        if result and self._is_blocking:
+            time.sleep(move_time/1000.0)
+        return result
 
     def arms(self, left_angle: int, right_angle: int, move_time: int) -> bool:
         '''
@@ -228,7 +258,10 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.arms(left_angle, right_angle, move_time)
+        result = self.client.arms(left_angle, right_angle, move_time)
+        if result and self._is_blocking:
+            time.sleep(move_time/1000.0)
+        return result
 
     def lean(self, direction: str, amount: int, move_time: int) -> bool:
         '''
@@ -240,7 +273,10 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.lean(direction, amount, move_time)
+        result = self.client.lean(direction, amount, move_time)
+        if result and self._is_blocking:
+            time.sleep(move_time/1000.0)
+        return result
 
     def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
             move_time: int = 1000) -> bool:
@@ -254,7 +290,11 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.sidestep(side, steps, step_length, move_time)
+        result = self.client.sidestep(side, steps, step_length, move_time)
+        if result and self._is_blocking:
+            steps = max(1, min(steps, 10))  # Clip steps
+            time.sleep(steps*move_time/1000.0)
+        return result
 
     def play_sound(self, name_or_freq_start: Union[str,int], 
             freq_end: Optional[int] = None, 
@@ -348,7 +388,10 @@ class Marty(object):
             True if Marty accepted the request
         '''
         # Default to plain "stop"
-        return self.client.hold_position(hold_time)
+        result = self.client.hold_position(hold_time)
+        if result and self._is_blocking:
+            time.sleep(hold_time)
+        return result
 
     def is_paused(self) -> bool:
         '''
@@ -377,7 +420,10 @@ class Marty(object):
                 raise MartyCommandException("Joint must be one of {}, not '{}'"
                                             "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
-        return self.client.move_joint(jointIDNo, position, move_time)
+        result = self.client.move_joint(jointIDNo, position, move_time)
+        if result and self._is_blocking:
+            time.sleep(move_time/1000.0)
+        return result
 
     def get_joint_position(self, joint_name_or_num: Union[int, str]) -> float:
         '''
@@ -848,7 +894,10 @@ class Marty(object):
         '''
         Zero joints and wiggle eyebrows :one:
         '''
-        return self.client.hello()
+        result = self.client.hello()
+        if result and self._is_blocking:
+            time.sleep(4)
+        return result
 
     def discover(self) -> List[str]:
         '''
