@@ -105,7 +105,7 @@ class ClientMV2(ClientGeneric):
                     '{"name":"MultiStatus","rateHz":0},' + \
                     '{"name":"PowerStatus","rateHz":0},' + \
                     '{"name":"AddOnStatus","rateHz":0}' + \
-                ']}\0')
+                ']}')
         # Allow message to be sent
         time.sleep(0.5)
         # Close the RIC interface
@@ -395,7 +395,7 @@ class ClientMV2(ClientGeneric):
          '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
                                 '{"name":"PowerStatus","rateHz":1.0},' + \
                                 '{' + f'"name":"AddOnStatus","rateHz":{self.subscribeRateHz}' + '}' + \
-                            ']}\0')
+                            ']}')
             self.lastSubscribedMsgTime = time.time()
 
     def _updateHwElemsInfo(self):

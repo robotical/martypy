@@ -20,7 +20,7 @@ class RICCommsTest(RICCommsBase):
 
     def __del__(self) -> None:
         try:
-        self.close()
+            self.close()
         except:
             pass
 

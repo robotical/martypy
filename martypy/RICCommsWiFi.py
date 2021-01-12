@@ -34,7 +34,7 @@ class RICCommsWiFi(RICCommsBase):
         Destructor
         '''
         try:
-        self.close()
+            self.close()
         except:
             pass
 

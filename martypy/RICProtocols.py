@@ -137,7 +137,7 @@ class RICProtocols:
         if payload is not None:
             if type(payload) is str:
                 payload = payload.encode()
-        if type(cmdStr) is str:
+            if type(cmdStr) is str:
                 cmdFrame += cmdStr.encode() + b"\0" + payload
             else:
                 cmdFrame += cmdStr + b"\0" + payload
@@ -146,7 +146,7 @@ class RICProtocols:
                 cmdFrame += cmdStr.encode()
                 if cmdFrame[-1] != b"\0":
                     cmdFrame = cmdFrame + b"\0"
-        else:
+            else:
                 cmdFrame += cmdStr
                 if cmdFrame[-1] != b"\0":
                     cmdFrame = cmdFrame + b"\0"
