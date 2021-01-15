@@ -97,7 +97,7 @@ class RICHwAddOnStatus:
         return addOnStatus
 
     def addOnStatus(self, addOnNameOrId: Union[int, str], dictOfHwElemsByIdNo: Dict) -> Dict:
-        status = self.status()
+        status = self.status(dictOfHwElemsByIdNo)
         addOnId = 0
         if type(addOnNameOrId) is str:
             if addOnNameOrId in self.addOnNameToIdMap:
