@@ -136,7 +136,7 @@ class ClientMV2(ClientGeneric):
         return self.ricIF.cmdRICRESTRslt("robot/resume")
 
     def hold_position(self, hold_time: int) -> bool:
-        return self.ricIF.cmdRICRESTRslt(f"traj/hold?move_time={hold_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/hold?moveTime={hold_time}")
 
     def move_joint(self, joint_id: int, position: int, move_time: int) -> bool:
         return self.ricIF.cmdRICRESTRslt(f"traj/joint?jointID={joint_id}&angle={position}&moveTime={move_time}")
