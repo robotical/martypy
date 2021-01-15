@@ -284,7 +284,7 @@ class ClientMV2(ClientGeneric):
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def save_calibration(self) -> bool:
-        return self.ricIF.cmdRICRESTRslt(f"calibrate/setFlag/1")
+        return self.ricIF.cmdRICRESTRslt(f"calibrate/set")
 
     def clear_calibration(self) -> bool:
         return self.ricIF.cmdRICRESTRslt(f"calibrate/setFlag/0")
