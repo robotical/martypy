@@ -447,7 +447,7 @@ class Marty(object):
         Returns:
             The distance sensor reading (will return 0 if no distance sensor is found)
         '''
-        return self.client.distance()
+        return self.client.get_distance_sensor()
 
     def get_battery_remaining(self) -> float:
         '''
