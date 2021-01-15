@@ -97,7 +97,7 @@ class RICHwAddOnStatus:
         return addOnStatus
 
     def addOnStatus(self, addOnNameOrId: Union[int, str], dictOfHwElemsByIdNo: Dict) -> Dict:
-        status = self.status()
+        status = self.status(dictOfHwElemsByIdNo)
         addOnId = 0
         if type(addOnNameOrId) is str:
             if addOnNameOrId in self.addOnNameToIdMap:
@@ -145,7 +145,7 @@ class RICHWElems:
             self._robotStatus.update(payload)
 
     def getServos(self, dictOfHwElemsByIdNo: Dict) -> List:
-        servosInfo = self._smartServos.status()
+        return self._smartServos.status(dictOfHwElemsByIdNo)
 
     def getServoPos(self, servoId: int, dictOfHwElemsByIdNo: Dict) -> float:
         return self._smartServos.servoStatus(servoId, dictOfHwElemsByIdNo).get("pos", 0)
