@@ -138,15 +138,16 @@ class Marty(object):
         '''
         return self.client.dance(side, move_time)
 
-    def celebrate(self, move_time: int = 4000) -> bool:
+    def celebrate(self, move_time: int = 5000) -> bool:
         '''
-        Do a small celebration :one: :two:
+        Coming soon! Same as `wiggle()` for now. :one: :two:
         Args:
             move_time: how long this movement should last, in milliseconds
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.celebrate(move_time)
+        # TODO: add a separate "celebrate" trajectory
+        return self.wiggle(move_time)
 
     def wiggle(self, move_time: int = 5000) -> bool:
         '''

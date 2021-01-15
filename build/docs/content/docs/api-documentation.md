@@ -81,10 +81,10 @@ Boogie, Marty! :one: :two:
 #### celebrate
 
 ```python
- | celebrate(move_time: int = 4000) -> bool
+ | celebrate(move_time: int = 5000) -> bool
 ```
 
-Do a small celebration :one: :two:
+Coming soon! Same as `wiggle()` for now. :one: :two:
 
 **Arguments**:
 
