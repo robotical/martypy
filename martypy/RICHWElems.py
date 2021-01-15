@@ -145,7 +145,7 @@ class RICHWElems:
             self._robotStatus.update(payload)
 
     def getServos(self, dictOfHwElemsByIdNo: Dict) -> List:
-        servosInfo = self._smartServos.status()
+        return self._smartServos.status(dictOfHwElemsByIdNo)
 
     def getServoPos(self, servoId: int, dictOfHwElemsByIdNo: Dict) -> float:
         return self._smartServos.servoStatus(servoId, dictOfHwElemsByIdNo).get("pos", 0)
