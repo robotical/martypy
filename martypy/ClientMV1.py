@@ -75,6 +75,11 @@ class ClientMV1(ClientGeneric):
             self.sock.close()
         self.sock = None
 
+    def wait_if_required(self, expected_wait_ms: int, blocking_override: Union[bool, None]):
+        if not self.is_blocking(blocking_override):
+            return
+        time.sleep(expected_wait_ms/1000)
+
     def hello(self):
         return self._execute('hello')
 

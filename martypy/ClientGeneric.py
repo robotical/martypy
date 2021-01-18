@@ -51,6 +51,20 @@ class ClientGeneric(ABC):
     def close(self):
         pass
 
+    def is_blocking(self, local_override: Optional[bool] = None) -> bool:
+        """
+        Check if this client is blocking, optionally taking into account a local
+        blocking override flag.
+        """
+        if local_override is not None:
+            return local_override
+        else:
+            return self._is_blocking
+
+    @abstractmethod
+    def wait_if_required(self, expected_wait_ms: int, blocking_override: Union[bool, None]):
+        raise NotImplementedError()
+
     @abstractmethod
     def hello(self) -> bool:
         return False

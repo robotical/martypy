@@ -114,6 +114,17 @@ class ClientMV2(ClientGeneric):
         # Close the RIC interface
         self.ricIF.close()
 
+    def wait_if_required(self, expected_wait_ms: int, blocking_override: Union[bool, None]):
+        if not self.is_blocking(blocking_override):
+            return
+
+        deadline = time.time() + expected_wait_ms*1.05/1000 + 1
+        time.sleep(2.5 * 1/self.subscribeRateHz)  # Give Marty time to report it is moving
+        while self.is_moving():
+            time.sleep(0.2 * 1/self.subscribeRateHz)
+            if time.time() > deadline:
+                raise TimeoutError("Marty wouldn't stop moving. Are you also controlling it via another method?")
+
     def hello(self) -> bool:
         return self.ricIF.cmdRICRESTRslt("traj/getReady")
 
