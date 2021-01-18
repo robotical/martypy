@@ -87,7 +87,7 @@ class Marty(object):
                 method: str,
                 locator: str = "",
                 extra_client_types: dict = dict(),
-                blocking: bool = False,
+                blocking: bool = True,
                 *args, **kwargs) -> None:
         '''
         Start a connection to Marty :one: :two:  
@@ -111,9 +111,6 @@ class Marty(object):
             * MartyConfigException if the parameters are invalid  
             * MartyConnectException if Marty couldn't be contacted
         '''
-
-        self._is_blocking: bool = blocking
-
         # Merge in any extra clients that have been added and check valid
         self.client: ClientGeneric = None
         self.CLIENT_TYPES = ClientGeneric.dict_merge(self.CLIENT_TYPES, extra_client_types)
@@ -128,12 +125,12 @@ class Marty(object):
 
         # Initialise the client class used to communicate with Marty
         client_cls = self.CLIENT_TYPES[method.lower()]
-        self.client = client_cls(method.lower(), locator, blocking=blocking *args, **kwargs)
+        self.client = client_cls(method.lower(), locator, blocking=blocking, *args, **kwargs)
 
         # Get Marty details
         self.client.start()
 
-    def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 4500, blocking: Optional[bool] = None) -> bool:
         '''
         Boogie, Marty! :one: :two:
         Args:
@@ -143,11 +140,11 @@ class Marty(object):
             True if Marty accepted the request
         '''
         result = self.client.dance(side, move_time)
-        if result and self._is_blocking:
-            time.sleep(move_time/1000.0)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
         return result
 
-    def celebrate(self, move_time: int = 4000) -> bool:
+    def celebrate(self, move_time: int = 4000, blocking: Optional[bool] = None) -> bool:
         '''
         Do a small celebration :one: :two:
         Args:
@@ -156,11 +153,11 @@ class Marty(object):
             True if Marty accepted the request
         '''
         result = self.client.celebrate(move_time)
-        if result and self._is_blocking:
-            time.sleep(move_time/1000.0)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
         return result
 
-    def wiggle(self, move_time: int = 5000) -> bool:
+    def wiggle(self, move_time: int = 5000, blocking: Optional[bool] = None) -> bool:
         '''
         Wiggle :two:
         Args:
@@ -169,11 +166,11 @@ class Marty(object):
             True if Marty accepted the request
         '''
         result = self.client.wiggle(move_time)
-        if result and self._is_blocking:
-            time.sleep(move_time/1000.0)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
         return result
 
-    def circle_dance(self, side: str = 'right', move_time: int = 2500) -> bool:
+    def circle_dance(self, side: str = 'right', move_time: int = 2500, blocking: Optional[bool] = None) -> bool:
         '''
         Circle Dance :two:
         Args:
@@ -183,12 +180,12 @@ class Marty(object):
             True if Marty accepted the request
         '''
         result = self.client.circle_dance(side, move_time)
-        if result and self._is_blocking:
-            time.sleep(move_time/1000.0)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
         return result
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
-                step_length:int = 25, move_time: int = 1500) -> bool:
+                step_length:int = 25, move_time: int = 1500, blocking: Optional[bool] = None) -> bool:
         '''
         Make Marty walk :one: :two:
         Args:
@@ -203,23 +200,23 @@ class Marty(object):
             True if Marty accepted the request
         '''
         result = self.client.walk(num_steps, start_foot, turn, step_length, move_time)
-        if result and self._is_blocking:
+        if result:
             num_steps = max(1, min(num_steps, 10))  # Clip num_steps
-            time.sleep(num_steps*move_time/1000.0)
+            self.client.wait_if_required(num_steps*move_time, blocking)
         return result
 
-    def get_ready(self) -> bool:
+    def get_ready(self, blocking: Optional[bool] = None) -> bool:
         '''
         Move Marty to the normal standing position :one: :two:
         Returns:
             True if Marty accepted the request
         '''
         result = self.client.get_ready()
-        if result and self._is_blocking:
-            time.sleep(4)
+        if result:
+            self.client.wait_if_required(4000, blocking)
         return result
 
-    def eyes(self, pose_or_angle: Union[str, int], move_time: int = 1000) -> bool:
+    def eyes(self, pose_or_angle: Union[str, int], move_time: int = 1000, blocking: Optional[bool] = None) -> bool:
         '''
         Move the eyes to a pose or an angle :one: :two:
         Args:
@@ -230,11 +227,11 @@ class Marty(object):
             True if Marty accepted the request
         '''
         result = self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
-        if result and self._is_blocking:
-            time.sleep(move_time/1000.0)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
         return result
 
-    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool:
+    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500, blocking: Optional[bool] = None) -> bool:
         '''
         Kick one of Marty's feet :one: :two:
         Args:
@@ -245,11 +242,11 @@ class Marty(object):
             True if Marty accepted the request
         '''
         result = self.client.kick(side, twist, move_time)
-        if result and self._is_blocking:
-            time.sleep(move_time/1000.0)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
         return result
 
-    def arms(self, left_angle: int, right_angle: int, move_time: int) -> bool:
+    def arms(self, left_angle: int, right_angle: int, move_time: int, blocking: Optional[bool] = None) -> bool:
         '''
         Move both of Marty's arms to angles you specify :one: :two:
         Args:
@@ -260,11 +257,11 @@ class Marty(object):
             True if Marty accepted the request
         '''
         result = self.client.arms(left_angle, right_angle, move_time)
-        if result and self._is_blocking:
-            time.sleep(move_time/1000.0)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
         return result
 
-    def lean(self, direction: str, amount: int, move_time: int) -> bool:
+    def lean(self, direction: str, amount: int, move_time: int, blocking: Optional[bool] = None) -> bool:
         '''
         Lean over in a direction :one: :two:
         Args:
@@ -275,12 +272,12 @@ class Marty(object):
             True if Marty accepted the request
         '''
         result = self.client.lean(direction, amount, move_time)
-        if result and self._is_blocking:
-            time.sleep(move_time/1000.0)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
         return result
 
     def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
-            move_time: int = 1000) -> bool:
+            move_time: int = 1000, blocking: Optional[bool] = None) -> bool:
         '''
         Take sidesteps :one: :two:
         Args:
@@ -292,9 +289,9 @@ class Marty(object):
             True if Marty accepted the request
         '''
         result = self.client.sidestep(side, steps, step_length, move_time)
-        if result and self._is_blocking:
+        if result:
             steps = max(1, min(steps, 10))  # Clip steps
-            time.sleep(steps*move_time/1000.0)
+            self.client.wait_if_required(steps*move_time, blocking)
         return result
 
     def play_sound(self, name_or_freq_start: Union[str,int], 
@@ -380,7 +377,7 @@ class Marty(object):
         '''
         return self.client.resume()
 
-    def hold_position(self, hold_time: int) -> bool:
+    def hold_position(self, hold_time: int, blocking: Optional[bool] = None) -> bool:
         '''
         Hold Marty at its current position :two:
         Args:
@@ -390,8 +387,8 @@ class Marty(object):
         '''
         # Default to plain "stop"
         result = self.client.hold_position(hold_time)
-        if result and self._is_blocking:
-            time.sleep(hold_time)
+        if result:
+            self.client.wait_if_required(hold_time, blocking)
         return result
 
     def is_paused(self) -> bool:
@@ -402,7 +399,7 @@ class Marty(object):
         '''
         return self.client.is_paused()
 
-    def move_joint(self, joint_name_or_num: Union[int, str], position: int, move_time: int) -> bool:
+    def move_joint(self, joint_name_or_num: Union[int, str], position: int, move_time: int, blocking: Optional[bool] = None) -> bool:
         '''
         Move a specific joint to a position :one: :two:
         Args:
@@ -422,8 +419,8 @@ class Marty(object):
                                             "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
         result = self.client.move_joint(jointIDNo, position, move_time)
-        if result and self._is_blocking:
-            time.sleep(move_time/1000.0)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
         return result
 
     def get_joint_position(self, joint_name_or_num: Union[int, str]) -> float:
@@ -891,13 +888,13 @@ class Marty(object):
         '''
         return self.client.get_battery_voltage()
 
-    def hello(self) -> bool:
+    def hello(self, blocking: Optional[bool] = None) -> bool:
         '''
         Zero joints and wiggle eyebrows :one:
         '''
         result = self.client.hello()
-        if result and self._is_blocking:
-            time.sleep(4)
+        if result:
+            self.client.wait_if_required(4000, blocking)
         return result
 
     def discover(self) -> List[str]:
