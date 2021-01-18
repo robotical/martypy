@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Dict, List, Optional, Union
+from warnings import warn
 
 class ClientGeneric(ABC):
 
@@ -21,8 +22,13 @@ class ClientGeneric(ABC):
 
     NOT_IMPLEMENTED = "Unfortunately this Marty doesn't do that"
 
-    def __init__(self):
+    def __init__(self, blocking: bool, *args, **kwargs):
         super().__init__()
+        if len(args) > 1:
+            warn(f"Ignoring unexpected constructor argument(s): {args}", stacklevel=3)
+        if len(kwargs) > 1:
+            warn(f"Ignoring unexpected constructor argument(s): {kwargs}", stacklevel=3)
+        self._is_blocking: bool = blocking
 
     @classmethod
     def dict_merge(cls, *dicts):

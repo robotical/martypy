@@ -40,6 +40,9 @@ class ClientMV2(ClientGeneric):
         Raises:
             MartyConnectException if the connection to the host failed
         '''
+        # Call base constructor
+        super().__init__(*args, **kwargs)
+
         # Initialise vars
         self.subscribeRateHz = subscribeRateHz
         self.lastSubscribedMsgTime = None

@@ -43,6 +43,8 @@ class ClientMV1(ClientGeneric):
         Raises:
             MartyConnectException if the socket failed to make the connection to the host
         '''
+        super().__init__(*args, **kwargs)
+
         if port is None:
             self.port = self.SOCKET_PORT
         else:

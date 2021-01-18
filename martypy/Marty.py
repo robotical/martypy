@@ -87,7 +87,7 @@ class Marty(object):
                 method: str,
                 locator: str = "",
                 extra_client_types: dict = dict(),
-                is_blocking: bool = False,
+                blocking: bool = False,
                 *args, **kwargs) -> None:
         '''
         Start a connection to Marty :one: :two:  
@@ -112,7 +112,7 @@ class Marty(object):
             * MartyConnectException if Marty couldn't be contacted
         '''
 
-        self._is_blocking: bool = is_blocking
+        self._is_blocking: bool = blocking
 
         # Merge in any extra clients that have been added and check valid
         self.client: ClientGeneric = None
@@ -127,7 +127,8 @@ class Marty(object):
             raise MartyConfigException(f'Unrecognised method "{method}"')
 
         # Initialise the client class used to communicate with Marty
-        self.client = self.CLIENT_TYPES[method.lower()](method.lower(), locator, *args, **kwargs)
+        client_cls = self.CLIENT_TYPES[method.lower()]
+        self.client = client_cls(method.lower(), locator, blocking=blocking *args, **kwargs)
 
         # Get Marty details
         self.client.start()
