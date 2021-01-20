@@ -1,6 +1,8 @@
-from typing import Callable, Dict, List, Optional, Union
 import logging
+import os
 import time
+from typing import Callable, Dict, List, Optional, Union
+
 from .ClientGeneric import ClientGeneric
 from .RICCommsSerial import RICCommsSerial
 from .RICCommsWiFi import RICCommsWiFi
@@ -47,6 +49,7 @@ class ClientMV2(ClientGeneric):
         self.subscribeRateHz = subscribeRateHz
         self.lastSubscribedMsgTime = None
         self.maxTimeBetweenPubs = 10
+        self.max_blocking_wait_time = 120  # seconds
         self.ricHardware = RICHWElems()
         self.isClosing = False
         self.ricSystemInfo = {}
@@ -118,12 +121,15 @@ class ClientMV2(ClientGeneric):
         if not self.is_blocking(blocking_override):
             return
 
-        deadline = time.time() + expected_wait_ms*1.05/1000 + 1
+        deadline = time.time() + expected_wait_ms/1000 + self.max_blocking_wait_time
         time.sleep(2.5 * 1/self.subscribeRateHz)  # Give Marty time to report it is moving
-        while self.is_moving():
+        while self.is_moving() or self.get_robot_status()['workQCount'] > 0:
             time.sleep(0.2 * 1/self.subscribeRateHz)
             if time.time() > deadline:
-                raise TimeoutError("Marty wouldn't stop moving. Are you also controlling it via another method?")
+                raise TimeoutError("Marty wouldn't stop moving. Are you also controlling it via another method?"
+                                   f"{os.linesep}If you issued some very long-running non-blocking commands, "
+                                   "try increasing `marty.client.max_blocking_wait_time` (the current value "
+                                   f"is {self.max_blocking_wait_time} s)")
 
     def hello(self) -> bool:
         return self.ricIF.cmdRICRESTRslt("traj/getReady")
