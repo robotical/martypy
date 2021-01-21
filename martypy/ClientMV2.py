@@ -123,7 +123,7 @@ class ClientMV2(ClientGeneric):
 
         deadline = time.time() + expected_wait_ms/1000 + self.max_blocking_wait_time
         time.sleep(2.5 * 1/self.subscribeRateHz)  # Give Marty time to report it is moving
-        while self.is_moving() or self.get_robot_status()['workQCount'] > 0:
+        while self.is_moving() or self.get_robot_status().get('workQCount', 1) > 0:
             time.sleep(0.2 * 1/self.subscribeRateHz)
             if time.time() > deadline:
                 raise TimeoutError("Marty wouldn't stop moving. Are you also controlling it via another method?"
