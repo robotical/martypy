@@ -144,15 +144,16 @@ class Marty(object):
             self.client.wait_if_required(move_time, blocking)
         return result
 
-    def celebrate(self, move_time: int = 4000, blocking: Optional[bool] = None) -> bool:
+    def celebrate(self, move_time: int = 5000, blocking: Optional[bool] = None) -> bool:
         '''
-        Do a small celebration :one: :two:
+        Coming soon! Same as `wiggle()` for now. :one: :two:
         Args:
             move_time: how long this movement should last, in milliseconds
         Returns:
             True if Marty accepted the request
         '''
-        result = self.client.celebrate(move_time)
+        # TODO: add a separate "celebrate" trajectory
+        result = self.client.wiggle(move_time)
         if result:
             self.client.wait_if_required(move_time, blocking)
         return result
@@ -512,7 +513,7 @@ class Marty(object):
         Returns:
             The distance sensor reading (will return 0 if no distance sensor is found)
         '''
-        return self.client.distance()
+        return self.client.get_distance_sensor()
 
     def get_battery_remaining(self) -> float:
         '''
@@ -525,14 +526,18 @@ class Marty(object):
     def save_calibration(self) -> bool:
         '''
         Set the current motor positions as the zero positions :one: :two:
+
         BE CAREFUL, this can cause unexpected movement or self-interference
         '''
         return self.client.save_calibration()
 
     def clear_calibration(self) -> bool:
         '''
-        Tell Marty to forget it's calibration :one: :two:
-        BE CAREFUL, this can cause unexpected movement or self-interference
+        Mark the current calibration as invalid :one: :two:
+
+        This has no immediate physical effect. Marty will still remember the last
+        calibration but will report that it needs to be calibrated again. (You may
+        notice that a "Calibrate" button appears in the app for example.)
         '''
         return self.client.clear_calibration()
 

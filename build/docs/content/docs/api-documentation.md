@@ -81,10 +81,10 @@ Boogie, Marty! :one: :two:
 #### celebrate
 
 ```python
- | celebrate(move_time: int = 4000) -> bool
+ | celebrate(move_time: int = 5000) -> bool
 ```
 
-Do a small celebration :one: :two:
+Coming soon! Same as `wiggle()` for now. :one: :two:
 
 **Arguments**:
 
@@ -516,6 +516,7 @@ Get the battery remaining percentage :two:
 ```
 
 Set the current motor positions as the zero positions :one: :two:
+
 BE CAREFUL, this can cause unexpected movement or self-interference
 
 <a name="martypy.Marty.Marty.clear_calibration"></a>
@@ -525,8 +526,11 @@ BE CAREFUL, this can cause unexpected movement or self-interference
  | clear_calibration() -> bool
 ```
 
-Tell Marty to forget it's calibration :one: :two:
-BE CAREFUL, this can cause unexpected movement or self-interference
+Mark the current calibration as invalid :one: :two:
+
+This has no immediate physical effect. Marty will still remember the last
+calibration but will report that it needs to be calibrated again. (You may
+notice that a "Calibrate" button appears in the app for example.)
 
 <a name="martypy.Marty.Marty.is_calibrated"></a>
 #### is\_calibrated
