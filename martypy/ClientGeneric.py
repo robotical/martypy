@@ -61,6 +61,9 @@ class ClientGeneric(ABC):
         else:
             return self._is_blocking
 
+    def set_bloking(self, blocking: bool):
+        self._is_blocking = blocking
+
     @abstractmethod
     def wait_if_required(self, expected_wait_ms: int, blocking_override: Union[bool, None]):
         raise NotImplementedError()

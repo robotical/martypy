@@ -399,6 +399,27 @@ class Marty(object):
         '''
         return self.client.is_paused()
 
+    def is_blocking(self) -> bool:
+        '''
+        Check the default movement command behaviour of this Marty.  :one: :two:
+        Returns:
+            `True` if movement commands block by default
+        '''
+        return self.client.is_blocking()
+
+    def set_blocking(self, blocking: bool):
+        '''
+        Change whether movement commands default to blocking or non-blocking behaviour
+        for this Marty.  :one: :two:
+
+        The blocking behaviour can also be specified on a per-command basis using the
+        `blocking=` argument which takes precedence over Marty's overall setting.
+
+        Args:
+            blocking: whether or not to block by default
+        '''
+        self.client.set_bloking(blocking)
+
     def move_joint(self, joint_name_or_num: Union[int, str], position: int, move_time: int, blocking: Optional[bool] = None) -> bool:
         '''
         Move a specific joint to a position :one: :two:
