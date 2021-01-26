@@ -6,4 +6,4 @@ from .RICCommsSerial import RICCommsSerial
 from .RICCommsWiFi import RICCommsWiFi
 from .Exceptions import *
 
-__version__ = '2.2.3'
+__version__ = '3.0.0'

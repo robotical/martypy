@@ -14,6 +14,7 @@ my_marty.dance()
 
 The tags :one: and :two: indicate when the method is available for Marty V1 :one: and Marty V2 :two:
 '''
+import time
 from typing import Callable, Dict, List, Optional, Union
 from .ClientGeneric import ClientGeneric
 from .ClientMV2 import ClientMV2
@@ -86,24 +87,46 @@ class Marty(object):
                 method: str,
                 locator: str = "",
                 extra_client_types: dict = dict(),
+                blocking: Union[bool, None] = None,
                 *args, **kwargs) -> None:
         '''
-        Start a connection to Marty :one: :two:  
+        Start a connection to Marty :one: :two:
 
-        For example:  
+        For example:
 
             * `Marty("wifi", "192.168.86.53")` to connect to Marty via WiFi on IP Address 192.168.0.53
             * `Marty("usb", "COM2")` on a Windows computer with Marty connected by USB cable to COM2
             * `Marty("usb", "/dev/tty.SLAB_USBtoUART")` on a Mac computer with Marty connected by USB cable to /dev/tty.SLAB_USBtoUART
             * `Marty("exp", "/dev/ttyAMA0")` on a Raspberry Pi computer with Marty connected by expansion cable to /dev/ttyAMA0
 
+        **Blocking Mode**
+
+        Each command that makes Marty move (e.g. `walk()`, `dance()`, `move_joint()`,
+        but also `hold_position()`) comes with two modes - blocking and non-blocking.
+
+        Issuing a command in blocking mode will make your program pause until Marty
+        physically stops moving. Only then the next line of your code will be executed.
+
+        In non-blocking mode, each movement command simply tells Marty what to do and
+        returns immediately, meaning that your code will continue to execute while
+        Marty is moving.
+
+        Every movement command takes an optional `blocking` argument that can be used
+        to choose the mode for that call. If you plan to use the same mode all or most
+        of the time, it is better to to use the `Marty.set_blocking()` method or use
+        the `blocking` constructor argument. The latter defaults to `False`
+        (non-blocking) if not provided.
+
         Args:
             method: method of connecting to Marty - it may be: "usb",
                 "wifi", "socket" (Marty V1) or "exp" (expansion port used to connect
-                to a Raspberry Pi, etc)  
-            locator: location to connect to, depending on the method of connection this 
-                is the serial port name, network (IP) Address or network name (hostname) of Marty 
+                to a Raspberry Pi, etc)
+            locator: location to connect to, depending on the method of connection this
+                is the serial port name, network (IP) Address or network name (hostname) of Marty
                 that the computer should use to communicate with Marty
+            blocking: Default movement command mode for this `Marty` instance.
+                * `True` = blocking mode
+                * `False` = non-blocking mode
 
         Raises:
             * MartyConfigException if the parameters are invalid  
@@ -122,56 +145,77 @@ class Marty(object):
             raise MartyConfigException(f'Unrecognised method "{method}"')
 
         # Initialise the client class used to communicate with Marty
-        self.client = self.CLIENT_TYPES[method.lower()](method.lower(), locator, *args, **kwargs)
+        client_cls = self.CLIENT_TYPES[method.lower()]
+        self.client = client_cls(method.lower(), locator, *args, blocking=blocking, **kwargs)
 
         # Get Marty details
         self.client.start()
 
-    def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 4500, blocking: Optional[bool] = None) -> bool:
         '''
         Boogie, Marty! :one: :two:
         Args:
             side: 'left' or 'right', which side to start on
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.dance(side, move_time)
+        result = self.client.dance(side, move_time)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
+        return result
 
-    def celebrate(self, move_time: int = 5000) -> bool:
+    def celebrate(self, move_time: int = 5000, blocking: Optional[bool] = None) -> bool:
         '''
         Coming soon! Same as `wiggle()` for now. :one: :two:
         Args:
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
         # TODO: add a separate "celebrate" trajectory
-        return self.wiggle(move_time)
+        result = self.client.wiggle(move_time)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
+        return result
 
-    def wiggle(self, move_time: int = 5000) -> bool:
+    def wiggle(self, move_time: int = 5000, blocking: Optional[bool] = None) -> bool:
         '''
         Wiggle :two:
         Args:
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.wiggle(move_time)
+        result = self.client.wiggle(move_time)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
+        return result
 
-    def circle_dance(self, side: str = 'right', move_time: int = 2500) -> bool:
+    def circle_dance(self, side: str = 'right', move_time: int = 2500, blocking: Optional[bool] = None) -> bool:
         '''
         Circle Dance :two:
         Args:
             side: 'left' or 'right', which side to start on
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.circle_dance(side, move_time)
+        result = self.client.circle_dance(side, move_time)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
+        return result
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
-                step_length:int = 25, move_time: int = 1500) -> bool:
+                step_length:int = 25, move_time: int = 1500, blocking: Optional[bool] = None) -> bool:
         '''
         Make Marty walk :one: :two:
         Args:
@@ -182,69 +226,101 @@ class Marty(object):
             turn: How much to turn (-100 to 100 in degrees), 0 is straight.
             step_length: How far to step (approximately in mm)
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.walk(num_steps, start_foot, turn, step_length, move_time)
+        result = self.client.walk(num_steps, start_foot, turn, step_length, move_time)
+        if result:
+            num_steps = max(1, min(num_steps, 10))  # Clip num_steps
+            self.client.wait_if_required(num_steps*move_time, blocking)
+        return result
 
-    def get_ready(self) -> bool:
+    def get_ready(self, blocking: Optional[bool] = None) -> bool:
         '''
         Move Marty to the normal standing position :one: :two:
+        Args:
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.get_ready()
+        result = self.client.get_ready()
+        if result:
+            self.client.wait_if_required(4000, blocking)
+        return result
 
-    def eyes(self, pose_or_angle: Union[str, int], move_time: int = 1000) -> bool:
+    def eyes(self, pose_or_angle: Union[str, int], move_time: int = 1000, blocking: Optional[bool] = None) -> bool:
         '''
         Move the eyes to a pose or an angle :one: :two:
         Args:
             pose_or_angle: 'angry', 'excited', 'normal', 'wide', or 'wiggle' :two: - alternatively
                            this can be an angle in degrees (which can be a negative number)
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
+        result = self.client.eyes(Marty.JOINT_IDS['eyes'], pose_or_angle, move_time)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
+        return result
 
-    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool:
+    def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500, blocking: Optional[bool] = None) -> bool:
         '''
         Kick one of Marty's feet :one: :two:
         Args:
             side: 'left' or 'right', which foot to use
             twist: the amount of twisting do do while kicking (in degrees)
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.kick(side, twist, move_time)
+        result = self.client.kick(side, twist, move_time)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
+        return result
 
-    def arms(self, left_angle: int, right_angle: int, move_time: int) -> bool:
+    def arms(self, left_angle: int, right_angle: int, move_time: int, blocking: Optional[bool] = None) -> bool:
         '''
         Move both of Marty's arms to angles you specify :one: :two:
         Args:
             left_angle: Angle of the left arm (degrees -100 to 100)
             right_angle: Position of the right arm (degrees -100 to 100)
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.arms(left_angle, right_angle, move_time)
+        result = self.client.arms(left_angle, right_angle, move_time)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
+        return result
 
-    def lean(self, direction: str, amount: int, move_time: int) -> bool:
+    def lean(self, direction: str, amount: int, move_time: int, blocking: Optional[bool] = None) -> bool:
         '''
         Lean over in a direction :one: :two:
         Args:
             direction: 'left', 'right', 'forward', 'back', or 'auto'
             amount: percentage amount to lean
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.lean(direction, amount, move_time)
+        result = self.client.lean(direction, amount, move_time)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
+        return result
 
     def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
-            move_time: int = 1000) -> bool:
+            move_time: int = 1000, blocking: Optional[bool] = None) -> bool:
         '''
         Take sidesteps :one: :two:
         Args:
@@ -252,10 +328,16 @@ class Marty(object):
             steps: number of steps to take
             step_length: how broad the steps are (up to 127)
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.sidestep(side, steps, step_length, move_time)
+        result = self.client.sidestep(side, steps, step_length, move_time)
+        if result:
+            steps = max(1, min(steps, 10))  # Clip steps
+            self.client.wait_if_required(steps*move_time, blocking)
+        return result
 
     def play_sound(self, name_or_freq_start: Union[str,int], 
             freq_end: Optional[int] = None, 
@@ -340,16 +422,23 @@ class Marty(object):
         '''
         return self.client.resume()
 
-    def hold_position(self, hold_time: int) -> bool:
+    def hold_position(self, hold_time: int, blocking: Optional[bool] = None) -> bool:
         '''
         Hold Marty at its current position :two:
         Args:
             hold_time, time to hold position in milli-seconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning. Holding position counts as movement since
+                Marty is using its motors to actively resist any attempts to move its
+                joints.
         Returns:
             True if Marty accepted the request
         '''
         # Default to plain "stop"
-        return self.client.hold_position(hold_time)
+        result = self.client.hold_position(hold_time)
+        if result:
+            self.client.wait_if_required(hold_time, blocking)
+        return result
 
     def is_paused(self) -> bool:
         '''
@@ -359,13 +448,36 @@ class Marty(object):
         '''
         return self.client.is_paused()
 
-    def move_joint(self, joint_name_or_num: Union[int, str], position: int, move_time: int) -> bool:
+    def is_blocking(self) -> bool:
+        '''
+        Check the default movement command behaviour of this Marty.  :one: :two:
+        Returns:
+            `True` if movement commands block by default
+        '''
+        return self.client.is_blocking()
+
+    def set_blocking(self, blocking: bool):
+        '''
+        Change whether movement commands default to blocking or non-blocking behaviour
+        for this Marty.  :one: :two:
+
+        The blocking behaviour can also be specified on a per-command basis using the
+        `blocking=` argument which takes precedence over Marty's overall setting.
+
+        Args:
+            blocking: whether or not to block by default
+        '''
+        self.client.set_bloking(blocking)
+
+    def move_joint(self, joint_name_or_num: Union[int, str], position: int, move_time: int, blocking: Optional[bool] = None) -> bool:
         '''
         Move a specific joint to a position :one: :two:
         Args:
             joint_name_or_num: joint to move, see the Marty.JOINT_IDS dictionary (can be name or number)
             position: angle in degrees
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         Raises:
@@ -378,7 +490,10 @@ class Marty(object):
                 raise MartyCommandException("Joint must be one of {}, not '{}'"
                                             "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
-        return self.client.move_joint(jointIDNo, position, move_time)
+        result = self.client.move_joint(jointIDNo, position, move_time)
+        if result:
+            self.client.wait_if_required(move_time, blocking)
+        return result
 
     def get_joint_position(self, joint_name_or_num: Union[int, str]) -> float:
         '''
@@ -849,11 +964,17 @@ class Marty(object):
         '''
         return self.client.get_battery_voltage()
 
-    def hello(self) -> bool:
+    def hello(self, blocking: Optional[bool] = None) -> bool:
         '''
         Zero joints and wiggle eyebrows :one:
+        Args:
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         '''
-        return self.client.hello()
+        result = self.client.hello()
+        if result:
+            self.client.wait_if_required(4000, blocking)
+        return result
 
     def discover(self) -> List[str]:
         '''

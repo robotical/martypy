@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Dict, List, Optional, Union
+from warnings import warn
 
 class ClientGeneric(ABC):
 
@@ -21,8 +22,13 @@ class ClientGeneric(ABC):
 
     NOT_IMPLEMENTED = "Unfortunately this Marty doesn't do that"
 
-    def __init__(self):
+    def __init__(self, blocking: Union[bool, None], *args, **kwargs):
         super().__init__()
+        if len(args) > 0:
+            warn(f"Ignoring unexpected constructor argument(s): {args}", stacklevel=4)
+        if len(kwargs) > 0:
+            warn(f"Ignoring unexpected constructor argument(s): {kwargs}", stacklevel=4)
+        self._is_blocking: bool = True if blocking is None else blocking
 
     @classmethod
     def dict_merge(cls, *dicts):
@@ -44,6 +50,23 @@ class ClientGeneric(ABC):
     @abstractmethod
     def close(self):
         pass
+
+    def is_blocking(self, local_override: Optional[bool] = None) -> bool:
+        """
+        Check if this client is blocking, optionally taking into account a local
+        blocking override flag.
+        """
+        if local_override is not None:
+            return local_override
+        else:
+            return self._is_blocking
+
+    def set_bloking(self, blocking: bool):
+        self._is_blocking = blocking
+
+    @abstractmethod
+    def wait_if_required(self, expected_wait_ms: int, blocking_override: Union[bool, None]):
+        raise NotImplementedError()
 
     @abstractmethod
     def hello(self) -> bool:

@@ -1,6 +1,8 @@
-from typing import Callable, Dict, List, Optional, Union
 import logging
+import os
 import time
+from typing import Callable, Dict, List, Optional, Union
+
 from .ClientGeneric import ClientGeneric
 from .RICCommsSerial import RICCommsSerial
 from .RICCommsWiFi import RICCommsWiFi
@@ -40,10 +42,14 @@ class ClientMV2(ClientGeneric):
         Raises:
             MartyConnectException if the connection to the host failed
         '''
+        # Call base constructor
+        super().__init__(*args, **kwargs)
+
         # Initialise vars
         self.subscribeRateHz = subscribeRateHz
         self.lastSubscribedMsgTime = None
         self.maxTimeBetweenPubs = 10
+        self.max_blocking_wait_time = 120  # seconds
         self.ricHardware = RICHWElems()
         self.isClosing = False
         self.ricSystemInfo = {}
@@ -110,6 +116,23 @@ class ClientMV2(ClientGeneric):
         time.sleep(0.5)
         # Close the RIC interface
         self.ricIF.close()
+
+    def wait_if_required(self, expected_wait_ms: int, blocking_override: Union[bool, None]):
+        if not self.is_blocking(blocking_override):
+            return
+
+        deadline = time.time() + expected_wait_ms/1000 + self.max_blocking_wait_time
+        time.sleep(2.5 * 1/self.subscribeRateHz)  # Give Marty time to report it is moving
+
+        # The is_moving flag may be cleared briefly between 2 queued trajectories
+        # Robot status may not be available for a while after Marty is turned on / connected to
+        while self.is_moving() or self.get_robot_status().get('workQCount', 1) > 0:
+            time.sleep(0.2 * 1/self.subscribeRateHz)
+            if time.time() > deadline:
+                raise TimeoutError("Marty wouldn't stop moving. Are you also controlling it via another method?"
+                                   f"{os.linesep}If you issued some very long-running non-blocking commands, "
+                                   "try increasing `marty.client.max_blocking_wait_time` (the current value "
+                                   f"is {self.max_blocking_wait_time} s)")
 
     def hello(self) -> bool:
         return self.ricIF.cmdRICRESTRslt("traj/getReady")
