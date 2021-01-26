@@ -123,6 +123,9 @@ class ClientMV2(ClientGeneric):
 
         deadline = time.time() + expected_wait_ms/1000 + self.max_blocking_wait_time
         time.sleep(2.5 * 1/self.subscribeRateHz)  # Give Marty time to report it is moving
+
+        # The is_moving flag may be cleared briefly between 2 queued trajectories
+        # Robot status may not be available for a while after Marty is turned on / connected to
         while self.is_moving() or self.get_robot_status().get('workQCount', 1) > 0:
             time.sleep(0.2 * 1/self.subscribeRateHz)
             if time.time() > deadline:
