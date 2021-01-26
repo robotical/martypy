@@ -32,7 +32,7 @@ class Marty(object)
 #### \_\_init\_\_
 
 ```python
- | __init__(method: str, locator: str = "", extra_client_types: dict = dict(), *args, **kwargs) -> None
+ | __init__(method: str, locator: str = "", extra_client_types: dict = dict(), blocking: Union[bool, None] = None, *args, **kwargs) -> None
 ```
 
 Start a connection to Marty :one: :two:
@@ -44,6 +44,24 @@ For example:
 * `Marty("usb", "/dev/tty.SLAB_USBtoUART")` on a Mac computer with Marty connected by USB cable to /dev/tty.SLAB_USBtoUART
 * `Marty("exp", "/dev/ttyAMA0")` on a Raspberry Pi computer with Marty connected by expansion cable to /dev/ttyAMA0
 
+**Blocking Mode**
+
+Each command that makes Marty move (e.g. `walk()`, `dance()`, `move_joint()`,
+but also `hold_position()`) comes with two modes - blocking and non-blocking.
+
+Issuing a command in blocking mode will make your program pause until Marty
+physically stops moving. Only then the next line of your code will be executed.
+
+In non-blocking mode, each movement command simply tells Marty what to do and
+returns immediately, meaning that your code will continue to execute while
+Marty is moving.
+
+Every movement command takes an optional `blocking` argument that can be used
+to choose the mode for that call. If you plan to use the same mode all or most
+of the time, it is better to to use the `Marty.set_blocking()` method or use
+the `blocking` constructor argument The latter defaults to `False`
+(non-blocking) if not provided.
+
 **Arguments**:
 
 - `method` - method of connecting to Marty - it may be: "usb",
@@ -52,6 +70,9 @@ For example:
 - `locator` - location to connect to, depending on the method of connection this
   is the serial port name, network (IP) Address or network name (hostname) of Marty
   that the computer should use to communicate with Marty
+- `blocking` - Default movement command mode for this `Marty` instance.
+  * `True` = blocking mode
+  * `False` = non-blocking mode
   
 
 **Raises**:
@@ -63,7 +84,7 @@ For example:
 #### dance
 
 ```python
- | dance(side: str = 'right', move_time: int = 4500) -> bool
+ | dance(side: str = 'right', move_time: int = 4500, blocking: Optional[bool] = None) -> bool
 ```
 
 Boogie, Marty! :one: :two:
@@ -72,6 +93,8 @@ Boogie, Marty! :one: :two:
 
 - `side` - 'left' or 'right', which side to start on
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -81,7 +104,7 @@ Boogie, Marty! :one: :two:
 #### celebrate
 
 ```python
- | celebrate(move_time: int = 5000) -> bool
+ | celebrate(move_time: int = 5000, blocking: Optional[bool] = None) -> bool
 ```
 
 Coming soon! Same as `wiggle()` for now. :one: :two:
@@ -89,6 +112,8 @@ Coming soon! Same as `wiggle()` for now. :one: :two:
 **Arguments**:
 
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -98,7 +123,7 @@ Coming soon! Same as `wiggle()` for now. :one: :two:
 #### wiggle
 
 ```python
- | wiggle(move_time: int = 5000) -> bool
+ | wiggle(move_time: int = 5000, blocking: Optional[bool] = None) -> bool
 ```
 
 Wiggle :two:
@@ -106,6 +131,8 @@ Wiggle :two:
 **Arguments**:
 
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -115,7 +142,7 @@ Wiggle :two:
 #### circle\_dance
 
 ```python
- | circle_dance(side: str = 'right', move_time: int = 2500) -> bool
+ | circle_dance(side: str = 'right', move_time: int = 2500, blocking: Optional[bool] = None) -> bool
 ```
 
 Circle Dance :two:
@@ -124,6 +151,8 @@ Circle Dance :two:
 
 - `side` - 'left' or 'right', which side to start on
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -133,7 +162,7 @@ Circle Dance :two:
 #### walk
 
 ```python
- | walk(num_steps: int = 2, start_foot: str = 'auto', turn: int = 0, step_length: int = 25, move_time: int = 1500) -> bool
+ | walk(num_steps: int = 2, start_foot: str = 'auto', turn: int = 0, step_length: int = 25, move_time: int = 1500, blocking: Optional[bool] = None) -> bool
 ```
 
 Make Marty walk :one: :two:
@@ -147,6 +176,8 @@ Make Marty walk :one: :two:
 - `turn` - How much to turn (-100 to 100 in degrees), 0 is straight.
 - `step_length` - How far to step (approximately in mm)
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -156,10 +187,15 @@ Make Marty walk :one: :two:
 #### get\_ready
 
 ```python
- | get_ready() -> bool
+ | get_ready(blocking: Optional[bool] = None) -> bool
 ```
 
 Move Marty to the normal standing position :one: :two:
+
+**Arguments**:
+
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -169,7 +205,7 @@ Move Marty to the normal standing position :one: :two:
 #### eyes
 
 ```python
- | eyes(pose_or_angle: Union[str, int], move_time: int = 1000) -> bool
+ | eyes(pose_or_angle: Union[str, int], move_time: int = 1000, blocking: Optional[bool] = None) -> bool
 ```
 
 Move the eyes to a pose or an angle :one: :two:
@@ -179,6 +215,8 @@ Move the eyes to a pose or an angle :one: :two:
 - `pose_or_angle` - 'angry', 'excited', 'normal', 'wide', or 'wiggle' :two: - alternatively
   this can be an angle in degrees (which can be a negative number)
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -188,7 +226,7 @@ Move the eyes to a pose or an angle :one: :two:
 #### kick
 
 ```python
- | kick(side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool
+ | kick(side: str = 'right', twist: int = 0, move_time: int = 2500, blocking: Optional[bool] = None) -> bool
 ```
 
 Kick one of Marty's feet :one: :two:
@@ -198,6 +236,8 @@ Kick one of Marty's feet :one: :two:
 - `side` - 'left' or 'right', which foot to use
 - `twist` - the amount of twisting do do while kicking (in degrees)
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -207,7 +247,7 @@ Kick one of Marty's feet :one: :two:
 #### arms
 
 ```python
- | arms(left_angle: int, right_angle: int, move_time: int) -> bool
+ | arms(left_angle: int, right_angle: int, move_time: int, blocking: Optional[bool] = None) -> bool
 ```
 
 Move both of Marty's arms to angles you specify :one: :two:
@@ -217,6 +257,8 @@ Move both of Marty's arms to angles you specify :one: :two:
 - `left_angle` - Angle of the left arm (degrees -100 to 100)
 - `right_angle` - Position of the right arm (degrees -100 to 100)
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -226,7 +268,7 @@ Move both of Marty's arms to angles you specify :one: :two:
 #### lean
 
 ```python
- | lean(direction: str, amount: int, move_time: int) -> bool
+ | lean(direction: str, amount: int, move_time: int, blocking: Optional[bool] = None) -> bool
 ```
 
 Lean over in a direction :one: :two:
@@ -236,6 +278,8 @@ Lean over in a direction :one: :two:
 - `direction` - 'left', 'right', 'forward', 'back', or 'auto'
 - `amount` - percentage amount to lean
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -245,7 +289,7 @@ Lean over in a direction :one: :two:
 #### sidestep
 
 ```python
- | sidestep(side: str, steps: int = 1, step_length: int = 50, move_time: int = 1000) -> bool
+ | sidestep(side: str, steps: int = 1, step_length: int = 50, move_time: int = 1000, blocking: Optional[bool] = None) -> bool
 ```
 
 Take sidesteps :one: :two:
@@ -256,6 +300,8 @@ Take sidesteps :one: :two:
 - `steps` - number of steps to take
 - `step_length` - how broad the steps are (up to 127)
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -365,7 +411,7 @@ Resume Marty's movement after a pause :two:
 #### hold\_position
 
 ```python
- | hold_position(hold_time: int) -> bool
+ | hold_position(hold_time: int, blocking: Optional[bool] = None) -> bool
 ```
 
 Hold Marty at its current position :two:
@@ -373,6 +419,10 @@ Hold Marty at its current position :two:
 **Arguments**:
 
   hold_time, time to hold position in milli-seconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning. Holding position counts as movement since
+  Marty is using its motors to actively resist any attempts to move its
+  joints.
 
 **Returns**:
 
@@ -391,11 +441,41 @@ Check if Marty is paused :two:
 
   True if Marty is paused
 
+<a name="martypy.Marty.Marty.is_blocking"></a>
+#### is\_blocking
+
+```python
+ | is_blocking() -> bool
+```
+
+Check the default movement command behaviour of this Marty.  :one: :two:
+
+**Returns**:
+
+  `True` if movement commands block by default
+
+<a name="martypy.Marty.Marty.set_blocking"></a>
+#### set\_blocking
+
+```python
+ | set_blocking(blocking: bool)
+```
+
+Change whether movement commands default to blocking or non-blocking behaviour
+for this Marty.  :one: :two:
+
+The blocking behaviour can also be specified on a per-command basis using the
+`blocking=` argument which takes precedence over Marty's overall setting.
+
+**Arguments**:
+
+- `blocking` - whether or not to block by default
+
 <a name="martypy.Marty.Marty.move_joint"></a>
 #### move\_joint
 
 ```python
- | move_joint(joint_name_or_num: Union[int, str], position: int, move_time: int) -> bool
+ | move_joint(joint_name_or_num: Union[int, str], position: int, move_time: int, blocking: Optional[bool] = None) -> bool
 ```
 
 Move a specific joint to a position :one: :two:
@@ -405,6 +485,8 @@ Move a specific joint to a position :one: :two:
 - `joint_name_or_num` - joint to move, see the Marty.JOINT_IDS dictionary (can be name or number)
 - `position` - angle in degrees
 - `move_time` - how long this movement should last, in milliseconds
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 **Returns**:
 
@@ -1074,10 +1156,14 @@ Get the voltage of the battery :one:
 #### hello
 
 ```python
- | hello() -> bool
+ | hello(blocking: Optional[bool] = None) -> bool
 ```
 
 Zero joints and wiggle eyebrows :one:
+
+**Arguments**:
+
+- `blocking` - Blocking mode override; whether to wait for physical movement to finish before returning
 
 <a name="martypy.Marty.Marty.discover"></a>
 #### discover
