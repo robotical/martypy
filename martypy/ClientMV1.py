@@ -3,6 +3,7 @@ import sys
 import time
 import socket
 import struct
+from warnings import warn
 from .ClientGeneric import ClientGeneric
 from .Exceptions import (MartyConnectException,
                          MartyCommandException,
@@ -43,6 +44,12 @@ class ClientMV1(ClientGeneric):
         Raises:
             MartyConnectException if the socket failed to make the connection to the host
         '''
+        if 'blocking' not in kwargs or kwargs['blocking'] is None:
+            warn('Since martypy 3.0.0, all movement commands are blocking by default. '
+                 'To go back to the old default, add `blocking=False` to your Marty '
+                 'constructor. To silence this warning, provide the `blocking` argument '
+                 f'explicitly (e.g. `Marty("{method}", "{locator}", blocking=True)`)',
+                 stacklevel=3)
         super().__init__(*args, **kwargs)
 
         if port is None:

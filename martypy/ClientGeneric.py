@@ -22,13 +22,13 @@ class ClientGeneric(ABC):
 
     NOT_IMPLEMENTED = "Unfortunately this Marty doesn't do that"
 
-    def __init__(self, blocking: bool, *args, **kwargs):
+    def __init__(self, blocking: Union[bool, None], *args, **kwargs):
         super().__init__()
         if len(args) > 1:
             warn(f"Ignoring unexpected constructor argument(s): {args}", stacklevel=3)
         if len(kwargs) > 1:
             warn(f"Ignoring unexpected constructor argument(s): {kwargs}", stacklevel=3)
-        self._is_blocking: bool = blocking
+        self._is_blocking: bool = True if blocking is None else blocking
 
     @classmethod
     def dict_merge(cls, *dicts):

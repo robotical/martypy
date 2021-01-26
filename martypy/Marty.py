@@ -87,7 +87,7 @@ class Marty(object):
                 method: str,
                 locator: str = "",
                 extra_client_types: dict = dict(),
-                blocking: bool = True,
+                blocking: Union[bool, None] = None,
                 *args, **kwargs) -> None:
         '''
         Start a connection to Marty :one: :two:  
@@ -125,7 +125,7 @@ class Marty(object):
 
         # Initialise the client class used to communicate with Marty
         client_cls = self.CLIENT_TYPES[method.lower()]
-        self.client = client_cls(method.lower(), locator, blocking=blocking, *args, **kwargs)
+        self.client = client_cls(method.lower(), locator, *args, blocking=blocking, **kwargs)
 
         # Get Marty details
         self.client.start()
