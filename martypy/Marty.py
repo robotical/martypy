@@ -90,22 +90,43 @@ class Marty(object):
                 blocking: Union[bool, None] = None,
                 *args, **kwargs) -> None:
         '''
-        Start a connection to Marty :one: :two:  
+        Start a connection to Marty :one: :two:
 
-        For example:  
+        For example:
 
             * `Marty("wifi", "192.168.86.53")` to connect to Marty via WiFi on IP Address 192.168.0.53
             * `Marty("usb", "COM2")` on a Windows computer with Marty connected by USB cable to COM2
             * `Marty("usb", "/dev/tty.SLAB_USBtoUART")` on a Mac computer with Marty connected by USB cable to /dev/tty.SLAB_USBtoUART
             * `Marty("exp", "/dev/ttyAMA0")` on a Raspberry Pi computer with Marty connected by expansion cable to /dev/ttyAMA0
 
+        **Blocking Mode**
+
+        Each command that makes Marty move (e.g. `walk()`, `dance()`, `move_joint()`,
+        but also `hold_position()`) comes with two modes - blocking and non-blocking.
+
+        Issuing a command in blocking mode will make your program pause until Marty
+        physically stops moving. Only then the next line of your code will be executed.
+
+        In non-blocking mode, each movement command simply tells Marty what to do and
+        returns immediately, meaning that your code will continue to execute while
+        Marty is moving.
+
+        Every movement command takes an optional `blocking` argument that can be used
+        to choose the mode for that call. If you plan to use the same mode all or most
+        of the time, it is better to to use the `Marty.set_blocking()` method or use
+        the `blocking` constructor argument. The latter defaults to `False`
+        (non-blocking) if not provided.
+
         Args:
             method: method of connecting to Marty - it may be: "usb",
                 "wifi", "socket" (Marty V1) or "exp" (expansion port used to connect
-                to a Raspberry Pi, etc)  
-            locator: location to connect to, depending on the method of connection this 
-                is the serial port name, network (IP) Address or network name (hostname) of Marty 
+                to a Raspberry Pi, etc)
+            locator: location to connect to, depending on the method of connection this
+                is the serial port name, network (IP) Address or network name (hostname) of Marty
                 that the computer should use to communicate with Marty
+            blocking: Default movement command mode for this `Marty` instance.
+                * `True` = blocking mode
+                * `False` = non-blocking mode
 
         Raises:
             * MartyConfigException if the parameters are invalid  
@@ -136,6 +157,8 @@ class Marty(object):
         Args:
             side: 'left' or 'right', which side to start on
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -149,6 +172,8 @@ class Marty(object):
         Coming soon! Same as `wiggle()` for now. :one: :two:
         Args:
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -163,6 +188,8 @@ class Marty(object):
         Wiggle :two:
         Args:
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -177,6 +204,8 @@ class Marty(object):
         Args:
             side: 'left' or 'right', which side to start on
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -197,6 +226,8 @@ class Marty(object):
             turn: How much to turn (-100 to 100 in degrees), 0 is straight.
             step_length: How far to step (approximately in mm)
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -209,6 +240,9 @@ class Marty(object):
     def get_ready(self, blocking: Optional[bool] = None) -> bool:
         '''
         Move Marty to the normal standing position :one: :two:
+        Args:
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -224,6 +258,8 @@ class Marty(object):
             pose_or_angle: 'angry', 'excited', 'normal', 'wide', or 'wiggle' :two: - alternatively
                            this can be an angle in degrees (which can be a negative number)
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -239,6 +275,8 @@ class Marty(object):
             side: 'left' or 'right', which foot to use
             twist: the amount of twisting do do while kicking (in degrees)
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -254,6 +292,8 @@ class Marty(object):
             left_angle: Angle of the left arm (degrees -100 to 100)
             right_angle: Position of the right arm (degrees -100 to 100)
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -269,6 +309,8 @@ class Marty(object):
             direction: 'left', 'right', 'forward', 'back', or 'auto'
             amount: percentage amount to lean
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -286,6 +328,8 @@ class Marty(object):
             steps: number of steps to take
             step_length: how broad the steps are (up to 127)
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         '''
@@ -383,6 +427,10 @@ class Marty(object):
         Hold Marty at its current position :two:
         Args:
             hold_time, time to hold position in milli-seconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning. Holding position counts as movement since
+                Marty is using its motors to actively resist any attempts to move its
+                joints.
         Returns:
             True if Marty accepted the request
         '''
@@ -428,6 +476,8 @@ class Marty(object):
             joint_name_or_num: joint to move, see the Marty.JOINT_IDS dictionary (can be name or number)
             position: angle in degrees
             move_time: how long this movement should last, in milliseconds
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         Returns:
             True if Marty accepted the request
         Raises:
@@ -917,6 +967,9 @@ class Marty(object):
     def hello(self, blocking: Optional[bool] = None) -> bool:
         '''
         Zero joints and wiggle eyebrows :one:
+        Args:
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
         '''
         result = self.client.hello()
         if result:
