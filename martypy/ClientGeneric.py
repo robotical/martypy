@@ -61,7 +61,7 @@ class ClientGeneric(ABC):
         else:
             return self._is_blocking
 
-    def set_bloking(self, blocking: bool):
+    def set_blocking(self, blocking: bool):
         self._is_blocking = blocking
 
     @abstractmethod

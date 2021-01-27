@@ -467,7 +467,7 @@ class Marty(object):
         Args:
             blocking: whether or not to block by default
         '''
-        self.client.set_bloking(blocking)
+        self.client.set_blocking(blocking)
 
     def move_joint(self, joint_name_or_num: Union[int, str], position: int, move_time: int, blocking: Optional[bool] = None) -> bool:
         '''
