@@ -177,8 +177,7 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        # TODO: add a separate "celebrate" trajectory
-        result = self.client.wiggle(move_time)
+        result = self.client.celebrate(move_time)
         if result:
             self.client.wait_if_required(move_time, blocking)
         return result

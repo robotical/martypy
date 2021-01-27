@@ -218,8 +218,7 @@ class ClientMV2(ClientGeneric):
     def celebrate(self, move_time: int = 4000) -> bool:
 
         # TODO - add celebrate trajectory to Marty V2
-
-        return self.ricIF.cmdRICRESTRslt("traj/celebrate")
+        return self.ricIF.cmdRICRESTRslt(f"traj/wiggle?moveTime={move_time}")
 
     def circle_dance(self, side: str = 'right', move_time: int = 2500) -> bool:
         if side != 'right' and side != 'left':
