@@ -167,7 +167,7 @@ class Marty(object):
             self.client.wait_if_required(move_time, blocking)
         return result
 
-    def celebrate(self, move_time: int = 5000, blocking: Optional[bool] = None) -> bool:
+    def celebrate(self, move_time: int = 4000, blocking: Optional[bool] = None) -> bool:
         '''
         Coming soon! Same as `wiggle()` for now. :one: :two:
         Args:
