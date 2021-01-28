@@ -140,6 +140,9 @@ class ClientMV2(ClientGeneric):
     def get_ready(self) -> bool:
         return self.ricIF.cmdRICRESTRslt("traj/getReady")
 
+    def stand_straight(self, move_time: int = 2000) -> bool:
+        return self.ricIF.cmdRICRESTRslt(f"traj/standStraight?moveTime={move_time}")
+
     def discover(self) -> List[str]:
         return []
 

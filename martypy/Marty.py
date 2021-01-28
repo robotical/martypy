@@ -238,7 +238,8 @@ class Marty(object):
 
     def get_ready(self, blocking: Optional[bool] = None) -> bool:
         '''
-        Move Marty to the normal standing position :one: :two:
+        Move Marty to the normal standing position and wiggle eyebrows :one: :two:
+        Will also enable motors for Marty v1 :one:
         Args:
             blocking: Blocking mode override; whether to wait for physical movement to
                 finish before returning.
@@ -248,6 +249,20 @@ class Marty(object):
         result = self.client.get_ready()
         if result:
             self.client.wait_if_required(4000, blocking)
+        return result
+
+    def stand_straight(self, blocking: Optional[bool] = None) -> bool:
+        '''
+        Move Marty to the normal standing position :one: :two:
+        Args:
+            blocking: Blocking mode override; whether to wait for physical movement to
+                finish before returning.
+        Returns:
+            True if Marty accepted the request
+        '''
+        result = self.client.stand_straight()
+        if result:
+            self.client.wait_if_required(2000, blocking)
         return result
 
     def eyes(self, pose_or_angle: Union[str, int], move_time: int = 1000, blocking: Optional[bool] = None) -> bool:

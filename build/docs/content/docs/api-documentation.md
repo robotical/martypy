@@ -59,7 +59,7 @@ Marty is moving.
 Every movement command takes an optional `blocking` argument that can be used
 to choose the mode for that call. If you plan to use the same mode all or most
 of the time, it is better to to use the `Marty.set_blocking()` method or use
-the `blocking` constructor argument The latter defaults to `False`
+the `blocking` constructor argument. The latter defaults to `False`
 (non-blocking) if not provided.
 
 **Arguments**:
@@ -188,6 +188,25 @@ Make Marty walk :one: :two:
 
 ```python
  | get_ready(blocking: Optional[bool] = None) -> bool
+```
+
+Move Marty to the normal standing position and wiggle eyebrows :one: :two:
+Will also enable motors for Marty v1 :one:
+
+**Arguments**:
+
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
+
+**Returns**:
+
+  True if Marty accepted the request
+
+<a name="martypy.Marty.Marty.stand_straight"></a>
+#### stand\_straight
+
+```python
+ | stand_straight(blocking: Optional[bool] = None) -> bool
 ```
 
 Move Marty to the normal standing position :one: :two:
@@ -1163,7 +1182,8 @@ Zero joints and wiggle eyebrows :one:
 
 **Arguments**:
 
-- `blocking` - Blocking mode override; whether to wait for physical movement to finish before returning
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning.
 
 <a name="martypy.Marty.Marty.discover"></a>
 #### discover

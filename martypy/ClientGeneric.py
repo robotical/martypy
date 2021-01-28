@@ -77,6 +77,10 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod
+    def stand_straight(self) -> bool:
+        return False
+
+    @abstractmethod
     def discover(self) -> List[str]:
         return []
 
