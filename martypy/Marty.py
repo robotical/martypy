@@ -114,8 +114,8 @@ class Marty(object):
         Every movement command takes an optional `blocking` argument that can be used
         to choose the mode for that call. If you plan to use the same mode all or most
         of the time, it is better to to use the `Marty.set_blocking()` method or use
-        the `blocking` constructor argument. The latter defaults to `False`
-        (non-blocking) if not provided.
+        the `blocking` constructor argument. The latter defaults to `True` (blocking)
+        if not provided.
 
         Args:
             method: method of connecting to Marty - it may be: "usb",
@@ -125,8 +125,8 @@ class Marty(object):
                 is the serial port name, network (IP) Address or network name (hostname) of Marty
                 that the computer should use to communicate with Marty
             blocking: Default movement command mode for this `Marty` instance.
-                * `True` = blocking mode
-                * `False` = non-blocking mode
+                * `True` (default): blocking mode
+                * `False`: non-blocking mode
 
         Raises:
             * MartyConfigException if the parameters are invalid  
@@ -158,7 +158,7 @@ class Marty(object):
             side: 'left' or 'right', which side to start on
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -173,7 +173,7 @@ class Marty(object):
         Args:
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -188,7 +188,7 @@ class Marty(object):
         Args:
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -204,7 +204,7 @@ class Marty(object):
             side: 'left' or 'right', which side to start on
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -226,7 +226,7 @@ class Marty(object):
             step_length: How far to step (approximately in mm)
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -256,7 +256,7 @@ class Marty(object):
         Move Marty to the normal standing position :one: :two:
         Args:
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -273,7 +273,7 @@ class Marty(object):
                            this can be an angle in degrees (which can be a negative number)
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -290,7 +290,7 @@ class Marty(object):
             twist: the amount of twisting do do while kicking (in degrees)
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -307,7 +307,7 @@ class Marty(object):
             right_angle: Position of the right arm (degrees -100 to 100)
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -324,7 +324,7 @@ class Marty(object):
             amount: percentage amount to lean
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -343,7 +343,7 @@ class Marty(object):
             step_length: how broad the steps are (up to 127)
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         '''
@@ -442,9 +442,9 @@ class Marty(object):
         Args:
             hold_time, time to hold position in milli-seconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning. Holding position counts as movement since
-                Marty is using its motors to actively resist any attempts to move its
-                joints.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
+                Holding position counts as movement because Marty is using its motors to
+                actively resist any attempts to move its joints.
         Returns:
             True if Marty accepted the request
         '''
@@ -483,7 +483,8 @@ class Marty(object):
         '''
         self.client.set_blocking(blocking)
 
-    def move_joint(self, joint_name_or_num: Union[int, str], position: int, move_time: int, blocking: Optional[bool] = None) -> bool:
+    def move_joint(self, joint_name_or_num: Union[int, str], position: int, move_time: int,
+                   blocking: Optional[bool] = None) -> bool:
         '''
         Move a specific joint to a position :one: :two:
         Args:
@@ -491,7 +492,7 @@ class Marty(object):
             position: angle in degrees
             move_time: how long this movement should last, in milliseconds
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
             True if Marty accepted the request
         Raises:
@@ -983,7 +984,7 @@ class Marty(object):
         Zero joints and wiggle eyebrows :one:
         Args:
             blocking: Blocking mode override; whether to wait for physical movement to
-                finish before returning.
+                finish before returning. Defaults to the value returned by `self.is_blocking()`.
         '''
         result = self.client.hello()
         if result:
