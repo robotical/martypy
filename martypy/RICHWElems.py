@@ -5,7 +5,7 @@ Class supporting the hardware on RIC
 
 import logging
 import time
-from martypy.RICROSSerial import RICROSSerial
+from .RICROSSerial import RICROSSerial
 from typing import Dict, List, Tuple, Union
 
 logger = logging.getLogger(__name__)

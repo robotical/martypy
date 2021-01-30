@@ -2,7 +2,7 @@
 RICInterface
 '''
 from __future__ import annotations
-from typing import Callable, Dict
+from typing import Callable, Dict, Union
 import time
 import threading
 import logging
@@ -10,6 +10,7 @@ import json
 from .RICProtocols import DecodedMsg, RICProtocols
 from .RICCommsBase import RICCommsBase
 from .ValueAverager import ValueAverager
+from .Exceptions import MartyTransferException
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +120,7 @@ class RICInterface:
         self.commsHandler.send(ricRestMsg)
         return True
 
-    def cmdRICRESTSync(self, msg: str) -> Dict:
+    def cmdRICRESTURLSync(self, msg: str) -> Dict:
         '''
         Send RICREST URL message and wait for response
         Args:
@@ -148,10 +149,10 @@ class RICInterface:
                         if respStr:
                             respObj = json.loads(respStr.payload.rstrip('\0'))
                         debugMsgRespTime = self._msgsOutstanding[msgNum].get("respTime", 0)
-                        # logger.debug(f"msgNum {msgNum} msg {msg} resp {json.dumps(respObj)} sendTime {msgSendTime} respTime {debugMsgRespTime}")
+                        # logger.debug(f"sendRICRESTURLSync msgNum {msgNum} msg {msg} resp {json.dumps(respObj)} sendTime {msgSendTime} respTime {debugMsgRespTime}")
                         return respObj
                     except Exception as excp:
-                        logger.debug(f"msgNum {msgNum} response is not JSON {excp}")
+                        logger.warn(f"sendRICRESTURLSync msgNum {msgNum} response is not JSON {excp}")
             time.sleep(0.01)
         return {"rslt":"failTimeout"}
 
@@ -163,23 +164,61 @@ class RICInterface:
         Returns:
             Response turned into a dictionary (from JSON)
         '''
-        response = self.cmdRICRESTSync(msg)
+        response = self.cmdRICRESTURLSync(msg)
         return response.get("rslt", "") == "ok"
 
-    def sendRICRESTCmdFrame(self, msg: bytes) -> bool:
+    def sendRICRESTCmdFrame(self, msg: Union[str,bytes], payload: Union[bytes, str] = None) -> bool:
         '''
         Send RICREST command frame message
         Args:
-            msg: string containing command
+            msg: string or bytes containing command frame
+            payload: optional payload
         Returns:
             True if message sent
         '''
-        ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTCmdFrame(msg)
+        ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTCmdFrame(msg, payload)
         # logger.debug(f"sendRICRESTCmdFrame msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
         with self._msgsOutstandingLock:
             self._msgsOutstanding[msgNum] = {"timeSent": time.time()}
         self.commsHandler.send(ricRestMsg)
         return True
+
+    def sendRICRESTCmdFrameSync(self, msg: Union[str,bytes], payload: Union[bytes, str] = None) -> Dict:
+        '''
+        Send RICREST command frame message and wait for response
+        Args:
+            msg: string or bytes containing command frame
+            payload: optional payload
+        Returns:
+            Response turned into a dictionary (from JSON)
+        '''
+        ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTCmdFrame(msg, payload)
+        # logger.debug(f"sendRICRESTCmdFrameSync msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
+        msgSendTime = time.time()
+        with self._msgsOutstandingLock:
+            self._msgsOutstanding[msgNum] = {"timeSent": msgSendTime,"awaited":True}
+        self.commsHandler.send(ricRestMsg)
+        # Wait for result
+        while time.time() < msgSendTime + self.msgRespTimeoutSecs:
+            with self._msgsOutstandingLock:
+                # Should be an outstanding message - if not there's a problem
+                if msgNum not in self._msgsOutstanding:
+                    return {"rslt":"failResponse"}
+                # Check if response received
+                if self._msgsOutstanding[msgNum].get("respValid", False):
+                    try:
+                        # Get response
+                        respStr = self._msgsOutstanding[msgNum].get("resp", None)
+                        respObj = {}
+                        if respStr:
+                            respObj = json.loads(respStr.payload.rstrip('\0'))
+                        debugMsgRespTime = self._msgsOutstanding[msgNum].get("respTime", 0)
+                        # logger.debug(f"sendRICRESTCmdFrameSync msgNum {msgNum} msg {msg} resp {json.dumps(respObj)} sendTime {msgSendTime} respTime {debugMsgRespTime}")
+                        return respObj
+                    except Exception as excp:
+                        logger.debug(f"msgNum {msgNum} response is not JSON {excp}", )
+            time.sleep(0.01)
+        return {"rslt":"failTimeout"}
 
     def sendRICRESTFileBlock(self, data: bytes) -> bool:
         '''
@@ -221,14 +260,19 @@ class RICInterface:
         for i in range(numMsgs):
             self.commsHandler.send(dataBlock)
 
-    def sendFile(self, filename: str, isEspFirmware: bool) -> None:
+    def sendFile(self, filename: str, fileDest: str, reqStr: str = '', 
+                progressCB: Callable[[int, int, RICInterface], None] = None) -> None:
         '''
         Send a file (from the file system) over serial connection
         Args:
             filename: name of file to send
-            isEspFirmware: False for a normal file, True for new RIC firmware
+            fileDest: "fs" to upload to file system, "ricfw" for new RIC firmware
+            reqStr: API request used for transfer, if left blank this is inferred from fileDest, other
+                    values include "fileupload" and "espfwupdate" - see RIC documentation for API
+            progressCB: callback used to indicate how file send is progressing, callable takes two params
+                    which are bytesSent and totalBytes
         Returns:
-            None
+            True if operation succeeded
         Throws:
             OSError: operating system exceptions
             May throw other exceptions so include a general exception handler
@@ -242,33 +286,36 @@ class RICInterface:
             # logger.debug(f"File {filename} is {binaryImageLen} bytes long")
 
             # Frames follow the approach used in the web interface start, block..., end
-            time.sleep(1.0)
-            fileType = "fs"
-            uploadType = "fileupload"
-            if isEspFirmware:
-                fileType = "ricfw"
-                uploadType = "espFwUpdate"
-            self.sendRICRESTCmdFrame('{' + f'"cmdName":"ufStart","reqStr":"{uploadType}","fileType":"{fileType}",' + \
-                            f'fileName":"{filename}","fileLen":{str(binaryImageLen)}' + '}\0')
-            time.sleep(1.0)
+            if reqStr == '':
+                reqStr = 'espfwupdate' if fileDest == "ricfw" else 'fileupload'
+            resp = self.sendRICRESTCmdFrameSync('{' + f'"cmdName":"ufStart","reqStr":"{reqStr}","fileType":"{fileDest}",' + \
+                            f'"fileName":"{filename}","fileLen":{str(binaryImageLen)}' + '}\0')
+            if resp.get("rslt","") != "ok":
+                raise MartyTransferException("File transfer start not acknowledged")
 
             # Split the file into blocks
-            blockMaxSize = 200
+            blockMaxSize = self.commsHandler.commsParams.fileTransfer.get("fileBlockMax",5000)
             numBlocks = binaryImageLen//blockMaxSize + (0 if (binaryImageLen % blockMaxSize == 0) else 1)
             # logger.debug(f"Sending file in {numBlocks} blocks of {blockMaxSize} max bytes")
             for i in range(numBlocks):
                 blockStart = i*blockMaxSize
                 blockToSend = binaryImage[blockStart:blockStart+blockMaxSize]
                 self.sendRICRESTFileBlock(blockStart.to_bytes(4, 'big') + blockToSend)
+                # Progress
+                if progressCB:
+                    progressCB(blockStart, binaryImageLen, self)
+                # TODO remove delay?
                 time.sleep(0.01)
                 # if i % 10 == 9:
                 #     logger.debug(f"SendFile Progress {i * 100 / numBlocks:0.1f}%")
 
-            # End frame            
-            time.sleep(1.0)
-            self.sendRICRESTCmdFrame('{' + f'"cmdName":"ufEnd","reqStr":"fileupload","fileType":"{fileType}",' + \
+            # End frame
+            resp = self.sendRICRESTCmdFrameSync('{' + f'"cmdName":"ufEnd","reqStr":"fileupload","fileType":"{fileDest}",' + \
                             f'"fileName":"{filename}","fileLen":{str(binaryImageLen)},' + \
                             f'"blockCount":{str(numBlocks)}' + '}\0')
+            if resp.get("rslt","") != "ok":
+                return False
+            return True
 
     def getStats(self) -> Dict:
         return {
@@ -307,7 +354,7 @@ class RICInterface:
             self._rawQueryOutstanding[msgKey] = {"timeSent": time.time(), "awaited":True}
 
         # Send message
-        resp = self.cmdRICRESTSync(ricRestCmd)
+        resp = self.cmdRICRESTURLSync(ricRestCmd)
         resp["dataRead"] = b""
         if resp.get("rslt", "") != "ok":
             self._rawQueryOutstanding.pop(msgKey)
@@ -334,6 +381,7 @@ class RICInterface:
     def _onRxFrameCB(self, frame: bytes) -> None:
         # logger.debug(f"_onRxFrameCB Rx len {len(frame)} data {frame.hex()}")
         decodedMsg = self.ricProtocols.decodeRICFrame(frame)
+        doRxCallback = True
         if decodedMsg.msgNum != 0:
             # Numbered message - this is the response to a REST API command
             # logger.debug(f"_onRxFrameCB msgNum {decodedMsg.msgNum} {decodedMsg.payload}")
@@ -354,9 +402,10 @@ class RICInterface:
                     isUnmatched = True
                     self.statsUnMatched += 1
             if isUnmatched:
-                logger.debug(f"_onRxFrameCB Unmatched msgNum {decodedMsg.msgNum}")
+                logger.warn(f"_onRxFrameCB Unmatched msgNum {decodedMsg.msgNum}")
+            doRxCallback = isUnmatched
         else:
-            logger.debug(f"_onRxFrameCB unnumbered restType {decodedMsg.restType} msgType {decodedMsg.msgTypeCode}")
+            # logger.debug(f"_onRxFrameCB unnumbered restType {decodedMsg.restType} msgType {decodedMsg.msgTypeCode}")
             if decodedMsg.msgTypeCode == RICProtocols.MSG_TYPE_REPORT:
                 # Report message - this can include results of accessing addOns
                 # logger.debug(f"_onRxFrameCB REPORT {decodedMsg.payload}")
@@ -364,7 +413,7 @@ class RICInterface:
                 try:
                     reptObj = json.loads(decodedMsg.payload.rstrip('\0'))
                 except Exception as excp:
-                    logger.debug(f"_onRxFrameCB REPORT is not JSON {excp}")
+                    logger.warn(f"_onRxFrameCB REPORT is not JSON {excp}")
                 msgKey = reptObj.get("msgKey", '')
                 if type(msgKey) is str:
                     msgKey = int(msgKey)
@@ -382,9 +431,10 @@ class RICInterface:
                             isUnmatched = True
                     if isUnmatched:
                         logger.debug(f"Unmatched msgKey {msgKey}")
-                self.statsUnNumbered += 1
+                    doRxCallback = isUnmatched
+            self.statsUnNumbered += 1
         # Call the decoded-message callback with the message
-        if self.decodedMsgCB is not None:
+        if doRxCallback and self.decodedMsgCB is not None:
             self.decodedMsgCB(decodedMsg, self)
 
     def _onLogLineCB(self, line: str) -> None:

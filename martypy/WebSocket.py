@@ -78,6 +78,7 @@ class WebSocket():
                 if b"Sec-WebSocket-Accept" in self.rxPreUpgrade:
                     self.socketState = self.SOCKET_UPGRADED
                     self.wsFrameCodec.addDataToDecode(self.rxPreUpgrade[headerEndPos+4:])
+                    # logger.debug("WebSocket upgraded")
             elif len(self.rxPreUpgrade) > self.MAX_RX_PREUPGRADE_LEN:
                 self.rxPreUpgrade.clear()
         else:
@@ -92,6 +93,7 @@ class WebSocket():
                 binaryFrame = self.wsFrameCodec.getBinaryMsg()
                 if binaryFrame:
                     checkForData = True
+                    # logger.debug(f"WebSocket proc binary len {len(binaryFrame)}")
                     if self.onBinaryFrame:
                         self.onBinaryFrame(binaryFrame)
                 textFrame = self.wsFrameCodec.getTextMsg()

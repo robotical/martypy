@@ -1,6 +1,7 @@
 '''
 Generic communications with a Robotical RIC
 '''
+from .RICCommsParams import RICCommsParams
 from typing import Callable, Dict, Union
 import logging
 from .LikeHDLC import LikeHDLC
@@ -19,6 +20,7 @@ class RICCommsBase:
         '''
         self.rxFrameCB = None
         self.logLineCB = None
+        self.commsParams = RICCommsParams()
 
     def __del__(self) -> None:
         '''
