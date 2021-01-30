@@ -524,6 +524,9 @@ class ClientMV1(ClientGeneric):
     def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
+    def add_on_query(self, addOnName: str, dataToWrite: bytes, numBytesToRead: int) -> Dict:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+    
     def get_system_info(self) -> Dict:
         return {"HardwareVersion":"1.0", "SystemName":"MartyV1","SystemVersion":"1.0.0","SerialNo":"000001","MAC":"000000000000"}
 

@@ -357,6 +357,9 @@ class ClientMV2(ClientGeneric):
     def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
         return self.ricHardware.getAddOn(add_on_name_or_id, self.ricHwElemsInfoByIDNo)
 
+    def add_on_query(self, addOnName: str, dataToWrite: bytes, numBytesToRead: int) -> Dict:
+        return self.ricIF.addOnQueryRaw(addOnName, dataToWrite, numBytesToRead)
+
     def get_system_info(self) -> Dict:
         return self.ricSystemInfo
 
@@ -405,6 +408,9 @@ class ClientMV2(ClientGeneric):
                 RICROSSerial.decode(decodedMsg.payload, 0, self.ricHardware.updateWithROSSerialMsg)
         elif decodedMsg.protocolID == RICProtocols.PROTOCOL_RICREST:
             # logger.debug(f"RIC REST message received {decodedMsg.payload}")
+            pass
+        else:
+            # logger.debug(f"RIC OTHER message received {decodedMsg.payload}")
             pass
 
     def _logDebugMsg(self, logMsg: str) -> None:

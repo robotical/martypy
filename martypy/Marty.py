@@ -677,6 +677,22 @@ class Marty(object):
         '''
         return self.client.get_add_on_status(add_on_name_or_id)
 
+    def add_on_query(self, addOnName: str, dataToWrite: bytes, numBytesToRead: int) -> Dict:
+        '''
+        Write and read an addOn directly (raw-mode)
+        Args:
+            addOnName, name of the addOn (see get_add_ons_status() at the top level or response to
+                addon/list REST API command)
+            dataToWrite, can be zero length if nothing is to be written, the first byte will generally
+                be the register or opcode of the addOn
+            numBytesToRead: number of bytes to read from the device - can be zero
+        Returns:
+            Dict with keys including:
+                "rslt" - the result which will be "ok" if the query succeeded
+                "dataRead" - the data read from the addOn
+        '''
+        return self.client.add_on_query(addOnName, dataToWrite, numBytesToRead)
+
     def get_system_info(self) -> Dict:
         '''
         Get information about Marty :two:

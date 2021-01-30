@@ -289,6 +289,10 @@ class ClientGeneric(ABC):
         return {}
 
     @abstractmethod
+    def add_on_query(self, addOnName: str, dataToWrite: bytes, numBytesToRead: int) -> Dict:
+        return {}
+
+    @abstractmethod
     def get_system_info(self) -> Dict:
         return {}
 
