@@ -372,7 +372,7 @@ class RICInterface:
                 if self._rawQueryOutstanding[msgKey].get("reptValid", False):
                     # Get report
                     reptObj = self._rawQueryOutstanding[msgKey].get("reptObj", {})
-                    logger.debug(f"msgKey {msgKey} msg {ricRestCmd} rept {json.dumps(reptObj)} sendTime {msgSendTime}")
+                    # logger.debug(f"msgKey {msgKey} msg {ricRestCmd} rept {json.dumps(reptObj)} sendTime {msgSendTime}")
                     resp["dataRead"] = reptObj.get("hexRd", b"")
                     return resp
             time.sleep(0.01)
@@ -456,7 +456,7 @@ class RICInterface:
 
         # Debug
         for msgIdx in msgIdxsTimedOut:
-            logger.debug(f"Message {msgIdx} timed out at time {time.time()}")
+            logger.warn(f"Message {msgIdx} timed out at time {time.time()}")
 
         # Remove timed-out messages
         for msgIdx in msgIdxsToRemove:
@@ -477,7 +477,7 @@ class RICInterface:
 
         # Debug
         for msgKey in msgKeysTimedOut:
-            logger.debug(f"rawQuery {msgKey} timed out at time {time.time()}")
+            logger.warn(f"rawQuery {msgKey} timed out at time {time.time()}")
 
         # Remove timed-out rawQueries
         for msgKey in msgKeysToRemove:
