@@ -251,7 +251,7 @@ class Marty(object):
             self.client.wait_if_required(4000, blocking)
         return result
 
-    def stand_straight(self, blocking: Optional[bool] = None) -> bool:
+    def stand_straight(self, move_time: int = 2000, blocking: Optional[bool] = None) -> bool:
         '''
         Move Marty to the normal standing position :one: :two:
         Args:
@@ -260,9 +260,9 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        result = self.client.stand_straight()
+        result = self.client.stand_straight(move_time)
         if result:
-            self.client.wait_if_required(2000, blocking)
+            self.client.wait_if_required(move_time, blocking)
         return result
 
     def eyes(self, pose_or_angle: Union[str, int], move_time: int = 1000, blocking: Optional[bool] = None) -> bool:
