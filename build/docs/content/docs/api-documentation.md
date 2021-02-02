@@ -206,13 +206,15 @@ Will also enable motors for Marty v1 :one:
 #### stand\_straight
 
 ```python
- | stand_straight(blocking: Optional[bool] = None) -> bool
+ | stand_straight(move_time: int = 2000, blocking: Optional[bool] = None) -> bool
 ```
 
 Move Marty to the normal standing position :one: :two:
 
 **Arguments**:
 
+- `move_time` - How long (in milliseconds) Marty will take to reach the
+  normal standing position. (Higher number means slower movement.)
 - `blocking` - Blocking mode override; whether to wait for physical movement to
   finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
@@ -287,16 +289,20 @@ Move both of Marty's arms to angles you specify :one: :two:
 #### lean
 
 ```python
- | lean(direction: str, amount: int, move_time: int, blocking: Optional[bool] = None) -> bool
+ | lean(direction: str, amount: Optional[int] = None, move_time: int = 1000, blocking: Optional[bool] = None) -> bool
 ```
 
 Lean over in a direction :one: :two:
 
 **Arguments**:
 
-- `direction` - 'left', 'right', 'forward', 'back', or 'auto'
-- `amount` - percentage amount to lean
-- `move_time` - how long this movement should last, in milliseconds
+- `direction` - `'left'`, `'right'`, `'forward'`, or `'back'`
+- `amount` - How much to lean. The defaults and the exact meaning is
+  different between Marty V1 and V2:
+  - :one: If not specified or `None`, `amount` defaults to `50` (no
+  specific unit).
+  - :two: If not specified or `None`, `amount` defaults to `29` degrees.
+- `move_time` - How long this movement should last, in milliseconds.
 - `blocking` - Blocking mode override; whether to wait for physical movement to
   finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
