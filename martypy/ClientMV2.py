@@ -140,6 +140,9 @@ class ClientMV2(ClientGeneric):
     def get_ready(self) -> bool:
         return self.ricIF.cmdRICRESTRslt("traj/getReady")
 
+    def stand_straight(self, move_time: int = 2000) -> bool:
+        return self.ricIF.cmdRICRESTRslt(f"traj/standStraight?moveTime={move_time}")
+
     def discover(self) -> List[str]:
         return []
 
@@ -173,7 +176,9 @@ class ClientMV2(ClientGeneric):
     def get_joint_status(self, joint_id: Union[int, str]) -> int:
         return self.ricHardware.getServoFlags(joint_id, self.ricHwElemsInfoByIDNo)
 
-    def lean(self, direction: str, amount: int, move_time: int) -> bool:
+    def lean(self, direction: str, amount: Optional[int], move_time: int) -> bool:
+        if amount is None:
+            amount = 29
         try:
             directionNum = ClientGeneric.SIDE_CODES[direction]
         except KeyError:
@@ -218,8 +223,7 @@ class ClientMV2(ClientGeneric):
     def celebrate(self, move_time: int = 4000) -> bool:
 
         # TODO - add celebrate trajectory to Marty V2
-
-        return self.ricIF.cmdRICRESTRslt("traj/celebrate")
+        return self.ricIF.cmdRICRESTRslt(f"traj/wiggle?moveTime={move_time}")
 
     def circle_dance(self, side: str = 'right', move_time: int = 2500) -> bool:
         if side != 'right' and side != 'left':

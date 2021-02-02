@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 import sys
 import time
 import socket
@@ -129,7 +129,9 @@ class ClientMV1(ClientGeneric):
     def get_joint_status(self, joint_name_or_num: Union[int, str]) -> int:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def lean(self, direction: str, amount: int, move_time: int) -> bool:
+    def lean(self, direction: str, amount: Optional[int], move_time: int) -> bool:
+        if amount is None:
+            amount = 50
         try:
             directionNum = self.SIDE_CODES[direction]
         except KeyError:
@@ -192,10 +194,19 @@ class ClientMV1(ClientGeneric):
                                    dur_lsb, dur_msb)
 
     def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
-        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+        for i in range(2):
+            self.circle_dance(side, int(move_time/3))
+            self.arms(90, 90, int(move_time/6))
+            self.arms(45, 45, int(move_time/6))
+        return self.stand_straight(int(move_time/3))
 
     def wiggle(self, move_time: int = 5000) -> bool:
-        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+        dur_lsb, dur_msb = self._pack_uint16(move_time)
+        return self._execute('celebrate', dur_lsb, dur_msb)
+
+    def stand_straight(self, move_time: int = 2000) -> bool:
+        dur_lsb, dur_msb = self._pack_uint16(move_time)
+        return self._execute('stand_straight', dur_lsb, dur_msb)
 
     def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
             move_time: int = 1000) -> bool:
@@ -402,6 +413,7 @@ class ClientMV1(ClientGeneric):
             'celebrate'          : self._fixed_command,
             'arms'               : self._fixed_command,
             'sidestep'           : self._fixed_command,
+            'stand_straight'     : self._fixed_command,
             'circle_dance'       : self._fixed_command,
             'play_sound'         : self._fixed_command,
             'stop'               : self._fixed_command,
@@ -560,6 +572,7 @@ class ClientMV1(ClientGeneric):
         'celebrate'          : ['\x02', '\x03', '\x00', '\x08'], # OK
         'arms'               : ['\x02', '\x05', '\x00', '\x0B'], #
         'sidestep'           : ['\x02', '\x06', '\x00', '\x0E'], #
+        'stand_straight'     : ['\x02', '\x03', '\x00', '\x0F'],
         'play_sound'         : ['\x02', '\x07', '\x00', '\x10'], #
         'stop'               : ['\x02', '\x02', '\x00', '\x11'], # OK
         'move_joint'         : ['\x02', '\x05', '\x00', '\x12'], #

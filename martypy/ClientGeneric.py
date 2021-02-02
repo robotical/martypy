@@ -61,7 +61,7 @@ class ClientGeneric(ABC):
         else:
             return self._is_blocking
 
-    def set_bloking(self, blocking: bool):
+    def set_blocking(self, blocking: bool):
         self._is_blocking = blocking
 
     @abstractmethod
@@ -74,6 +74,10 @@ class ClientGeneric(ABC):
 
     @abstractmethod
     def get_ready(self) -> bool:
+        return False
+
+    @abstractmethod
+    def stand_straight(self, move_time: int) -> bool:
         return False
 
     @abstractmethod
@@ -109,7 +113,7 @@ class ClientGeneric(ABC):
         return 0
 
     @abstractmethod
-    def lean(self, direction: str, amount: int, move_time: int) -> bool:
+    def lean(self, direction: str, amount: Optional[int], move_time: int) -> bool:
         return False
 
     @abstractmethod
