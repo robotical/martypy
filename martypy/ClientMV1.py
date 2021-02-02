@@ -204,7 +204,7 @@ class ClientMV1(ClientGeneric):
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('celebrate', dur_lsb, dur_msb)
 
-    def stand_straight(self, move_time: int=2000) -> bool:
+    def stand_straight(self, move_time: int = 2000) -> bool:
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('stand_straight', dur_lsb, dur_msb)
 
