@@ -318,13 +318,18 @@ class Marty(object):
             self.client.wait_if_required(move_time, blocking)
         return result
 
-    def lean(self, direction: str, amount: int, move_time: int, blocking: Optional[bool] = None) -> bool:
+    def lean(self, direction: str, amount: Optional[int] = None, move_time: int = 1000,
+             blocking: Optional[bool] = None) -> bool:
         '''
         Lean over in a direction :one: :two:
         Args:
-            direction: 'left', 'right', 'forward', 'back', or 'auto'
-            amount: percentage amount to lean
-            move_time: how long this movement should last, in milliseconds
+            direction: `'left'`, `'right'`, `'forward'`, or `'back'`
+            amount: How much to lean. The defaults and the exact meaning is
+                different between Marty V1 and V2:
+                - :one: If not specified or `None`, `amount` defaults to `50` (no
+                        specific unit).
+                - :two: If not specified or `None`, `amount` defaults to `29` degrees.
+            move_time: How long this movement should last, in milliseconds.
             blocking: Blocking mode override; whether to wait for physical movement to
                 finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:

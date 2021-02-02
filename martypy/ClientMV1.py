@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 import sys
 import time
 import socket
@@ -129,7 +129,9 @@ class ClientMV1(ClientGeneric):
     def get_joint_status(self, joint_name_or_num: Union[int, str]) -> int:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def lean(self, direction: str, amount: int, move_time: int) -> bool:
+    def lean(self, direction: str, amount: Optional[int], move_time: int) -> bool:
+        if amount is None:
+            amount = 50
         try:
             directionNum = self.SIDE_CODES[direction]
         except KeyError:

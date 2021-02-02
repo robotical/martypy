@@ -176,7 +176,9 @@ class ClientMV2(ClientGeneric):
     def get_joint_status(self, joint_id: Union[int, str]) -> int:
         return self.ricHardware.getServoFlags(joint_id, self.ricHwElemsInfoByIDNo)
 
-    def lean(self, direction: str, amount: int, move_time: int) -> bool:
+    def lean(self, direction: str, amount: Optional[int], move_time: int) -> bool:
+        if amount is None:
+            amount = 29
         try:
             directionNum = ClientGeneric.SIDE_CODES[direction]
         except KeyError:

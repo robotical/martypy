@@ -113,7 +113,7 @@ class ClientGeneric(ABC):
         return 0
 
     @abstractmethod
-    def lean(self, direction: str, amount: int, move_time: int) -> bool:
+    def lean(self, direction: str, amount: Optional[int], move_time: int) -> bool:
         return False
 
     @abstractmethod
