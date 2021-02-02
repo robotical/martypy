@@ -255,6 +255,8 @@ class Marty(object):
         '''
         Move Marty to the normal standing position :one: :two:
         Args:
+            move_time: How long (in milliseconds) Marty will take to reach the
+                normal standing position. (Higher number means slower movement.)
             blocking: Blocking mode override; whether to wait for physical movement to
                 finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
