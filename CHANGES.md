@@ -1,3 +1,10 @@
+Version 3.0.0 :
+- **Blocking Mode**
+  - You can now select whether movement commands are blocking or non-blocking.
+  - The default behaviour changed from non-blocking to blocking.
+- New `stand_straight()` method matching the "Stand straight in <...>" Scratch block.
+- Marty V1 can `dance()` now!
+
 Version 2.2.0 :
 - Better defaults for movement commands
 - Various bugfixes including:
