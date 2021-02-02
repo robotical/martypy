@@ -77,7 +77,7 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod
-    def stand_straight(self) -> bool:
+    def stand_straight(self, move_time: int) -> bool:
         return False
 
     @abstractmethod
