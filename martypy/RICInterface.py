@@ -1,7 +1,6 @@
 '''
 RICInterface
 '''
-from __future__ import annotations
 from typing import Callable, Dict
 import time
 import threading
@@ -68,7 +67,7 @@ class RICInterface:
         '''
         self.commsHandler.close()
 
-    def setDecodedMsgCB(self, onDecodedMsg: Callable[[DecodedMsg, RICInterface], None]) -> None:
+    def setDecodedMsgCB(self, onDecodedMsg: Callable[[DecodedMsg, 'RICInterface'], None]) -> None:
         '''
         Set callback on decoded message received from RIC
         Args:
