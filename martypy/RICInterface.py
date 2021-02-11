@@ -89,7 +89,7 @@ class RICInterface:
 
     def setTimerCB(self, onMsgTimerCB: Callable[[], None]) -> None:
         '''
-        Set callback which can be used to check for message types (e.g. publish) 
+        Set callback which can be used to check for message types (e.g. publish)
         Args:
             onMsgTimerCB: callback function (takes 0 parameters)
         Returns:
@@ -191,7 +191,7 @@ class RICInterface:
 
     def newRoundTrip(self, rtTime:int) -> None:
         '''
-        Indicate a new round-trip for a message is complete - this is 
+        Indicate a new round-trip for a message is complete - this is
         for statistics gathering
         Args:
             rtTime: time taken for round-trip in seconds
@@ -257,7 +257,7 @@ class RICInterface:
                 # if i % 10 == 9:
                 #     logger.debug(f"SendFile Progress {i * 100 / numBlocks:0.1f}%")
 
-            # End frame            
+            # End frame
             time.sleep(1.0)
             self.sendRICRESTCmdFrame('{' + f'"cmdName":"ufEnd","reqStr":"fileupload","fileType":"{fileType}",' + \
                             f'"fileName":"{filename}","fileLen":{str(binaryImageLen)},' + \
@@ -323,7 +323,7 @@ class RICInterface:
         for msgIdx in msgIdxsToRemove:
             with self._msgsOutstandingLock:
                 self._msgsOutstanding.pop(msgIdx)
-        
+
         # Restart timer
         if self.commsHandler is not None and self.commsHandler.isOpen():
             self.msgTimeoutCheckTimer = threading.Timer(1.0, self._msgTimeoutCheck)
