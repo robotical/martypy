@@ -1,14 +1,14 @@
 '''
 Python library to communicate with Marty the Robot V1 and V2 by Robotical
 
-Getting started:  
-1) Import Marty from the martypy library  
-2) Create a Marty object that connects the way you want  
-3) Tell your Marty to dance  
+Getting started:
+1) Import Marty from the martypy library
+2) Create a Marty object that connects the way you want
+3) Tell your Marty to dance
 
 ```python
-from martypy import Marty  
-my_marty = Marty("wifi","192.168.0.53")  
+from martypy import Marty
+my_marty = Marty("wifi","192.168.0.53")
 my_marty.dance()
 ```
 
@@ -50,7 +50,7 @@ class Marty(object):
         'right knee'     : 5,
         'left arm'       : 6,
         'right arm'      : 7,
-        'eyes'          : 8        
+        'eyes'          : 8
     }
 
     JOINT_STATUS = {
@@ -83,7 +83,7 @@ class Marty(object):
         "IRFoot"
     ]
 
-    def __init__(self, 
+    def __init__(self,
                 method: str,
                 locator: str = "",
                 extra_client_types: dict = dict(),
@@ -129,7 +129,7 @@ class Marty(object):
                 * `False`: non-blocking mode
 
         Raises:
-            * MartyConfigException if the parameters are invalid  
+            * MartyConfigException if the parameters are invalid
             * MartyConnectException if Marty couldn't be contacted
         '''
         # Merge in any extra clients that have been added and check valid
@@ -360,8 +360,8 @@ class Marty(object):
             self.client.wait_if_required(steps*move_time, blocking)
         return result
 
-    def play_sound(self, name_or_freq_start: Union[str,int], 
-            freq_end: Optional[int] = None, 
+    def play_sound(self, name_or_freq_start: Union[str,int],
+            freq_end: Optional[int] = None,
             duration: Optional[int] = None) -> bool:
         '''
         Play a named sound (Marty V2 :two:) or make a tone (Marty V1 :one:)
@@ -380,8 +380,8 @@ class Marty(object):
         Get the latest value from the Marty's accelerometer :one: :two:
         Args:
             axis: (optional) 'x', 'y' or 'z' OR no parameter at all (see returns below)
-        Returns:  
-            * The acceleration value from the axis (if axis specified)  
+        Returns:
+            * The acceleration value from the axis (if axis specified)
             * A tuple containing x, y and z values (if no axis) :two:
             Note that the returned value will be 0 if no value is available
         Raises:
@@ -408,10 +408,10 @@ class Marty(object):
 
     def stop(self, stop_type: Optional[str] = None) -> bool:
         '''
-        Stop Marty's movement  :one: :two:  
+        Stop Marty's movement  :one: :two:
 
-        You can also control what way to "stop" you want with the parameter stop_type. For instance:  
-        
+        You can also control what way to "stop" you want with the parameter stop_type. For instance:
+
         * 'clear queue' to finish the current movement before stopping (clear any queued movements)
         * 'clear and stop' stop immediately (and clear queues)
         * 'clear and disable' :one: stop and disable the robot
@@ -426,7 +426,7 @@ class Marty(object):
             MartyCommandException if the stop_type is unknown
         '''
         # Default to plain "stop"
-        stopCode = 1 
+        stopCode = 1
         if stop_type is not None:
             if stop_type not in self.STOP_TYPE:
                 self.client.preException(True)
@@ -525,7 +525,7 @@ class Marty(object):
         Returns:
             Angle of the joint in degrees
         Raises:
-            MartyCommandException if the joint_name_or_num is unknown            
+            MartyCommandException if the joint_name_or_num is unknown
         '''
         jointIDNo = joint_name_or_num
         if type(joint_name_or_num) is str:
@@ -633,7 +633,7 @@ class Marty(object):
         '''
         return self.client.get_robot_status()
 
-    def get_joints(self) -> Dict: 
+    def get_joints(self) -> Dict:
         '''
         Get information on all of Marty's joints :two:
         Args:
@@ -667,7 +667,7 @@ class Marty(object):
                 "is5VOn": True if power to the joints and add-ons is turned on
         '''
         return self.client.get_power_status()
-    
+
     def get_add_ons_status(self) -> Dict:
         '''
         Get latest information for all add-ons :two:
@@ -710,7 +710,7 @@ class Marty(object):
                                 "1.0" for Marty V1
                                 "2.0" for Marty V2
                                 other values for later versions of Marty
-                "SystemName": the name of the physical hardware in Marty - this will be 
+                "SystemName": the name of the physical hardware in Marty - this will be
                               RicFirmwareESP32 for Marty V2 and
                               MartyV1 for Marty V1
                 "SystemVersion": a string in semantic versioning format with the version
@@ -773,7 +773,7 @@ class Marty(object):
 
     def send_ric_rest_cmd(self, ricRestCmd: str) -> None:
         '''
-        Send a command in RIC REST format to Marty :two:  
+        Send a command in RIC REST format to Marty :two:
 
         This is a special purpose command which you can use to do advanced
         control of Marty
@@ -786,7 +786,7 @@ class Marty(object):
 
     def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
         '''
-        Send a command in RIC REST format to Marty and wait for reply :two:  
+        Send a command in RIC REST format to Marty and wait for reply :two:
 
         This is a special purpose command which you can use to do advanced
         control of Marty
@@ -807,7 +807,7 @@ class Marty(object):
         '''
         return self.get_joint_current(motor_id)
 
-    ''' 
+    '''
     ============================================================
     The following commands are for Marty V1 Only
     ============================================================
@@ -871,7 +871,7 @@ class Marty(object):
 
     def ros_command(self, *byte_array: int) -> bool:
         '''
-        Low level proxied access to the ROS Serial API between 
+        Low level proxied access to the ROS Serial API between
         the modem and main controller :one:
         '''
         return self.client.ros_command(*byte_array)
@@ -909,7 +909,7 @@ class Marty(object):
     def ros_serial_formatter(self, topicID: int, send: bool = False, *message: int) -> List[int]:
         '''
         Formats message into ROS serial format and
-        returns formatted message as a list :one:  
+        returns formatted message as a list :one:
 
         Calls ros_command with the processed message if send is True.
         More information about the ROS serial format can be
@@ -952,7 +952,7 @@ class Marty(object):
 
     def i2c_write(self, *byte_array: int) -> bool:
         '''
-        Write a bytestream to the i2c port. :one:  
+        Write a bytestream to the i2c port. :one:
 
         The first byte should be the address, following from that
         the datagram folows standard i2c spec
@@ -961,7 +961,7 @@ class Marty(object):
 
     def i2c_write_to_ric(self, address: int, byte_array: bytes) -> bool:
         '''
-        Write a formatted bytestream to the i2c port. :one:  
+        Write a formatted bytestream to the i2c port. :one:
 
         The bytestream is formatted in the ROS serial format.
 
@@ -971,7 +971,7 @@ class Marty(object):
 
     def i2c_write_to_rick(self, address: int, byte_array: bytes) -> bool:
         '''
-        Write a formatted bytestream to the i2c port. :one:  
+        Write a formatted bytestream to the i2c port. :one:
 
         The bytestream is formatted in the ROS serial format.
         address: the other device's address
@@ -1004,7 +1004,7 @@ class Marty(object):
         '''
         return self.client.discover()
 
-    ''' 
+    '''
     ============================================================
     Helper commands that you probably won't need to use directly
     ============================================================
