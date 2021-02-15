@@ -8,14 +8,14 @@ title: API Documentation
 
 Python library to communicate with Marty the Robot V1 and V2 by Robotical
 
-Getting started:  
-1) Import Marty from the martypy library  
-2) Create a Marty object that connects the way you want  
-3) Tell your Marty to dance  
+Getting started:
+1) Import Marty from the martypy library
+2) Create a Marty object that connects the way you want
+3) Tell your Marty to dance
 
 ```python
-from martypy import Marty  
-my_marty = Marty("wifi","192.168.0.53")  
+from martypy import Marty
+my_marty = Marty("wifi","192.168.0.53")
 my_marty.dance()
 ```
 
@@ -165,17 +165,20 @@ Circle Dance :two:
  | walk(num_steps: int = 2, start_foot: str = 'auto', turn: int = 0, step_length: int = 25, move_time: int = 1500, blocking: Optional[bool] = None) -> bool
 ```
 
-Make Marty walk :one: :two:
+Make Marty walk forwards, backwards, or turn on the spot :one: :two:
 
 **Arguments**:
 
-- `num_steps` - how many steps to take
-- `start_foot` - 'left', 'right' or 'auto', start walking with this foot Note: :two: Unless
-  you specify 'auto', all steps are taken with the same foot so
-  it only makes sense to use the start_foot argument with `num_steps=1`.
+- `num_steps` - How many steps to take. (Integer in range [1, 10].)
+- `start_foot` - `'left'`, `'right'` or `'auto'`; start walking with this
+  foot. Note: :two: Unless you specify 'auto', all steps are taken
+  with the same foot so it only makes sense to use the `start_foot`
+  argument with `num_steps=1`.
 - `turn` - How much to turn (-100 to 100 in degrees), 0 is straight.
-- `step_length` - How far to step (approximately in mm)
-- `move_time` - how long this movement should last, in milliseconds
+- `step_length` - How far to step (approximately in mm). Use negative numbers
+  to walk backwards. To turn on the spot, either specify `start_foot`
+  explicitly or use small but non-zero `step_length`.
+- `move_time` - How long Marty will take to make one step, in milliseconds.
 - `blocking` - Blocking mode override; whether to wait for physical movement to
   finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
@@ -1023,7 +1026,7 @@ Tell the robot whether it can or can't move now and then in a lifelike way when 
  | ros_command(*byte_array: int) -> bool
 ```
 
-Low level proxied access to the ROS Serial API between 
+Low level proxied access to the ROS Serial API between
 the modem and main controller :one:
 
 <a name="martypy.Marty.Marty.keyframe"></a>
@@ -1068,7 +1071,7 @@ Ask the board to print the firmware version over chatter :one:
 ```
 
 Formats message into ROS serial format and
-returns formatted message as a list :one:  
+returns formatted message as a list :one:
 
 Calls ros_command with the processed message if send is True.
 More information about the ROS serial format can be
@@ -1134,7 +1137,7 @@ Set board parameters :one:
  | i2c_write(*byte_array: int) -> bool
 ```
 
-Write a bytestream to the i2c port. :one:  
+Write a bytestream to the i2c port. :one:
 
 The first byte should be the address, following from that
 the datagram folows standard i2c spec
@@ -1146,7 +1149,7 @@ the datagram folows standard i2c spec
  | i2c_write_to_ric(address: int, byte_array: bytes) -> bool
 ```
 
-Write a formatted bytestream to the i2c port. :one:  
+Write a formatted bytestream to the i2c port. :one:
 
 The bytestream is formatted in the ROS serial format.
 
@@ -1159,7 +1162,7 @@ address: the other device's address
  | i2c_write_to_rick(address: int, byte_array: bytes) -> bool
 ```
 
-Write a formatted bytestream to the i2c port. :one:  
+Write a formatted bytestream to the i2c port. :one:
 
 The bytestream is formatted in the ROS serial format.
 address: the other device's address

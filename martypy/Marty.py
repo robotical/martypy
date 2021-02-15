@@ -216,15 +216,18 @@ class Marty(object):
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
                 step_length:int = 25, move_time: int = 1500, blocking: Optional[bool] = None) -> bool:
         '''
-        Make Marty walk :one: :two:
+        Make Marty walk forwards, backwards, or turn on the spot :one: :two:
         Args:
-            num_steps: how many steps to take
-            start_foot: 'left', 'right' or 'auto', start walking with this foot Note: :two: Unless
-                    you specify 'auto', all steps are taken with the same foot so
-                    it only makes sense to use the start_foot argument with `num_steps=1`.
+            num_steps: How many steps to take. (Integer in range [1, 10].)
+            start_foot: `'left'`, `'right'` or `'auto'`; start walking with this
+                foot. Note: :two: Unless you specify 'auto', all steps are taken
+                with the same foot so it only makes sense to use the `start_foot`
+                argument with `num_steps=1`.
             turn: How much to turn (-100 to 100 in degrees), 0 is straight.
-            step_length: How far to step (approximately in mm)
-            move_time: how long this movement should last, in milliseconds
+            step_length: How far to step (approximately in mm). Use negative numbers
+                to walk backwards. To turn on the spot, either specify `start_foot`
+                explicitly or use small but non-zero `step_length`.
+            move_time: How long Marty will take to make one step, in milliseconds.
             blocking: Blocking mode override; whether to wait for physical movement to
                 finish before returning. Defaults to the value returned by `self.is_blocking()`.
         Returns:
