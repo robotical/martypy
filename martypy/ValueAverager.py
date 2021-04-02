@@ -1,8 +1,8 @@
 class ValueAverager:
     
-    def __init__(self):
+    def __init__(self, windowSize = 10):
         self.valList = []
-        self.windowSize = 10
+        self.windowSize = windowSize
 
     def add(self, newVal):
         self.valList = self.valList[-self.windowSize:]

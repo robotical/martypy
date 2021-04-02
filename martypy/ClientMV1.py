@@ -548,6 +548,9 @@ class ClientMV1(ClientGeneric):
     def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
+    def is_conn_ready(self) -> bool:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+        
     # Encodes Command Type flag, LSB size, MSB size, Data
     CMD_OPCODES = {
         'battery'            : ['\x01', '\x01', '\x00'],         # OK

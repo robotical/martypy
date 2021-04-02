@@ -44,7 +44,7 @@ class RICCommsWiFi(RICCommsBase):
         Returns:
             True if comms open
         '''
-        return self.isOpen
+        return self._isOpen
 
     def open(self, openParams: Dict) -> bool:
         '''
@@ -163,11 +163,11 @@ class RICCommsWiFi(RICCommsBase):
             except OSError as excp:
                 logger.debug(f"webSocket problem {excp}")
                 self.webSocketThreadEnabled = False
-                raise MartyConnectException("WebSocket closed unexpectedly")
             except Exception as excp:
                 logger.debug(f"WebSocket exception {excp}")
             time.sleep(0.001)
         logger.debug("Exiting WebSocket thread")
+        self._isOpen = False
 
     def _onWSBinaryFrame(self, rxFrame: bytes) -> None:
         # logger.debug(f"webSocketRx {''.join('{:02x}'.format(x) for x in rxFrame)}")

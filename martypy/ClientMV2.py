@@ -389,11 +389,19 @@ class ClientMV2(ClientGeneric):
     def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
         return self.ricIF.cmdRICRESTURLSync(ricRestCmd)
 
+    def is_conn_ready(self) -> bool:
+        if not self.ricIF.isOpen():
+            return False
+        return self._initComplete and (self.lastSubscribedMsgTime is not None)
+
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
         self.loggingCallback = loggingCallback
 
     def get_interface_stats(self) -> Dict:
-        return self.ricIF.getStats()
+        ricIFStats = self.ricIF.getStats()
+        publishInfo = self.ricHardware.getPublishStats()
+        ricIFStats = {**ricIFStats, **publishInfo}
+        return ricIFStats
 
     def preException(self, isFatal: bool) -> None:
         if isFatal:
@@ -426,7 +434,7 @@ class ClientMV2(ClientGeneric):
             # Subscribe for publication messages
             self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
                             '"pubRecs":[' + \
-         '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
+                                '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
                                 '{"name":"PowerStatus","rateHz":1.0},' + \
                                 '{' + f'"name":"AddOnStatus","rateHz":{self.subscribeRateHz}' + '}' + \
                             ']}')

@@ -7,6 +7,7 @@ import logging
 import time
 from .RICROSSerial import RICROSSerial
 from typing import Dict, List, Tuple, Union
+from .ValueAverager import ValueAverager
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,43 @@ class RICHwRobotStatus:
             return {}
         return RICROSSerial.extractRobotStatus(self.latestMsg)
 
+class RICHwPublishMonitor:
+    
+    def __init__(self):
+        self._pubRecs = {}
+
+    def update(self, topicID):
+        nowTime = time.time()
+        if topicID in self._pubRecs:
+            pubData = self._pubRecs[topicID]
+            lastMsgTime = pubData.get("lastMsgTime", 0)
+            timeInterval = nowTime - lastMsgTime
+            pubData["averager"].add(timeInterval)
+            pubData["lastMsgTime"] = nowTime
+        else:
+            self._pubRecs[topicID] = {
+                "averager": ValueAverager(10),
+                "lastMsgTime": nowTime
+            }
+
+    def getPublishStats(self):
+        pubIntervalSecs = {}
+        for topicID in self._pubRecs:
+            pubIntervalSecs["pub_"+self.topicIDToStr(topicID)+"_Sper"] = self._pubRecs[topicID]["averager"].getAvg()
+        return pubIntervalSecs
+
+    def topicIDToStr(self, topicID):
+        if topicID == RICROSSerial.ROSTOPIC_V2_SMART_SERVOS:
+            return "servos"
+        elif topicID == RICROSSerial.ROSTOPIC_V2_ACCEL:
+            return "imu"
+        elif topicID == RICROSSerial.ROSTOPIC_V2_POWER_STATUS:
+            return "power"
+        elif topicID == RICROSSerial.ROSTOPIC_V2_ADDONS:
+            return "addons"
+        elif topicID == RICROSSerial.ROSTOPIC_V2_ROBOT_STATUS:
+            return "robot"
+        return "unknown"
 class RICHWElems:
 
     def __init__(self):
@@ -130,6 +168,7 @@ class RICHWElems:
         self._powerStatus = RICHwPowerStatus()
         self._addOnsStatus = RICHwAddOnStatus()
         self._robotStatus = RICHwRobotStatus()
+        self._publishMonitor = RICHwPublishMonitor()
 
     def updateWithROSSerialMsg(self, topicID: int, payload: bytes):
         # logger.debug(f"Received ROSSerial topicID {topicID}")
@@ -143,8 +182,9 @@ class RICHWElems:
             self._addOnsStatus.update(payload)
         elif topicID == RICROSSerial.ROSTOPIC_V2_ROBOT_STATUS:
             self._robotStatus.update(payload)
+        self._publishMonitor.update(topicID)
 
-    def getServos(self, dictOfHwElemsByIdNo: Dict) -> List:
+    def getServos(self, dictOfHwElemsByIdNo: Dict) -> Dict:
         return self._smartServos.status(dictOfHwElemsByIdNo)
 
     def getServoPos(self, servoId: int, dictOfHwElemsByIdNo: Dict) -> float:
@@ -179,4 +219,7 @@ class RICHWElems:
 
     def getAddOn(self, addOnNameOrId: Union[int, str], dictOfHwElemsByIdNo: Dict) -> Dict:
         return self._addOnsStatus.addOnStatus(addOnNameOrId, dictOfHwElemsByIdNo)
+
+    def getPublishStats(self):
+        return self._publishMonitor.getPublishStats()
 

@@ -711,6 +711,7 @@ class Marty(object):
                                  of Marty firmware (e.g. "1.2.3")
                 "SerialNo": serial number of this Marty
                 "MAC": the base MAC address of the Marty
+                "RicHwRevNo": the revision number of the RIC hardware
         '''
         return self.client.get_system_info()
 
@@ -801,6 +802,17 @@ class Marty(object):
         '''
         return self.get_joint_current(motor_id)
 
+    def is_conn_ready(self) -> bool:
+        '''
+        Check if the robot is connected and the connection is ready to accept
+        commands :two:
+        Args:
+            None
+        Returns:
+            True if the robot is connected and ready
+        '''
+        return self.client.is_conn_ready()
+        
     ''' 
     ============================================================
     The following commands are for Marty V1 Only

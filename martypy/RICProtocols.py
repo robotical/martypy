@@ -156,14 +156,10 @@ class RICProtocols:
         return cmdFrame, msgNum
 
     def encodeRICRESTFileBlock(self, cmdBuf: bytes) -> Tuple[bytes, int]:
-        # RICSerial file block
-        msgNum = self.ricSerialMsgNum
-        cmdFrame = bytearray([msgNum, self.MSG_TYPE_COMMAND + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_FILE_BLOCK])
+        # RICSerial file block - not numbered
+        cmdFrame = bytearray([0, self.MSG_TYPE_COMMAND + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_FILE_BLOCK])
         cmdFrame += cmdBuf
-        self.ricSerialMsgNum += 1
-        if self.ricSerialMsgNum > 255:
-            self.ricSerialMsgNum = 1
-        return cmdFrame, msgNum
+        return cmdFrame, 0
 
     def decodeRICFrame(self, fr: bytes) -> DecodedMsg:
         msg = DecodedMsg()

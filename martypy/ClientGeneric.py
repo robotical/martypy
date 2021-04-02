@@ -335,3 +335,7 @@ class ClientGeneric(ABC):
     @abstractmethod
     def get_test_output(self) -> dict:
         return ""
+
+    @abstractmethod
+    def is_conn_ready(self) -> bool:
+        return False
