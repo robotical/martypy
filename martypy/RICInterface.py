@@ -348,7 +348,7 @@ class RICInterface:
             self._fileSendOkTo = 0
 
             # Debug
-            # print(f"blockMaxSize {blockMaxSize} batchAckSize {batchAckSize} resp {resp}")
+            # logger.debug(f"ricIF sendFile blockMaxSize {blockMaxSize} batchAckSize {batchAckSize} resp {resp}")
 
             # Progress and check for abort
             if self._sendFileProgressCheckAbort(progressCB, self._fileSendOkTo, binaryImageLen):
@@ -366,7 +366,7 @@ class RICInterface:
                         break
 
             # Debug
-            # print(f"starting to send file data ...")
+            # logger.debug(f"ricIF sendFile starting to send file data ...")
 
             # Send file blocks
             numBlocks = 0
@@ -384,25 +384,18 @@ class RICInterface:
                 self._fileSendNewOkTo = False
                 while batchBlockIdx < batchSize and sendFromPos < binaryImageLen:
 
-                    # # Clear old batch acks
-                    # if batchIdx == batchSize - 1:
-                    #     batchAckReceived = False
-
                     # Send block
                     blockToSend = binaryImage[sendFromPos:sendFromPos+blockMaxSize]
                     self.sendRICRESTFileBlock(sendFromPos.to_bytes(4, 'big') + blockToSend)
                     sendFromPos += blockMaxSize
                     batchBlockIdx += 1
 
-                    # TODO REMOVE??
-                    time.sleep(0.01)
-
                     # Check if we have received a file-not-started error
                     if self._fileNotStarted or self._fileUserCancel:
                         break
 
                 # Debug
-                # print(f"sent batch - start at {batchStartPos} end at {sendFromPos} okto {self._fileSendOkTo}")
+                # logger.debug(f"ricIF sendFile sent batch - start at {batchStartPos} end at {sendFromPos} okto {self._fileSendOkTo}")
 
                 # Wait for response (there is a timeout at the ESP end to ensure a response is always returned
                 # even if blocks are dropped on reception at ESP) - the timeout here is for these responses
@@ -414,7 +407,7 @@ class RICInterface:
                         return False
 
                     # Debug
-                    # print(f"checking for OKTO {self._fileSendOkTo} batchStartPos {batchStartPos}")
+                    # logger.debug(f"ricIF sendFile checking for OKTO {self._fileSendOkTo} batchStartPos {batchStartPos}")
 
                     # Check for okto
                     if self._fileSendNewOkTo:
@@ -438,7 +431,7 @@ class RICInterface:
                 numBlocks += 1
 
             # Debug
-            print(f"sending END")
+            # logger.debug(f"ricIF sendFile sending END")
 
             # End frame
             resp = self.sendRICRESTCmdFrameSync('{' + f'"cmdName":"ufEnd","reqStr":"fileupload","fileType":"{fileDest}",' + \
@@ -569,7 +562,7 @@ class RICInterface:
                         logger.debug(f"Unmatched msgKey {msgKey}")
                     doRxCallback = isUnmatched
             elif decodedMsg.msgTypeCode == RICProtocols.MSG_TYPE_RESPONSE:
-                # print(f"RESPONSE {decodedMsg.payload}")
+                # logger.debug(f"RESPONSE {decodedMsg.payload}")
                 # Check for okto message
                 reptObj = {}
                 try:
@@ -581,7 +574,7 @@ class RICInterface:
                     if self._fileSendOkTo < okto:
                         self._fileSendOkTo = okto
                     self._fileSendNewOkTo = True
-                    # logger.warn(f"OKTO MESSAGE {reptObj['okto']}")
+                    # logger.debug(f"OKTO MESSAGE {reptObj['okto']}")
                 elif "cmdName" in reptObj:
                     cmdName = reptObj.get("cmdName","")
                     if cmdName == "ufBlock" or cmdName == "ufStatus" or cmdName == "ufCancel":
