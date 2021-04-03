@@ -286,7 +286,7 @@ class RICInterface:
         for i in range(numMsgs):
             self.commsHandler.send(dataBlock)
 
-    def _sendFileProgressCheckAbort(self, progressCB: Callable[[int, int, RICInterface], bool], 
+    def _sendFileProgressCheckAbort(self, progressCB: Callable[[int, int, 'RICInterface'], bool], 
                     currentPos: int, fileSize: int) -> bool:
         if not progressCB:
             return False
@@ -298,7 +298,7 @@ class RICInterface:
         return False
 
     def sendFile(self, filename: str, fileDest: str, reqStr: str = '', 
-                progressCB: Callable[[int, int, RICInterface], bool] = None) -> bool:
+                progressCB: Callable[[int, int, 'RICInterface'], bool] = None) -> bool:
         '''
         Send a file (from the file system)
         Args:
