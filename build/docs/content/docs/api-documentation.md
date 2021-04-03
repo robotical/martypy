@@ -59,8 +59,8 @@ Marty is moving.
 Every movement command takes an optional `blocking` argument that can be used
 to choose the mode for that call. If you plan to use the same mode all or most
 of the time, it is better to to use the `Marty.set_blocking()` method or use
-the `blocking` constructor argument The latter defaults to `False`
-(non-blocking) if not provided.
+the `blocking` constructor argument. The latter defaults to `True` (blocking)
+if not provided.
 
 **Arguments**:
 
@@ -71,8 +71,8 @@ the `blocking` constructor argument The latter defaults to `False`
   is the serial port name, network (IP) Address or network name (hostname) of Marty
   that the computer should use to communicate with Marty
 - `blocking` - Default movement command mode for this `Marty` instance.
-  * `True` = blocking mode
-  * `False` = non-blocking mode
+  * `True` (default): blocking mode
+  * `False`: non-blocking mode
   
 
 **Raises**:
@@ -94,7 +94,7 @@ Boogie, Marty! :one: :two:
 - `side` - 'left' or 'right', which side to start on
 - `move_time` - how long this movement should last, in milliseconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -104,7 +104,7 @@ Boogie, Marty! :one: :two:
 #### celebrate
 
 ```python
- | celebrate(move_time: int = 5000, blocking: Optional[bool] = None) -> bool
+ | celebrate(move_time: int = 4000, blocking: Optional[bool] = None) -> bool
 ```
 
 Coming soon! Same as `wiggle()` for now. :one: :two:
@@ -113,7 +113,7 @@ Coming soon! Same as `wiggle()` for now. :one: :two:
 
 - `move_time` - how long this movement should last, in milliseconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -132,7 +132,7 @@ Wiggle :two:
 
 - `move_time` - how long this movement should last, in milliseconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -152,7 +152,7 @@ Circle Dance :two:
 - `side` - 'left' or 'right', which side to start on
 - `move_time` - how long this movement should last, in milliseconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -177,7 +177,7 @@ Make Marty walk :one: :two:
 - `step_length` - How far to step (approximately in mm)
 - `move_time` - how long this movement should last, in milliseconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -190,12 +190,33 @@ Make Marty walk :one: :two:
  | get_ready(blocking: Optional[bool] = None) -> bool
 ```
 
-Move Marty to the normal standing position :one: :two:
+Move Marty to the normal standing position and wiggle eyebrows :one: :two:
+Will also enable motors for Marty v1 :one:
 
 **Arguments**:
 
 - `blocking` - Blocking mode override; whether to wait for physical movement to
   finish before returning.
+
+**Returns**:
+
+  True if Marty accepted the request
+
+<a name="martypy.Marty.Marty.stand_straight"></a>
+#### stand\_straight
+
+```python
+ | stand_straight(move_time: int = 2000, blocking: Optional[bool] = None) -> bool
+```
+
+Move Marty to the normal standing position :one: :two:
+
+**Arguments**:
+
+- `move_time` - How long (in milliseconds) Marty will take to reach the
+  normal standing position. (Higher number means slower movement.)
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -216,7 +237,7 @@ Move the eyes to a pose or an angle :one: :two:
   this can be an angle in degrees (which can be a negative number)
 - `move_time` - how long this movement should last, in milliseconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -237,7 +258,7 @@ Kick one of Marty's feet :one: :two:
 - `twist` - the amount of twisting do do while kicking (in degrees)
 - `move_time` - how long this movement should last, in milliseconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -258,7 +279,7 @@ Move both of Marty's arms to angles you specify :one: :two:
 - `right_angle` - Position of the right arm (degrees -100 to 100)
 - `move_time` - how long this movement should last, in milliseconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -268,18 +289,22 @@ Move both of Marty's arms to angles you specify :one: :two:
 #### lean
 
 ```python
- | lean(direction: str, amount: int, move_time: int, blocking: Optional[bool] = None) -> bool
+ | lean(direction: str, amount: Optional[int] = None, move_time: int = 1000, blocking: Optional[bool] = None) -> bool
 ```
 
 Lean over in a direction :one: :two:
 
 **Arguments**:
 
-- `direction` - 'left', 'right', 'forward', 'back', or 'auto'
-- `amount` - percentage amount to lean
-- `move_time` - how long this movement should last, in milliseconds
+- `direction` - `'left'`, `'right'`, `'forward'`, or `'back'`
+- `amount` - How much to lean. The defaults and the exact meaning is
+  different between Marty V1 and V2:
+  - :one: If not specified or `None`, `amount` defaults to `50` (no
+  specific unit).
+  - :two: If not specified or `None`, `amount` defaults to `29` degrees.
+- `move_time` - How long this movement should last, in milliseconds.
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -301,7 +326,7 @@ Take sidesteps :one: :two:
 - `step_length` - how broad the steps are (up to 127)
 - `move_time` - how long this movement should last, in milliseconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -420,9 +445,9 @@ Hold Marty at its current position :two:
 
   hold_time, time to hold position in milli-seconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning. Holding position counts as movement since
-  Marty is using its motors to actively resist any attempts to move its
-  joints.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
+  Holding position counts as movement because Marty is using its motors to
+  actively resist any attempts to move its joints.
 
 **Returns**:
 
@@ -486,7 +511,7 @@ Move a specific joint to a position :one: :two:
 - `position` - angle in degrees
 - `move_time` - how long this movement should last, in milliseconds
 - `blocking` - Blocking mode override; whether to wait for physical movement to
-  finish before returning.
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 **Returns**:
 
@@ -1163,7 +1188,8 @@ Zero joints and wiggle eyebrows :one:
 
 **Arguments**:
 
-- `blocking` - Blocking mode override; whether to wait for physical movement to finish before returning
+- `blocking` - Blocking mode override; whether to wait for physical movement to
+  finish before returning. Defaults to the value returned by `self.is_blocking()`.
 
 <a name="martypy.Marty.Marty.discover"></a>
 #### discover

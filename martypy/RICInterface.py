@@ -1,7 +1,6 @@
 '''
 RICInterface
 '''
-from __future__ import annotations
 from typing import Callable, Dict, Union
 import time
 import threading
@@ -89,7 +88,7 @@ class RICInterface:
     def isOpen(self) -> None:
         return self.commsHandler.isOpen()
 
-    def setDecodedMsgCB(self, onDecodedMsg: Callable[[DecodedMsg, RICInterface], None]) -> None:
+    def setDecodedMsgCB(self, onDecodedMsg: Callable[[DecodedMsg, 'RICInterface'], None]) -> None:
         '''
         Set callback on decoded message received from RIC
         Args:
@@ -111,7 +110,7 @@ class RICInterface:
 
     def setTimerCB(self, onMsgTimerCB: Callable[[], None]) -> None:
         '''
-        Set callback which can be used to check for message types (e.g. publish) 
+        Set callback which can be used to check for message types (e.g. publish)
         Args:
             onMsgTimerCB: callback function (takes 0 parameters)
         Returns:
@@ -264,7 +263,7 @@ class RICInterface:
 
     def newRoundTrip(self, rtTime:int) -> None:
         '''
-        Indicate a new round-trip for a message is complete - this is 
+        Indicate a new round-trip for a message is complete - this is
         for statistics gathering
         Args:
             rtTime: time taken for round-trip in seconds
