@@ -148,7 +148,7 @@ class RICROSSerial:
     @classmethod
     def extractAccel(cls, buf: bytes) -> Tuple[float, float, float]:
         xyzTimes1024 = struct.unpack(">fffBB", buf[0:cls.ROS_ACCEL_BYTES])
-        return [val/1024 for val in xyzTimes1024[0:3]]
+        return [round(val/1024,2) for val in xyzTimes1024[0:3]]
 
     @classmethod
     def extractPowerStatus(cls, buf: bytes) -> Dict:

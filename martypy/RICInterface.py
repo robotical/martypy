@@ -48,7 +48,8 @@ class RICInterface:
         self._fileUserCancel = False
         self._fileSendOkTo = None
         self._fileSendNewOkTo = False
-        self.BLOCK_ACK_TIMEOUT_MS = 15000
+        self._fileFailedInFirmware = False
+        self.BLOCK_ACK_TIMEOUT = 15
         self.BATCH_RETRY_MAX = 3
 
     def __del__(self) -> None:
@@ -288,12 +289,12 @@ class RICInterface:
 
     def _sendFileProgressCheckAbort(self, progressCB: Callable[[int, int, 'RICInterface'], bool], 
                     currentPos: int, fileSize: int) -> bool:
+        if self._fileOTAStartFailed or self._fileNotStarted or self._fileUserCancel or self._fileFailedInFirmware:
+            return True
         if not progressCB:
             return False
         if not progressCB(currentPos, fileSize, self):
             self.sendRICRESTCmdFrameSync('{"cmdName":"ufCancel"}')
-            return True
-        if self._fileOTAStartFailed or self._fileNotStarted or self._fileUserCancel:
             return True
         return False
 
@@ -332,6 +333,7 @@ class RICInterface:
             self._fileOTAStartedOK = False
             self._fileNotStarted = False
             self._fileUserCancel = False
+            self._fileFailedInFirmware = False
 
             # Frames follow the approach used in the web interface start, block..., end
             resp = self.sendRICRESTCmdFrameSync('{' + f'"cmdName":"ufStart","reqStr":"{reqStr}","fileType":"{fileDest}",' + \
@@ -389,8 +391,8 @@ class RICInterface:
                     sendFromPos += blockMaxSize
                     batchBlockIdx += 1
 
-                    # Check if we have received a file-not-started error
-                    if self._fileNotStarted or self._fileUserCancel:
+                    # Check if we have received an error
+                    if self._fileNotStarted or self._fileUserCancel or self._fileFailedInFirmware:
                         break
 
                 # Debug
@@ -400,7 +402,7 @@ class RICInterface:
                 # even if blocks are dropped on reception at ESP) - the timeout here is for these responses
                 # being dropped
                 timeNow = time.time()
-                while time.time() - timeNow < self.BLOCK_ACK_TIMEOUT_MS:
+                while time.time() - timeNow < self.BLOCK_ACK_TIMEOUT:
                     # Progress update
                     if self._sendFileProgressCheckAbort(progressCB, self._fileSendOkTo, binaryImageLen):
                         return False
@@ -586,6 +588,8 @@ class RICInterface:
                             self._fileNotStarted = True
                         elif reason == "userCancel":
                             self._fileUserCancel = True
+                        elif reason == "failRetries" or reason == "failTimeout":
+                            self._fileFailedInFirmware = True
                     logger.warn(f"_onRxFrameCB {cmdName} reason {reason}")
                 else:
                     logger.warn(f"_onRxFrameCB response not OkTo or fileUpload ... {decodedMsg.payload}")
