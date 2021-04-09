@@ -27,6 +27,7 @@ class ClientMV2(ClientGeneric):
                 port = 80,
                 wsPath = "/ws",
                 subscribeRateHz = 10.0,
+                ricInterface = None,
                 *args, **kwargs):
         '''
         Initialise connection to remote Marty
@@ -58,30 +59,38 @@ class ClientMV2(ClientGeneric):
         self.loggingCallback = None
         self._initComplete = False
 
-        # Handle the method of connection
-        if method == "usb" or method == "exp":
-            ifType = "overascii" if method == "usb" else "plain"
-            if serialBaud is None:
-                serialBaud = 115200 if method == "usb" else 921600
-            rifConfig = {
-                "serialPort": locator,
-                "serialBaud": serialBaud,
-                "ifType": ifType,
-            }
-            self.ricIF = RICInterface(RICCommsSerial())
-        elif method == "test":
-            rifConfig = {
-                "testFileName": locator
-            }
-            self.ricIF = RICInterface(RICCommsTest())
+        # Check if we are given a RICInterface
+        if ricInterface is None:
+            # Handle the method of connection
+            if method == "usb" or method == "exp":
+                ifType = "overascii" if method == "usb" else "plain"
+                if serialBaud is None:
+                    serialBaud = 115200 if method == "usb" else 921600
+                rifConfig = {
+                    "serialPort": locator,
+                    "serialBaud": serialBaud,
+                    "ifType": ifType,
+                }
+                self.ricIF = RICInterface(RICCommsSerial())
+            elif method == "test":
+                rifConfig = {
+                    "testFileName": locator
+                }
+                self.ricIF = RICInterface(RICCommsTest())
+            else:
+                rifConfig = {
+                    "ipAddrOrHostname": locator,
+                    "ipPort": port,
+                    "wsPath": wsPath,
+                    "ifType": "plain"
+                }
+                self.ricIF = RICInterface(RICCommsWiFi())
         else:
             rifConfig = {
                 "ipAddrOrHostname": locator,
-                "ipPort": port,
-                "wsPath": wsPath,
                 "ifType": "plain"
             }
-            self.ricIF = RICInterface(RICCommsWiFi())
+            self.ricIF = ricInterface
 
         # Open comms
         try:
