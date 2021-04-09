@@ -42,7 +42,7 @@ class RICHwIMU:
         self.latestMsgTime: float = None
 
     def update(self, msgPayload: bytes) -> None:
-        if len(msgPayload) != RICROSSerial.ROS_ACCEL_BYTES:
+        if len(msgPayload) < RICROSSerial.ROS_ACCEL_BYTES:
             return
         self.latestMsg = msgPayload
         self.latestMsgTime = time.time()
@@ -65,7 +65,7 @@ class RICHwPowerStatus:
         self.latestMsgTime: float = None
 
     def update(self, msgPayload: bytes) -> None:
-        if len(msgPayload) != RICROSSerial.ROS_POWER_STATUS_BYTES:
+        if len(msgPayload) < RICROSSerial.ROS_POWER_STATUS_BYTES:
             return
         self.latestMsg = msgPayload
         self.latestMsgTime = time.time()
@@ -113,7 +113,7 @@ class RICHwRobotStatus:
         self.latestMsgTime: float = None
 
     def update(self, msgPayload: bytes) -> None:
-        if len(msgPayload) != RICROSSerial.ROS_ROBOT_STATUS_BYTES:
+        if len(msgPayload) < RICROSSerial.ROS_ROBOT_STATUS_BYTES_MINIMAL:
             return
         self.latestMsg = msgPayload
         self.latestMsgTime = time.time()

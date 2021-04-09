@@ -60,12 +60,20 @@ class RICROSSerial:
     ROS_POWER_STATUS_IDNO = 12
 
     # V2 ROSTOPIC ROBOT STATUS message layout
-    ROS_ROBOT_STATUS_BYTES = 2
+    ROS_ROBOT_STATUS_BYTES = 22
+    ROS_ROBOT_STATUS_BYTES_MINIMAL = 2
     ROS_ROBOT_STATUS_MOTION_FLAGS = 0
     ROS_ROBOT_STATUS_IS_MOVING_MASK = 0x01
     ROS_ROBOT_STATUS_IS_PAUSED_MASK = 0x02
     ROS_ROBOT_STATUS_FW_UPDATE_MASK = 0x04
     ROS_ROBOT_STATUS_QUEUED_WORK_COUNT = 1
+    ROS_ROBOT_STATUS_HEAP_FREE_POS = 2
+    ROS_ROBOT_STATUS_HEAP_FREE_BYTES = 4
+    ROS_ROBOT_STATUS_HEAP_MIN_POS = 6
+    ROS_ROBOT_STATUS_HEAP_MIN_BYTES = 4
+    ROS_ROBOT_STATUS_INDICATORS_POS = 10
+    ROS_ROBOT_STATUS_INDICATOR_BYTES = 4
+    ROS_ROBOT_STATUS_INDICATORS_NUM = 3
 
     # V2 ROSTOPIC ADDONS message layout
     ROS_ADDONS_MAX_NUM_ADDONS = 15
@@ -139,12 +147,12 @@ class RICROSSerial:
 
     @classmethod
     def extractAccel(cls, buf: bytes) -> Tuple[float, float, float]:
-        xyzTimes1024 = struct.unpack(">fffBB", buf)
+        xyzTimes1024 = struct.unpack(">fffBB", buf[0:cls.ROS_ACCEL_BYTES])
         return [val/1024 for val in xyzTimes1024[0:3]]
 
     @classmethod
     def extractPowerStatus(cls, buf: bytes) -> Dict:
-        pst = struct.unpack(">BBHHhHHB", buf)
+        pst = struct.unpack(">BBHHhHHB", buf[0:cls.ROS_POWER_STATUS_BYTES])
         return {
             "remCapPC": pst[0],
             "tempDegC": pst[1],
@@ -159,15 +167,43 @@ class RICROSSerial:
         }
 
     @classmethod
-    def extractRobotStatus(cls, buf: bytes) -> Dict:
-        robotStat = struct.unpack(">BB", buf)
+    def extractRGBT(cls, rgbtVal:int):
+        stateVal = rgbtVal & 0xff
+        rgbtStates = ["off","on","breathe","override"]
+        rgbtState = "unknown"
+        if stateVal >= 0 and stateVal < len(rgbtStates):
+            rgbtState = rgbtStates[stateVal]
         return {
-            "flags": robotStat[0],
-            "workQCount": robotStat[1],
-            "isMoving": (robotStat[0] & 0x01) != 0,
-            "isPaused": (robotStat[0] & 0x02) != 0,
-            "isFwUpdating": (robotStat[0] & 0x04) != 0,
+            "r": (rgbtVal >> 24) & 0xff,
+            "g": (rgbtVal >> 16) & 0xff,
+            "b": (rgbtVal >> 8) & 0xff,
+            "state": rgbtState
         }
+
+
+    @classmethod
+    def extractRobotStatus(cls, buf: bytes) -> Dict:
+        if len(buf) == cls.ROS_ROBOT_STATUS_BYTES:
+            robotStat = struct.unpack(">BBIIIII", buf)
+            return {
+                "flags": robotStat[0],
+                "workQCount": robotStat[1],
+                "isMoving": (robotStat[0] & 0x01) != 0,
+                "isPaused": (robotStat[0] & 0x02) != 0,
+                "isFwUpdating": (robotStat[0] & 0x04) != 0,
+                "heapFree": robotStat[2],
+                "heapMin": robotStat[3],
+                "pixRGBT": list(cls.extractRGBT(robotStat[i+4]) for i in range(3))
+            }
+        else:
+            robotStat = struct.unpack(">BB", buf[0:cls.ROS_ROBOT_STATUS_BYTES_MINIMAL])
+            return {
+                "flags": robotStat[0],
+                "workQCount": robotStat[1],
+                "isMoving": (robotStat[0] & 0x01) != 0,
+                "isPaused": (robotStat[0] & 0x02) != 0,
+                "isFwUpdating": (robotStat[0] & 0x04) != 0,
+            }
 
     @classmethod
     def extractAddOnStatus(cls, buf: bytes) -> List:
