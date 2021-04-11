@@ -46,7 +46,7 @@ class RICInterface:
         self._fileOTAStartedOK = False
         self._fileNotStarted = False
         self._fileUserCancel = False
-        self._fileSendOkTo = None
+        self._fileSendOkTo = 0
         self._fileSendNewOkTo = False
         self._fileFailedInFirmware = False
         self.BLOCK_ACK_TIMEOUT = 15

@@ -60,7 +60,7 @@ class RICROSSerial:
     ROS_POWER_STATUS_IDNO = 12
 
     # V2 ROSTOPIC ROBOT STATUS message layout
-    ROS_ROBOT_STATUS_BYTES = 22
+    ROS_ROBOT_STATUS_BYTES = 24
     ROS_ROBOT_STATUS_BYTES_MINIMAL = 2
     ROS_ROBOT_STATUS_MOTION_FLAGS = 0
     ROS_ROBOT_STATUS_IS_MOVING_MASK = 0x01
@@ -74,6 +74,10 @@ class RICROSSerial:
     ROS_ROBOT_STATUS_INDICATORS_POS = 10
     ROS_ROBOT_STATUS_INDICATOR_BYTES = 4
     ROS_ROBOT_STATUS_INDICATORS_NUM = 3
+    ROS_ROBOT_STATUS_SYSMOD_LOOPMS_AVG_POS = 22
+    ROS_ROBOT_STATUS_SYSMOD_LOOPMS_AVG_SIZE = 1
+    ROS_ROBOT_STATUS_SYSMOD_LOOPMS_MAX_POS = 23
+    ROS_ROBOT_STATUS_SYSMOD_LOOPMS_MAX_SIZE = 1
 
     # V2 ROSTOPIC ADDONS message layout
     ROS_ADDONS_MAX_NUM_ADDONS = 15
@@ -184,7 +188,7 @@ class RICROSSerial:
     @classmethod
     def extractRobotStatus(cls, buf: bytes) -> Dict:
         if len(buf) == cls.ROS_ROBOT_STATUS_BYTES:
-            robotStat = struct.unpack(">BBIIIII", buf)
+            robotStat = struct.unpack(">BBIIIIIBB", buf)
             return {
                 "flags": robotStat[0],
                 "workQCount": robotStat[1],
@@ -193,7 +197,9 @@ class RICROSSerial:
                 "isFwUpdating": (robotStat[0] & 0x04) != 0,
                 "heapFree": robotStat[2],
                 "heapMin": robotStat[3],
-                "pixRGBT": list(cls.extractRGBT(robotStat[i+4]) for i in range(3))
+                "pixRGBT": list(cls.extractRGBT(robotStat[i+4]) for i in range(3)),
+                "loopMsAvg": robotStat[7],
+                "loopMsMax": robotStat[8]
             }
         else:
             robotStat = struct.unpack(">BB", buf[0:cls.ROS_ROBOT_STATUS_BYTES_MINIMAL])
