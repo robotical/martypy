@@ -114,7 +114,7 @@ build/docs/*
 build/docs/content/*
 !build/docs/content/docs
 build/docs/content/docs/*
-!*build/docs/content/docs/api-documentation.md
+# !*build/docs/content/docs/api-documentation.md
 
 # logs
 logs
