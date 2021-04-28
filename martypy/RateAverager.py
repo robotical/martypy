@@ -7,9 +7,11 @@ class RateAverager:
         self.windowSizeMinSecs = windowSizeMinSecs
         self.lastCalcSecs = time.time()
         self.prevVal = 0
+        self.totalCount = 0
 
     def inst(self):
         self.instCount += 1
+        self.totalCount += 1
 
     def getAvg(self):
         if self.lastCalcSecs + self.windowSizeMinSecs < time.time():
@@ -20,3 +22,5 @@ class RateAverager:
             return rsltVal
         return self.prevVal
 
+    def getTotal(self):
+        return self.totalCount

@@ -463,6 +463,8 @@ class RICInterface:
             "unnumbered":self.statsUnNumbered,
             "timedOut":self.statsTimedOut,
             "uploadBPS":self.uploadBytesPerSec.getAvg(),
+            "rxCount":self.msgRxRate.getTotal(),
+            "txCount":self.msgTxRate.getTotal(),
         }
 
     def addOnQueryRaw(self, addOnName: str, dataToWrite: bytes, numBytesToRead: int,
