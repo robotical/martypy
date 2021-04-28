@@ -143,10 +143,14 @@ class RICHwPublishMonitor:
             }
 
     def getPublishStats(self):
-        pubIntervalSecs = {}
+        pubRateStats = {}
         for topicID in self._pubRecs:
-            pubIntervalSecs["pub_"+self.topicIDToStr(topicID)+"_Sper"] = self._pubRecs[topicID]["averager"].getAvg()
-        return pubIntervalSecs
+            timeAvgPerMsg = self._pubRecs[topicID]["averager"].getAvg()
+            pubRateAvg = 0
+            if timeAvgPerMsg > 0:
+                pubRateAvg = round(1/timeAvgPerMsg, 2)
+            pubRateStats[self.topicIDToStr(topicID)+"PS"] = pubRateAvg
+        return pubRateStats
 
     def topicIDToStr(self, topicID):
         if topicID == RICROSSerial.ROSTOPIC_V2_SMART_SERVOS:

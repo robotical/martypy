@@ -413,7 +413,7 @@ class ClientMV2(ClientGeneric):
     def get_interface_stats(self) -> Dict:
         ricIFStats = self.ricIF.getStats()
         publishInfo = self.ricHardware.getPublishStats()
-        ricIFStats = {**ricIFStats, **publishInfo}
+        ricIFStats.update(publishInfo)
         return ricIFStats
 
     def preException(self, isFatal: bool) -> None:

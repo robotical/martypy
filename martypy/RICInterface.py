@@ -9,6 +9,7 @@ import json
 import os
 from .RICProtocols import DecodedMsg, RICProtocols
 from .RICCommsBase import RICCommsBase
+from .RateAverager import RateAverager
 from .ValueAverager import ValueAverager
 from .Exceptions import MartyTransferException
 
@@ -36,10 +37,13 @@ class RICInterface:
         self._rawQueryOutstandingLock = threading.Lock()
         self._rawQueryMsgKey = 1
         # Stats
+        self.msgRxRate = RateAverager()
+        self.msgTxRate = RateAverager()
         self.roundTripInfo = ValueAverager()
         self.statsMatched = 0
         self.statsUnMatched = 0
         self.statsUnNumbered = 0
+        self.statsTimedOut = 0
         self.uploadBytesPerSec = ValueAverager()
         # File send vars
         self._fileOTAStartFailed = False
@@ -134,6 +138,7 @@ class RICInterface:
             self._msgsOutstanding[msgNum] = {"timeSent": time.time(), "timeOutSecs": timeOutSecs}
         # logger.debug(f"sendRICRESTURL msgNum {msgNum} time {time.time()} msg {msg}")
         self.commsHandler.send(ricRestMsg)
+        self.msgTxRate.inst()
         return True
 
     def cmdRICRESTURLSync(self, msg: str, timeOutSecs: float = None) -> Dict:
@@ -152,6 +157,7 @@ class RICInterface:
         with self._msgsOutstandingLock:
             self._msgsOutstanding[msgNum] = {"timeSent": msgSendTime, "timeOutSecs": timeOutSecs, "awaited":True}
         self.commsHandler.send(ricRestMsg)
+        self.msgTxRate.inst()
         # Wait for result
         while time.time() < msgSendTime + timeOutSecs:
             with self._msgsOutstandingLock:
@@ -203,6 +209,7 @@ class RICInterface:
         with self._msgsOutstandingLock:
             self._msgsOutstanding[msgNum] = {"timeSent": time.time(), "timeOutSecs": timeOutSecs}
         self.commsHandler.send(ricRestMsg)
+        self.msgTxRate.inst()
         return True
 
     def sendRICRESTCmdFrameSync(self, msg: Union[str,bytes], 
@@ -225,6 +232,7 @@ class RICInterface:
         with self._msgsOutstandingLock:
             self._msgsOutstanding[msgNum] = {"timeSent": msgSendTime, "timeOutSecs": timeOutSecs, "awaited":True}
         self.commsHandler.send(ricRestMsg)
+        self.msgTxRate.inst()
         # Wait for result
         while time.time() < msgSendTime + timeOutSecs:
             logger.debug(f"sendRICRESTCmdFrameSync while loop")
@@ -260,6 +268,7 @@ class RICInterface:
         ricRestMsg, _ = self.ricProtocols.encodeRICRESTFileBlock(data)
         # logger.debug(f"sendRICRESTFileBlock msgNum {msgNum} len {len(ricRestMsg)}")
         self.commsHandler.send(ricRestMsg)
+        self.msgTxRate.inst()
         return True
 
     def newRoundTrip(self, rtTime:int) -> None:
@@ -271,7 +280,7 @@ class RICInterface:
         Returns:
             None
         '''
-        self.roundTripInfo.add(rtTime)
+        self.roundTripInfo.add(rtTime*1000)
         # logger.debug(f"RTTime {self.roundTripInfo.getAvg()}")
 
     def sendTestMsgs(self, numMsgs:int, bytesPerMsg: int) -> None:
@@ -286,6 +295,7 @@ class RICInterface:
         dataBlock = bytearray(bytesPerMsg)
         for i in range(numMsgs):
             self.commsHandler.send(dataBlock)
+            self.msgTxRate.inst()
 
     def _sendFileProgressCheckAbort(self, progressCB: Callable[[int, int, 'RICInterface'], bool], 
                     currentPos: int, fileSize: int) -> bool:
@@ -445,10 +455,13 @@ class RICInterface:
 
     def getStats(self) -> Dict:
         return {
-            "roundTripAvgS":self.roundTripInfo.getAvg(),
+            "roundTripAvgMS":self.roundTripInfo.getAvg(),
+            "msgRxRatePS":self.msgRxRate.getAvg(),
+            "msgTxRatePS":self.msgTxRate.getAvg(),
             "unmatched":self.statsUnMatched,
             "matched":self.statsMatched,
             "unnumbered":self.statsUnNumbered,
+            "timedOut":self.statsTimedOut,
             "uploadBPS":self.uploadBytesPerSec.getAvg(),
         }
 
@@ -510,6 +523,7 @@ class RICInterface:
 
     def _onRxFrameCB(self, frame: bytes) -> None:
         # logger.debug(f"_onRxFrameCB Rx len {len(frame)} data {frame.hex()}")
+        self.msgRxRate.inst()
         decodedMsg = self.ricProtocols.decodeRICFrame(frame)
         doRxCallback = True
         if decodedMsg.msgNum != 0:
@@ -640,6 +654,7 @@ class RICInterface:
         # Debug
         for msgKey in msgKeysTimedOut:
             logger.warn(f"rawQuery {msgKey} timed out at time {time.time()}")
+            self.statsTimedOut += 1
 
         # Remove timed-out rawQueries
         for msgKey in msgKeysToRemove:
