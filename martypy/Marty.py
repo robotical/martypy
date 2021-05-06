@@ -340,7 +340,7 @@ class Marty(object):
             self.client.wait_if_required(move_time, blocking)
         return result
 
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 35,
             move_time: int = 1000, blocking: Optional[bool] = None) -> bool:
         '''
         Take sidesteps :one: :two:

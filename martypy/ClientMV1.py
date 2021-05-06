@@ -208,7 +208,7 @@ class ClientMV1(ClientGeneric):
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('stand_straight', dur_lsb, dur_msb)
 
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 35,
             move_time: int = 1000) -> bool:
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
