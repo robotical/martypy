@@ -200,7 +200,7 @@ class ClientMV1(ClientGeneric):
             self.arms(45, 45, int(move_time/6))
         return self.stand_straight(int(move_time/3))
 
-    def wiggle(self, move_time: int = 5000) -> bool:
+    def wiggle(self, move_time: int = 4000) -> bool:
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('celebrate', dur_lsb, dur_msb)
 

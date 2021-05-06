@@ -182,7 +182,7 @@ class Marty(object):
             self.client.wait_if_required(move_time, blocking)
         return result
 
-    def wiggle(self, move_time: int = 5000, blocking: Optional[bool] = None) -> bool:
+    def wiggle(self, move_time: int = 4000, blocking: Optional[bool] = None) -> bool:
         '''
         Wiggle :two:
         Args:
