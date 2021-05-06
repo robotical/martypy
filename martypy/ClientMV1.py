@@ -200,7 +200,7 @@ class ClientMV1(ClientGeneric):
             self.arms(45, 45, int(move_time/6))
         return self.stand_straight(int(move_time/3))
 
-    def wiggle(self, move_time: int = 5000) -> bool:
+    def wiggle(self, move_time: int = 4000) -> bool:
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('celebrate', dur_lsb, dur_msb)
 
@@ -208,7 +208,7 @@ class ClientMV1(ClientGeneric):
         dur_lsb, dur_msb = self._pack_uint16(move_time)
         return self._execute('stand_straight', dur_lsb, dur_msb)
 
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 35,
             move_time: int = 1000) -> bool:
         side_c = self.SIDE_CODES[side]
         dur_lsb, dur_msb = self._pack_uint16(move_time)
