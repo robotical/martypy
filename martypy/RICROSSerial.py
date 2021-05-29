@@ -158,15 +158,15 @@ class RICROSSerial:
     def extractPowerStatus(cls, buf: bytes) -> Dict:
         pst = struct.unpack(">BBHHhHHB", buf[0:cls.ROS_POWER_STATUS_BYTES])
         return {
-            "remCapPC": pst[0],
-            "tempDegC": pst[1],
-            "remCapMAH": pst[2],
-            "fullCapMAH": pst[3],
-            "currentMA": pst[4],
+            "battRemainCapacityPC": pst[0],
+            "battTempDegC": pst[1],
+            "battRemainCapacityMAH": pst[2],
+            "battFullCapacityMAH": pst[3],
+            "battCurrentMA": pst[4],
             "power5VOnTimeSecs": pst[5],
             "powerFlags": pst[6],
-            "isOnUSBPower": (pst[6] & 0x0001) != 0,
-            "is5VOn": (pst[6] & 0x0002) != 0,
+            "powerUSBIsConnected": (pst[6] & 0x0001) != 0,
+            "power5VIsOn": (pst[6] & 0x0002) != 0,
             "IDNo": pst[7]
         }
 

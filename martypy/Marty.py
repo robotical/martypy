@@ -657,14 +657,14 @@ class Marty(object):
             none
         Returns:
             Dictionary containing:
-                "remCapPC" remaining battery capacity in percent
-                "tempDegC": battery temperature in degrees C
-                "remCapMAH": remaining battery capacity in milli-Amp-Hours
-                "fullCapMAH": capacity of the battery when full in milli-Amp-Hours
-                "currentMA": current the battery is supplying (or being charged with) milli-Amps
-                "power5VOnTimeSecs": number of seconds the power to joints and add-ons has been on
-                "isOnUSBPower": True if Marty is running on power from the USB connector
-                "is5VOn": True if power to the joints and add-ons is turned on
+              "battRemainCapacityPC" remaining battery capacity in percent
+              "battTempDegC" - battery temperature in degrees C
+              "battRemainCapacityMAH" - remaining battery capacity in milli-Amp-Hours
+              "battFullCapacityMAH" - capacity of the battery when full in milli-Amp-Hours
+              "battCurrentMA" - current the battery is supplying (or being charged with) milli-Amps
+              "power5VOnTimeSecs" - number of seconds the power to joints and add-ons has been on
+              "powerUSBIsConnected" - True if USB is connected
+              "power5VIsOn" - True if power to the joints and add-ons is turned on
         '''
         return self.client.get_power_status()
     
