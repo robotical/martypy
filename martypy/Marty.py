@@ -657,7 +657,7 @@ class Marty(object):
             none
         Returns:
             Dictionary containing:
-              "battRemainCapacityPC" remaining battery capacity in percent
+              "battRemainCapacityPercent" remaining battery capacity in percent
               "battTempDegC" - battery temperature in degrees C
               "battRemainCapacityMAH" - remaining battery capacity in milli-Amp-Hours
               "battFullCapacityMAH" - capacity of the battery when full in milli-Amp-Hours
