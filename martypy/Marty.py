@@ -124,10 +124,10 @@ class Marty(object):
             locator: location to connect to, depending on the method of connection this
                 is the serial port name, network (IP) Address or network name (hostname) of Marty
                 that the computer should use to communicate with Marty.
-                If `method` is `"usb"` or `"exp"` and there is only a single Marty
-                connected, `locator` can be left out and the Marty will be found
-                automatically. If multiple Martys are detected, one of them will be
-                chosen arbitrarily and connected to.
+                If `method` is `"usb"` and there is only a single Marty connected,
+                `locator` can be left out and the Marty will be found automatically.
+                If multiple Martys are detected, one of them will be chosen
+                arbitrarily and connected to.
             blocking: Default movement command mode for this `Marty` instance.
                 * `True` (default): blocking mode
                 * `False`: non-blocking mode
