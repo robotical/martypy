@@ -246,10 +246,10 @@ class ClientMV2(ClientGeneric):
                                         "".format(side))
         return self.ricIF.cmdRICRESTRslt(f"traj/dance?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}")
 
-    def wiggle(self, move_time: int = 5000) -> bool:
+    def wiggle(self, move_time: int = 4000) -> bool:
         return self.ricIF.cmdRICRESTRslt(f"traj/wiggle?moveTime={move_time}")
 
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 35,
             move_time: int = 1000) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"

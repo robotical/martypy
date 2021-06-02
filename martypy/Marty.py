@@ -182,7 +182,7 @@ class Marty(object):
             self.client.wait_if_required(move_time, blocking)
         return result
 
-    def wiggle(self, move_time: int = 5000, blocking: Optional[bool] = None) -> bool:
+    def wiggle(self, move_time: int = 4000, blocking: Optional[bool] = None) -> bool:
         '''
         Wiggle :two:
         Args:
@@ -340,7 +340,7 @@ class Marty(object):
             self.client.wait_if_required(move_time, blocking)
         return result
 
-    def sidestep(self, side: str, steps: int = 1, step_length: int = 50,
+    def sidestep(self, side: str, steps: int = 1, step_length: int = 35,
             move_time: int = 1000, blocking: Optional[bool] = None) -> bool:
         '''
         Take sidesteps :one: :two:
