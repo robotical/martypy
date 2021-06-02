@@ -15,13 +15,14 @@ class RICHwSmartServos:
     def __init__(self) -> None:
         self.latestMsg: bytes = None
         self.latestMsgTime: float = None
+        self.validForSecs = 3
 
     def update(self, msgPayload: bytes) -> None:
         self.latestMsg = msgPayload
         self.latestMsgTime = time.time()
 
     def status(self, dictOfHwElemsByIdNo: Dict) -> Dict:
-        if self.latestMsgTime is None:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
             return {}
         servosStatus = RICROSSerial.extractSmartServos(self.latestMsg)
         fieldsToCopy = ["name"]
@@ -40,6 +41,7 @@ class RICHwIMU:
     def __init__(self) -> None:
         self.latestMsg: bytes = None
         self.latestMsgTime: float = None
+        self.validForSecs = 3
 
     def update(self, msgPayload: bytes) -> None:
         if len(msgPayload) < RICROSSerial.ROS_ACCEL_BYTES:
@@ -54,7 +56,7 @@ class RICHwIMU:
         return RICROSSerial.extractAccel(self.latestMsg)
 
     def axisVal(self, axisCode: int) -> float:
-        if self.latestMsgTime is None:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
             return 0
         xyzTuple = RICROSSerial.extractAccel(self.latestMsg)
         return xyzTuple[axisCode]
@@ -63,6 +65,7 @@ class RICHwPowerStatus:
     def __init__(self) -> None:
         self.latestMsg: bytes = None
         self.latestMsgTime: float = None
+        self.validForSecs = 5
 
     def update(self, msgPayload: bytes) -> None:
         if len(msgPayload) < RICROSSerial.ROS_POWER_STATUS_BYTES:
@@ -71,7 +74,7 @@ class RICHwPowerStatus:
         self.latestMsgTime = time.time()
 
     def powerStatus(self) -> Dict:
-        if self.latestMsgTime is None:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
             return {}
         return RICROSSerial.extractPowerStatus(self.latestMsg)
 
@@ -80,13 +83,14 @@ class RICHwAddOnStatus:
         self.latestMsg: bytes = None
         self.latestMsgTime: float = None
         self.addOnNameToIdMap = {}
+        self.validForSecs = 3
 
     def update(self, msgPayload: bytes) -> None:
         self.latestMsg = msgPayload
         self.latestMsgTime = time.time()
 
     def status(self, dictOfHwElemsByIdNo: Dict) -> Dict:
-        if self.latestMsgTime is None:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
             return {}
         addOnStatus = RICROSSerial.extractAddOnStatus(self.latestMsg)
         fieldsToCopy = ["name", "type", "whoAmITypeCode"]
@@ -111,6 +115,7 @@ class RICHwRobotStatus:
     def __init__(self):
         self.latestMsg: bytes = None
         self.latestMsgTime: float = None
+        self.validForSecs = 3
 
     def update(self, msgPayload: bytes) -> None:
         if len(msgPayload) < RICROSSerial.ROS_ROBOT_STATUS_BYTES_MINIMAL:
@@ -119,7 +124,7 @@ class RICHwRobotStatus:
         self.latestMsgTime = time.time()
 
     def status(self) -> Dict:
-        if self.latestMsgTime is None:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
             return {}
         return RICROSSerial.extractRobotStatus(self.latestMsg)
 
