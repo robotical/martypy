@@ -1,20 +1,23 @@
 '''
 Serial communications with a Robotical RIC
 '''
-from threading import Thread
-from typing import Callable, Dict, List, Union
-import serial
-import serial.tools.list_ports
-import time
 import logging
+import serial
 from serial.serialutil import SerialException
+import serial.tools.list_ports
+from threading import Thread
+import time
+from typing import Dict, List
 from warnings import warn
+
 from .RICCommsBase import RICCommsBase
 from .LikeHDLC import LikeHDLC
 from .ProtocolOverAscii import ProtocolOverAscii
 from .Exceptions import MartyConnectException
 
+
 logger = logging.getLogger(__name__)
+
 
 class RICCommsSerial(RICCommsBase):
     '''
