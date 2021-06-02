@@ -44,7 +44,7 @@ class RICCommsSerial(RICCommsBase):
     def detect_rics(cls) -> List[str]:
         serial_ports = serial.tools.list_ports.comports()
         possible_rics = [port.device for port in serial_ports
-                         if port.description.startswith("CP2102")]
+                         if "CP210" in port.description]
         return possible_rics
 
     def isOpen(self) -> bool:
