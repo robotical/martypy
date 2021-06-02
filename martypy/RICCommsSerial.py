@@ -1,18 +1,23 @@
 '''
 Serial communications with a Robotical RIC
 '''
-from threading import Thread
-from typing import Callable, Dict, Union
-import serial
-import time
 import logging
+import serial
 from serial.serialutil import SerialException
+import serial.tools.list_ports
+from threading import Thread
+import time
+from typing import Dict, List
+from warnings import warn
+
 from .RICCommsBase import RICCommsBase
 from .LikeHDLC import LikeHDLC
 from .ProtocolOverAscii import ProtocolOverAscii
 from .Exceptions import MartyConnectException
 
+
 logger = logging.getLogger(__name__)
+
 
 class RICCommsSerial(RICCommsBase):
     '''
@@ -39,6 +44,13 @@ class RICCommsSerial(RICCommsBase):
         '''
         self.close()
 
+    @classmethod
+    def detect_rics(cls) -> List[str]:
+        serial_ports = serial.tools.list_ports.comports()
+        possible_rics = [port.device for port in serial_ports
+                         if "CP210" in port.description]
+        return possible_rics
+
     def isOpen(self) -> bool:
         '''
         Check if comms open
@@ -54,7 +66,7 @@ class RICCommsSerial(RICCommsBase):
                  overascii (if the port is also used for logging information)
         Args:
             openParams: dict containing params used to open the connection, may include
-                        "serialPort", 
+                        "serialPort" (will be auto-detected if missing/empty),
                         "serialBaud",
                         "ifType" == "plain" or "overascii"
         Returns:
@@ -73,11 +85,17 @@ class RICCommsSerial(RICCommsBase):
         if self.overAscii:
             self.protocolOverAscii = ProtocolOverAscii()
 
-        # Validate
-        if len(serialPort) == 0:
-            return False
-
         # Open serial port
+        rics = self.detect_rics()
+        if not serialPort:
+            if len(rics) == 0:
+                raise MartyConnectException(
+                    "No serial (COM) port provided and no Martys detected."
+                )
+            if len(rics) > 1:
+                warn(f"Multiple Martys detected ({rics}). Connecting to {rics[0]}.",
+                     stacklevel=0)
+            serialPort = rics[0]
         try:
             self.serialDevice = serial.Serial(port=None, baudrate=serialBaud)
             self.serialDevice.port = serialPort
@@ -86,7 +104,9 @@ class RICCommsSerial(RICCommsBase):
             self.serialDevice.dsrdtr = False
             self.serialDevice.open()
         except Exception as excp:
-            raise MartyConnectException("Serial port problem") from excp
+            error_message = f"Serial port problem on {self.serialDevice.port}. Try "\
+                            f"connecting to one of the following ports instead: {rics}"
+            raise MartyConnectException(error_message) from excp
 
         # Start receive loop
         self.serialThreadEnabled = True
@@ -168,10 +188,10 @@ class RICCommsSerial(RICCommsBase):
     def _onHDLCFrame(self, frame: bytes) -> None:
         if self.rxFrameCB is not None:
             self.rxFrameCB(frame)
-        
+
     def _onHDLCError(self) -> None:
         pass
-        
+
     def _sendBytesToIF(self, bytesToSend: bytes) -> None:
         # logger.debug(f"Sending to IF len {len(bytesToSend)} {str(bytesToSend)}")
         if not self._isOpen:
@@ -188,4 +208,3 @@ class RICCommsSerial(RICCommsBase):
 
     def getTestOutput(self) -> dict:
         return {}
-        
