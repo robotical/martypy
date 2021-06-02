@@ -187,8 +187,8 @@ class RICROSSerial:
 
     @classmethod
     def extractRobotStatus(cls, buf: bytes) -> Dict:
-        if len(buf) == cls.ROS_ROBOT_STATUS_BYTES:
-            robotStat = struct.unpack(">BBIIIIIBB", buf)
+        if len(buf) >= cls.ROS_ROBOT_STATUS_BYTES:
+            robotStat = struct.unpack(">BBIIIIIBB", buf[0:cls.ROS_ROBOT_STATUS_BYTES])
             return {
                 "flags": robotStat[0],
                 "workQCount": robotStat[1],
