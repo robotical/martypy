@@ -2,8 +2,9 @@
 Serial communications with a Robotical RIC
 '''
 from threading import Thread
-from typing import Callable, Dict, Union
+from typing import Callable, Dict, List, Union
 import serial
+import serial.tools.list_ports
 import time
 import logging
 from serial.serialutil import SerialException
@@ -39,6 +40,13 @@ class RICCommsSerial(RICCommsBase):
         '''
         self.close()
 
+    @classmethod
+    def detect_rics(cls) -> List[str]:
+        serial_ports = serial.tools.list_ports.comports()
+        possible_rics = [port.device for port in serial_ports
+                         if port.description.startswith("CP2102")]
+        return possible_rics
+
     def isOpen(self) -> bool:
         '''
         Check if comms open
@@ -54,7 +62,7 @@ class RICCommsSerial(RICCommsBase):
                  overascii (if the port is also used for logging information)
         Args:
             openParams: dict containing params used to open the connection, may include
-                        "serialPort", 
+                        "serialPort" (will be auto-detected if missing/empty),
                         "serialBaud",
                         "ifType" == "plain" or "overascii"
         Returns:
@@ -73,20 +81,19 @@ class RICCommsSerial(RICCommsBase):
         if self.overAscii:
             self.protocolOverAscii = ProtocolOverAscii()
 
-        # Validate
-        if len(serialPort) == 0:
-            return False
-
         # Open serial port
+        rics = self.detect_rics()
         try:
             self.serialDevice = serial.Serial(port=None, baudrate=serialBaud)
-            self.serialDevice.port = serialPort
+            self.serialDevice.port = serialPort or rics[0]
             self.serialDevice.rts = 0
             self.serialDevice.dtr = 0
             self.serialDevice.dsrdtr = False
             self.serialDevice.open()
         except Exception as excp:
-            raise MartyConnectException("Serial port problem") from excp
+            error_message = f"Serial port problem on {self.serialDevice.port}. Try "\
+                            f"connecting to one of the following ports instead: {rics}"
+            raise MartyConnectException(error_message) from excp
 
         # Start receive loop
         self.serialThreadEnabled = True
@@ -168,10 +175,10 @@ class RICCommsSerial(RICCommsBase):
     def _onHDLCFrame(self, frame: bytes) -> None:
         if self.rxFrameCB is not None:
             self.rxFrameCB(frame)
-        
+
     def _onHDLCError(self) -> None:
         pass
-        
+
     def _sendBytesToIF(self, bytesToSend: bytes) -> None:
         # logger.debug(f"Sending to IF len {len(bytesToSend)} {str(bytesToSend)}")
         if not self._isOpen:
@@ -188,4 +195,3 @@ class RICCommsSerial(RICCommsBase):
 
     def getTestOutput(self) -> dict:
         return {}
-        

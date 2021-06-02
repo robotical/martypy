@@ -83,7 +83,7 @@ class Marty(object):
         "IRFoot"
     ]
 
-    def __init__(self, 
+    def __init__(self,
                 method: str,
                 locator: str = "",
                 extra_client_types: dict = dict(),
@@ -123,13 +123,17 @@ class Marty(object):
                 to a Raspberry Pi, etc)
             locator: location to connect to, depending on the method of connection this
                 is the serial port name, network (IP) Address or network name (hostname) of Marty
-                that the computer should use to communicate with Marty
+                that the computer should use to communicate with Marty.
+                If `method` is `"usb"` or `"exp"` and there is only a single Marty
+                connected, `locator` can be left out and the Marty will be found
+                automatically. If multiple Martys are detected, one of them will be
+                chosen arbitrarily and connected to.
             blocking: Default movement command mode for this `Marty` instance.
                 * `True` (default): blocking mode
                 * `False`: non-blocking mode
 
         Raises:
-            * MartyConfigException if the parameters are invalid  
+            * MartyConfigException if the parameters are invalid
             * MartyConnectException if Marty couldn't be contacted
         '''
         # Merge in any extra clients that have been added and check valid
