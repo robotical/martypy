@@ -8,6 +8,7 @@ import serial.tools.list_ports
 import time
 import logging
 from serial.serialutil import SerialException
+from warnings import warn
 from .RICCommsBase import RICCommsBase
 from .LikeHDLC import LikeHDLC
 from .ProtocolOverAscii import ProtocolOverAscii
@@ -83,9 +84,18 @@ class RICCommsSerial(RICCommsBase):
 
         # Open serial port
         rics = self.detect_rics()
+        if not serialPort:
+            if len(rics) == 0:
+                raise MartyConnectException(
+                    "No serial (COM) port provided and no Martys detected."
+                )
+            if len(rics) > 1:
+                warn(f"Multiple Martys detected ({rics}). Connecting to {rics[0]}.",
+                     stacklevel=0)
+            serialPort = rics[0]
         try:
             self.serialDevice = serial.Serial(port=None, baudrate=serialBaud)
-            self.serialDevice.port = serialPort or rics[0]
+            self.serialDevice.port = serialPort
             self.serialDevice.rts = 0
             self.serialDevice.dtr = 0
             self.serialDevice.dsrdtr = False
