@@ -27,7 +27,7 @@ class ClientMV2(ClientGeneric):
                 port = 80,
                 wsPath = "/ws",
                 subscribeRateHz = 10.0,
-                ricInterface = None,
+                ricInterface: Optional[RICInterface] = None,
                 *args, **kwargs):
         '''
         Initialise connection to remote Marty
