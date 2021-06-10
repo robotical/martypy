@@ -1,3 +1,9 @@
+Version 3.1.0 :
+- Automatic Marty discovery when connecting over USB
+
+Version 3.0.3 :
+- Improved default parameters for `wiggle()` and `sidestep()`
+
 Version 3.0.0 :
 - **Blocking Mode**
   - You can now select whether movement commands are blocking or non-blocking.

@@ -5,7 +5,7 @@ with open('README.md') as f:
 
 setup(
     name="martypy",
-    version="3.0.3",
+    version="3.1.0",
     description="Python library for Marty the Robot V1 and V2",
     long_description=readme,
     long_description_content_type="text/markdown",
