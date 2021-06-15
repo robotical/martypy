@@ -172,7 +172,7 @@ class RICProtocols:
                 msg.setRESTElemCode(restElemCode)
                 if restElemCode == self.RICREST_ELEM_CODE_URL or restElemCode == self.RICREST_ELEM_CODE_JSON:
                     msg.setPayload(True, fr[3:].decode('ascii'))
-                    msg.payload = msg.payload.rstrip(b'\x00')
+                    msg.payload = msg.payload.rstrip('\x00')
                 else:
                     msg.setPayload(False, fr[3:])
                 # logging.debug(f"RICREST {RICProtocols.MSG_TYPE_STRS[msgTypeCode]} msgNum {msgNum} {fr.hex()}")
