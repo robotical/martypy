@@ -1036,3 +1036,18 @@ class Marty(object):
 
     def get_test_output(self) -> str:
         return self.client.get_test_output()
+
+    def disco_off(self, add_on: str = 'all') -> bool :
+        return self.client.disco_pattern('01',add_on)
+
+    def disco_pattern(self, pattern:int, add_on:str='all') -> bool:
+        if pattern==1:
+            pattern='10'
+        elif pattern ==2:
+            pattern='11'
+        else:
+            raise Exception("Pattern must be 1 or 2")
+        return self.client.disco_pattern(pattern, add_on)
+
+    def disco_color(self, color = 'white', add_on:str='all', region= 'all') -> bool:
+        pass
