@@ -1041,9 +1041,9 @@ class Marty(object):
         return self.client.disco_pattern('01',add_on)
 
     def disco_pattern(self, pattern:int, add_on:str='all') -> bool:
-        if pattern==1:
+        if pattern == 1:
             pattern='10'
-        elif pattern ==2:
+        elif pattern == 2:
             pattern='11'
         else:
             raise Exception("Pattern must be 1 or 2")
