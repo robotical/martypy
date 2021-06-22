@@ -445,20 +445,21 @@ class ClientMV2(ClientGeneric):
     def disco_pattern(self,  pattern: str, add_on: str = 'all') -> bool :
         return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
 
-    def disco_hex(self, hexc:str, add_on:str, region: int) -> bool:
+    def disco_cmd_hex(self, hexc:str, add_on:str, region: int) -> bool:
         if region == 'all':
             region='02'
         else:
             region='040'+str(region)
         return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={region}{hexc}")
 
-    def disco_color(self, color = 'white', add_on:str='all', region='all') -> bool:
+    def disco_color(self, color = 'white', add_on:str='all', region='all') -> bool:#mayb switch  color and add_on
         default_colors={'white':'FFFFFF','red':'FF0000','blue':'0000FF','yellow':'FFFF00','green':'008000','teal':'008080','pink':'800080','purple':'060014','orange':'0f0200'}
-        if type(color) is int:
-            return self.disco_hex(str(color), add_on,region)
-        elif type(color) is str:
+        if type(color) is str:
             try:
-                color= default_colors[color]
-                return self.disco_hex(color, add_on,region)
+                color = default_colors[color]
+                return self.disco_cmd_hex(color, add_on,region)
             except KeyError:
-                raise MartyCommandException("Color specified is not in default colors")
+                if len(color) == 6: # add other params of hex code here
+                    return self.disco_cmd_hex(color, add_on,region)
+                else:
+                    raise MartyCommandException("Color specified is not a valid hex code or default color")
