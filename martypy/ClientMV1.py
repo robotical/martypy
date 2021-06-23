@@ -193,7 +193,7 @@ class ClientMV1(ClientGeneric):
                                    side_c,
                                    dur_lsb, dur_msb)
 
-    def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 3000) -> bool:
         for i in range(2):
             self.circle_dance(side, int(move_time/3))
             self.arms(90, 90, int(move_time/6))
