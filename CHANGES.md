@@ -1,3 +1,6 @@
+Version 3.1.1 :
+- Default `movetime` parameter for the `dance()` has been changed to 3000ms instead of 4500ms
+
 Version 3.1.0 :
 - Automatic Marty discovery when connecting over USB
 
