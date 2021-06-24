@@ -479,5 +479,6 @@ class ClientMV2(ClientGeneric):
         if type(color) is tuple:
             if len(color)!= 3:
                 raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
-            hex_color='%02x%02x%02x' % color
+            downscaled_color=tuple(int(c/20) for c in color)
+            hex_color='%02x%02x%02x' % downscaled_color
             return self.disco_cmd_hex(hex_color, add_on,region)
