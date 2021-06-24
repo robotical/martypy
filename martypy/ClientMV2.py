@@ -441,7 +441,10 @@ class ClientMV2(ClientGeneric):
 
     def get_test_output(self) -> dict:
         return self.ricIF.getTestOutput()
-    
+
+    def disco_off(self, add_on: str = 'all') -> bool :
+        pattern='01'
+        return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
     def disco_pattern(self,  pattern: str, add_on: str = 'all') -> bool :
         return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
 
@@ -452,14 +455,22 @@ class ClientMV2(ClientGeneric):
             region='040'+str(region)
         return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={region}{hexc}")
 
+    def rgb_to_hex(self,rgb: tuple):
+        pass
+
     def disco_color(self, color = 'white', add_on:str='all', region='all') -> bool:#mayb switch  color and add_on
         default_colors={'white':'FFFFFF','red':'FF0000','blue':'0000FF','yellow':'FFFF00','green':'008000','teal':'008080','pink':'800080','purple':'060014','orange':'0f0200'}
         if type(color) is str:
             try:
-                color = default_colors[color]
-                return self.disco_cmd_hex(color, add_on,region)
+                hex_color = default_colors[color]
+                return self.disco_cmd_hex(hex_color, add_on,region)
             except KeyError:
                 if len(color) == 6: # add other params of hex code here
                     return self.disco_cmd_hex(color, add_on,region)
                 else:
                     raise MartyCommandException("Color specified is not a valid hex code or default color")
+        if type(color) is tuple:
+            if len(color)!= 3:
+                raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
+            hex_color='%02x%02x%02x' % color
+            return self.disco_cmd_hex(hex_color, add_on,region)

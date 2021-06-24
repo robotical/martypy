@@ -1038,7 +1038,7 @@ class Marty(object):
         return self.client.get_test_output()
 
     def disco_off(self, add_on: str = 'all') -> bool :
-        return self.client.disco_pattern('01',add_on)
+        return self.client.disco_off(add_on)
 
     def disco_pattern(self, pattern:int, add_on:str='all') -> bool:
         if pattern == 1:
