@@ -448,7 +448,6 @@ class ClientMV2(ClientGeneric):
 
 
     def disco_pattern(self,  pattern: str, add_on: str = 'all') -> bool :
-        print(pattern, add_on)
         return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
 
     def disco_cmd_hex(self, hexc:str, add_on:str, region: int) -> bool:
@@ -482,9 +481,7 @@ class ClientMV2(ClientGeneric):
         for add_ons in self.get_add_ons_status().values():
             if add_ons['whoAmITypeCode'] in group:
                 addon_name=add_ons['name']
-                print(addon_name,params)
                 result.append(function(**params,**{'add_on':addon_name}))
-        print(result)
         if result == [True]*len(result):
             return True
         return False
