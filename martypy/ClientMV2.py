@@ -444,15 +444,11 @@ class ClientMV2(ClientGeneric):
 
     def disco_off(self, add_on: str = 'all') -> bool :
         pattern='01'
-        result= []
-        if add_on == 'arms':
-            for add_ons in self.get_add_ons_status().values():
-                if add_ons['whoAmITypeCode']=='00000088':
-                    addon_name=add_ons['name']
-                    result.append(self.ricIF.cmdRICRESTRslt(f"elem/{addon_name}/json?cmd=raw&hexWr={pattern}"))
-            return result
         return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
+
+
     def disco_pattern(self,  pattern: str, add_on: str = 'all') -> bool :
+        print(pattern, add_on)
         return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
 
     def disco_cmd_hex(self, hexc:str, add_on:str, region: int) -> bool:
@@ -462,8 +458,6 @@ class ClientMV2(ClientGeneric):
             region='040'+str(region)
         return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={region}{hexc}")
 
-    def rgb_to_hex(self,rgb: tuple):
-        pass
 
     def disco_color(self, color: Union[int,str,tuple] = 'white', add_on: str = 'all', region: Union[int,str] = 'all') -> bool:#mayb switch  color and add_on
         default_colors={'white':'FFFFFF','red':'FF0000','blue':'0000FF','yellow':'FFFF00','green':'008000','teal':'008080','pink':'800080','purple':'060014','orange':'0f0200'}
@@ -482,3 +476,15 @@ class ClientMV2(ClientGeneric):
             downscaled_color=tuple(int(c/20) for c in color)
             hex_color='%02x%02x%02x' % downscaled_color
             return self.disco_cmd_hex(hex_color, add_on,region)
+
+    def disco_group(self, function: str, group: set = {"00000087","00000088","00000089"}, params: dict= {}) :
+        result = []
+        for add_ons in self.get_add_ons_status().values():
+            if add_ons['whoAmITypeCode'] in group:
+                addon_name=add_ons['name']
+                print(addon_name,params)
+                result.append(function(**params,**{'add_on':addon_name}))
+        print(result)
+        if result == [True]*len(result):
+            return True
+        return False
