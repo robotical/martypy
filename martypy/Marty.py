@@ -16,12 +16,13 @@ The tags :one: and :two: indicate when the method is available for Marty V1 :one
 '''
 import time
 from typing import Callable, Dict, List, Optional, Union
+from enum import Enum
 from .ClientGeneric import ClientGeneric
 from .ClientMV2 import ClientMV2
 from .ClientMV1 import ClientMV1
 from .Exceptions import (MartyCommandException,
                          MartyConfigException)
-from enum import Enum
+
 
 
 class Marty(object):
@@ -1045,6 +1046,7 @@ class Marty(object):
 
     def get_test_output(self) -> str:
         return self.client.get_test_output()
+
 
     def disco_off(self, add_on: str = 'all') -> bool :
         if type(add_on) is str:
