@@ -557,6 +557,27 @@ class ClientMV1(ClientGeneric):
     def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
+    def valid_addon(self, add_on:str) -> bool :
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def valid_hex(self, hexc: str) -> bool :
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def disco_off(self, add_on: str = 'all') -> bool :
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def disco_pattern(self,  pattern: str, add_on: str ) -> bool :
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+        
+    def disco_cmd_hex(self, hexc: str, add_on: str, region: int) -> bool:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def disco_color(self, color: Union[int,str,tuple], add_on: str, region: Union[int,str] = 'all') -> bool:#mayb switch  color and add_on
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def disco_group(self, function: str, group: set = {"00000087","00000088","00000089"}, params: dict = {}) :
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
     # Encodes Command Type flag, LSB size, MSB size, Data
     CMD_OPCODES = {
         'battery'            : ['\x01', '\x01', '\x00'],         # OK
