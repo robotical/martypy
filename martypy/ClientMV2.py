@@ -401,6 +401,81 @@ class ClientMV2(ClientGeneric):
         if isFatal:
             self.ricIF.close()
         logger.debug(f"Pre-exception isFatal {isFatal}")
+        
+    def valid_addon(self, add_on:str) -> bool :
+        disco= {"00000087","00000088","00000089"}
+        for add_ons in self.get_add_ons_status().values():
+            if add_ons['name'] == add_on:
+                if add_ons['whoAmITypeCode'] in disco:
+                    return True
+                else:
+                    raise MartyCommandException("The add on name passed in is not a valid disco add on.")
+        raise MartyCommandException("The add on name passed in is not a valid add on.")
+
+    def valid_hex(self, hexc: str) -> bool :
+        regex = "^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        p = re.compile(regex)
+        if not hexc:
+            return False
+        if (re.search(p,hexc)):
+            return True
+        return False
+
+    def disco_off(self, add_on: str = 'all') -> bool :
+        pattern = '01'
+        if self.valid_addon(add_on):
+            return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
+
+    def disco_pattern(self,  pattern: str, add_on: str ) -> bool :
+        if self.valid_addon(add_on):
+            return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
+
+    def disco_cmd_hex(self, hexc: str, add_on: str, region: int) -> bool:
+        if region == 'all':
+            region = '02'
+        else:
+            region = '040' + str(region)
+        if self.valid_addon(add_on):
+            return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={region}{hexc}")
+
+    def disco_color(self, color: Union[int,str,tuple], add_on: str, region: Union[int,str] = 'all') -> bool:#mayb switch  color and add_on
+        default_colors = {
+            'white':'FFFFFF',
+            'red':'FF0000',
+            'blue':'0000FF',
+            'yellow':'FFFF00',
+            'green':'008000',
+            'teal':'008080',
+            'pink':'800080',
+            'purple':'060014',
+            'orange':'0f0200'
+        }
+        if type(color) is str:
+            try:
+                hex_color = default_colors[color.lower()]
+                return self.disco_cmd_hex(hex_color, add_on,region)
+            except KeyError:
+                if color[0] == '#':
+                    color = color[1:]
+                if self.valid_hex(color): # add other params of hex code here
+                    return self.disco_cmd_hex(color, add_on,region)
+                else:
+                    raise MartyCommandException("Color specified is not a valid hex code or default color")
+        if type(color) is tuple:
+            if len(color)!= 3:
+                raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
+            hex_color = '%02x%02x%02x' % color
+            return self.disco_cmd_hex(hex_color, add_on,region)
+
+    def disco_group(self, function: str, group: set = {"00000087","00000088","00000089"}, params: dict = {}) :
+        result = []
+        for add_ons in self.get_add_ons_status().values():
+            if add_ons['whoAmITypeCode'] in group:
+                addon_name = add_ons['name']
+                result.append(function(**params,**{'add_on':addon_name}))
+        if result == [True]*len(result):
+            return True
+        return False
 
     def _rxDecodedMsg(self, decodedMsg: DecodedMsg, interface: RICInterface):
         if decodedMsg.protocolID == RICProtocols.PROTOCOL_ROSSERIAL:
@@ -443,64 +518,4 @@ class ClientMV2(ClientGeneric):
     def get_test_output(self) -> dict:
         return self.ricIF.getTestOutput()
 
-    def valid_hex(self, hexc: str) -> bool :
-        regex = "^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
-        p = re.compile(regex)
-        if not hexc:
-            return False
-        if (re.search(p,hexc)):
-            return True
-        return False
-
-    def disco_off(self, add_on: str = 'all') -> bool :
-        pattern = '01'
-        return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
-
-    def disco_pattern(self,  pattern: str, add_on: str = 'all') -> bool :
-        return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
-
-    def disco_cmd_hex(self, hexc: str, add_on: str, region: int) -> bool:
-        if region == 'all':
-            region = '02'
-        else:
-            region = '040' + str(region)
-        return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={region}{hexc}")
-
-    def disco_color(self, color: Union[int,str,tuple] = 'white', add_on: str = 'all', region: Union[int,str] = 'all') -> bool:#mayb switch  color and add_on
-        default_colors = {
-            'white':'FFFFFF',
-            'red':'FF0000',
-            'blue':'0000FF',
-            'yellow':'FFFF00',
-            'green':'008000',
-            'teal':'008080',
-            'pink':'800080',
-            'purple':'060014',
-            'orange':'0f0200'
-        }
-        if type(color) is str:
-            try:
-                hex_color = default_colors[color.lower()]
-                return self.disco_cmd_hex(hex_color, add_on,region)
-            except KeyError:
-                if color[0] == '#':
-                    color = color[1:]
-                if self.valid_hex(color): # add other params of hex code here
-                    return self.disco_cmd_hex(color, add_on,region)
-                else:
-                    raise MartyCommandException("Color specified is not a valid hex code or default color")
-        if type(color) is tuple:
-            if len(color)!= 3:
-                raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
-            hex_color = '%02x%02x%02x' % color
-            return self.disco_cmd_hex(hex_color, add_on,region)
-
-    def disco_group(self, function: str, group: set = {"00000087","00000088","00000089"}, params: dict = {}) :
-        result = []
-        for add_ons in self.get_add_ons_status().values():
-            if add_ons['whoAmITypeCode'] in group:
-                addon_name = add_ons['name']
-                result.append(function(**params,**{'add_on':addon_name}))
-        if result == [True]*len(result):
-            return True
-        return False
+    
