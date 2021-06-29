@@ -412,11 +412,11 @@ class ClientMV2(ClientGeneric):
                     raise MartyCommandException("The add on name passed in is not a valid disco add on. Please check the add on name in the scratch app -> configure -> add ons")
         raise MartyCommandException("The add on name passed in is not a valid add on. Please check the add on name in the scratch app -> configure -> add ons")
 
-    def _valid_hex(self, hexc: str) -> bool :
+    def _valid_hex(self, color_hex: str) -> bool :
         hex_pattern = re.compile("^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
-        return bool(hex_pattern.match(hexc))
+        return bool(hex_pattern.match(color_hex))
 
-    def disco_off(self, add_on: str = 'all') -> bool :
+    def disco_off(self, add_on: str) -> bool :
         if self._valid_addon(add_on):
             return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr=01")
 
@@ -424,15 +424,15 @@ class ClientMV2(ClientGeneric):
         if self._valid_addon(add_on):
             return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
 
-    def _disco_cmd_hex(self, hexc: str, add_on: str, region: int) -> bool:
+    def _disco_cmd_hex(self, color_hex: str, add_on: str, region: int) -> bool:
         if region == 'all':
             region = '02'
         else:
             region = '040' + str(region)
         if self._valid_addon(add_on):
-            return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={region}{hexc}")
+            return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={region}{color_hex}")
 
-    def disco_color(self, color: Union[int,str,tuple], add_on: str, region: Union[int,str] = 'all') -> bool:#mayb switch  color and add_on
+    def disco_color(self, color: Union[int,str,tuple], add_on: str, region: Union[int,str]) -> bool:#mayb switch  color and add_on
         default_colors = {
             'white':'FFFFFF',
             'red':'FF0000',
@@ -446,8 +446,8 @@ class ClientMV2(ClientGeneric):
         }
         if type(color) is str:
             try:
-                hex_color = default_colors[color.lower()]
-                return self._disco_cmd_hex(hex_color, add_on, region)
+                color_hex = default_colors[color.lower()]
+                return self._disco_cmd_hex(color_hex, add_on, region)
             except KeyError:
                 if color[0] == '#':
                     color = color[1:]
@@ -458,8 +458,8 @@ class ClientMV2(ClientGeneric):
         if type(color) is tuple:
             if len(color) != 3:
                 raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
-            hex_color = '%02x%02x%02x' % color
-            return self._disco_cmd_hex(hex_color, add_on,region)
+            color_hex = '%02x%02x%02x' % color
+            return self._disco_cmd_hex(color_hex, add_on,region)
 
     def disco_group(self, function: str, group: set = {"00000087","00000088","00000089"}, params: dict = {}) :
         result = []
