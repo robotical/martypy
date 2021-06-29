@@ -24,7 +24,6 @@ from .Exceptions import (MartyCommandException,
                          MartyConfigException)
 
 
-
 class Marty(object):
 
     CLIENT_TYPES = {
@@ -86,10 +85,10 @@ class Marty(object):
         "IRFoot"
     ]
     class LED(Enum):
-        ARMS={"00000088"}
-        FEET= {"00000087"}
-        EYES={"00000089"}
-        ALL= {"00000087","00000088","00000089"}
+        ARMS = {"00000088"}
+        FEET = {"00000087"}
+        EYES = {"00000089"}
+        ALL = {"00000087", "00000088", "00000089"}
 
 
 
@@ -827,7 +826,7 @@ class Marty(object):
         else:
             return self.client.disco_group(self.client.disco_off,add_on.value)
 
-    def disco_pattern(self, pattern: int, add_on: str = LED.ALL) -> bool:
+    def disco_pattern(self, pattern: int, add_on: Union[LED, str] = LED.ALL) -> bool:
         if pattern == 1:
             pattern = '10'
         elif pattern == 2:
@@ -839,7 +838,7 @@ class Marty(object):
         else:
             return self.client.disco_group(self.client.disco_pattern, add_on.value, {'pattern':pattern})
 
-    def disco_color(self, color: Union[int,str,tuple] = 'white', add_on: str = LED.ALL, region: Union[int,str] = 'all') -> bool:
+    def disco_color(self, color: Union[int, str, tuple] = 'white', add_on: str = LED.ALL, region: Union[int, str] = 'all') -> bool:
         if type(add_on) is str:
             return self.client.disco_color(color,add_on,region)
         else:
@@ -1070,5 +1069,3 @@ class Marty(object):
 
     def get_test_output(self) -> str:
         return self.client.get_test_output()
-
-    
