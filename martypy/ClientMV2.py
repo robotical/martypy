@@ -404,13 +404,13 @@ class ClientMV2(ClientGeneric):
 
     def valid_addon(self, add_on:str) -> bool :
         disco= {"00000087","00000088","00000089"}
-        for add_ons in self.get_add_ons_status().values():
-            if add_ons['name'] == add_on:
-                if add_ons['whoAmITypeCode'] in disco:
+        for attached_add_on in self.get_add_ons_status().values():
+            if attached_add_on['name'] == add_on:
+                if attached_add_on['whoAmITypeCode'] in disco:
                     return True
                 else:
-                    raise MartyCommandException("The add on name passed in is not a valid disco add on.")
-        raise MartyCommandException("The add on name passed in is not a valid add on.")
+                    raise MartyCommandException("The add on name passed in is not a valid disco add on. Please check the add on name in the scratch app -> configure -> add ons")
+        raise MartyCommandException("The add on name passed in is not a valid add on. Please check the add on name in the scratch app -> configure -> add ons")
 
     def valid_hex(self, hexc: str) -> bool :
         regex = "^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
@@ -469,9 +469,9 @@ class ClientMV2(ClientGeneric):
 
     def disco_group(self, function: str, group: set = {"00000087","00000088","00000089"}, params: dict = {}) :
         result = []
-        for add_ons in self.get_add_ons_status().values():
-            if add_ons['whoAmITypeCode'] in group:
-                addon_name = add_ons['name']
+        for attached_add_on in self.get_add_ons_status().values():
+            if attached_add_on['whoAmITypeCode'] in group:
+                addon_name = attached_add_on['name']
                 result.append(function(**params,**{'add_on':addon_name}))
         if result == [True]*len(result):
             return True
