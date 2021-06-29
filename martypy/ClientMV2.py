@@ -413,18 +413,12 @@ class ClientMV2(ClientGeneric):
         raise MartyCommandException("The add on name passed in is not a valid add on. Please check the add on name in the scratch app -> configure -> add ons")
 
     def _valid_hex(self, hexc: str) -> bool :
-        regex = "^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
-        p = re.compile(regex)
-        if not hexc:
-            return False
-        if (re.search(p,hexc)):
-            return True
-        return False
+        hex_pattern = re.compile("^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
+        return bool(hex_pattern.match(hexc))
 
     def disco_off(self, add_on: str = 'all') -> bool :
-        pattern = '01'
         if self._valid_addon(add_on):
-            return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
+            return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr=01")
 
     def disco_pattern(self, pattern: str, add_on: str) -> bool :
         if self._valid_addon(add_on):
