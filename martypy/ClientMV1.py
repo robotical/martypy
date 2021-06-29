@@ -566,13 +566,13 @@ class ClientMV1(ClientGeneric):
     def disco_off(self, add_on: str = 'all') -> bool :
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def disco_pattern(self,  pattern: str, add_on: str ) -> bool :
+    def disco_pattern(self, pattern: str, add_on: str) -> bool :
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
         
     def disco_cmd_hex(self, hexc: str, add_on: str, region: int) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def disco_color(self, color: Union[int,str,tuple], add_on: str, region: Union[int,str] = 'all') -> bool:#mayb switch  color and add_on
+    def disco_color(self, color: Union[int, str, tuple], add_on: str, region: Union[int, str] = 'all') -> bool:  #mayb switch  color and add_on
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def disco_group(self, function: str, group: set = {"00000087","00000088","00000089"}, params: dict = {}) :

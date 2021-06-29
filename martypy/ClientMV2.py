@@ -426,7 +426,7 @@ class ClientMV2(ClientGeneric):
         if self.valid_addon(add_on):
             return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
 
-    def disco_pattern(self,  pattern: str, add_on: str ) -> bool :
+    def disco_pattern(self, pattern: str, add_on: str) -> bool :
         if self.valid_addon(add_on):
             return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
 
@@ -453,7 +453,7 @@ class ClientMV2(ClientGeneric):
         if type(color) is str:
             try:
                 hex_color = default_colors[color.lower()]
-                return self.disco_cmd_hex(hex_color, add_on,region)
+                return self.disco_cmd_hex(hex_color, add_on, region)
             except KeyError:
                 if color[0] == '#':
                     color = color[1:]
@@ -462,7 +462,7 @@ class ClientMV2(ClientGeneric):
                 else:
                     raise MartyCommandException("Color specified is not a valid hex code or default color")
         if type(color) is tuple:
-            if len(color)!= 3:
+            if len(color) != 3:
                 raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
             hex_color = '%02x%02x%02x' % color
             return self.disco_cmd_hex(hex_color, add_on,region)
@@ -517,5 +517,3 @@ class ClientMV2(ClientGeneric):
 
     def get_test_output(self) -> dict:
         return self.ricIF.getTestOutput()
-
-    
