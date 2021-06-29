@@ -284,7 +284,7 @@ class ClientMV2(ClientGeneric):
 
     def get_battery_remaining(self) -> float:
         powerStatus = self.ricHardware.getPowerStatus()
-        return powerStatus.get("remCapPC", 0)
+        return powerStatus.get("battRemainCapacityPercent", 0)
 
     def get_distance_sensor(self) -> float:
         # TODO NotImplemented
