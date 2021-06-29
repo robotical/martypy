@@ -401,7 +401,7 @@ class ClientMV2(ClientGeneric):
         if isFatal:
             self.ricIF.close()
         logger.debug(f"Pre-exception isFatal {isFatal}")
-        
+
     def valid_addon(self, add_on:str) -> bool :
         disco= {"00000087","00000088","00000089"}
         for add_ons in self.get_add_ons_status().values():
@@ -517,5 +517,3 @@ class ClientMV2(ClientGeneric):
 
     def get_test_output(self) -> dict:
         return self.ricIF.getTestOutput()
-
-    
