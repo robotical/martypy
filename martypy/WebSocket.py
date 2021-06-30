@@ -1,10 +1,12 @@
 
 import socket
 import logging
-from typing import Callable, Union
+from typing import Callable, Optional
 from .WebSocketFrame import WebSocketFrame
+import time
 
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 class WebSocket():
 
@@ -17,26 +19,31 @@ class WebSocket():
             onBinaryFrame: Callable[[bytes], None],
             onTextFrame: Callable[[str], None],
             onError: Callable[[str], None],
+            onReconnect: Callable[[], None],
             ipAddrOrHostname: str,
             ipPort: int = 80,
             wsPath: str = "/ws",
-            timeout: float = 30.0) -> None:
+            timeout: float = 5.0,
+            autoReconnect: bool = True,
+            reconnectRepeatSecs: int = 5.0) -> None:
         self.ipAddr = socket.gethostbyname(ipAddrOrHostname)
         self.wsPath = wsPath
         self.ipPort = ipPort
         self.timeout = timeout
-        self.sock = None
-        self.wsFrameCodec = WebSocketFrame()
+        self.autoReconnect = autoReconnect
+        self.reconnectRepeatSecs = reconnectRepeatSecs
         self.onBinaryFrame = onBinaryFrame
         self.onTextFrame = onTextFrame
         self.onError = onError
-        self.socketState = self.SOCKET_AWAITING_UPGRADE
-        self.rxPreUpgrade = bytearray()
+        self.onReconnect = onReconnect
+        self._clear()
 
     def __del__(self) -> None:
         self.close()
 
     def open(self) -> bool:
+        # Clear
+        self._clear()
         # Open socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(self.timeout)
@@ -53,7 +60,10 @@ class WebSocket():
 
     def close(self) -> None:
         if self.sock:
-            self.sock.close()
+            try:
+                self.sock.close()
+            except Exception as excp:
+                logger.debug("WebSocket exception while closing", excp)
         self.sock = None
 
     def _sendUpgradeReq(self) -> None:
@@ -67,7 +77,36 @@ class WebSocket():
 
     def service(self) -> None:
         # Get any data
-        rxData = self.sock.recv(self.maxSocketBytes)
+        reconnectRequired = False
+        try:
+            rxData = self.sock.recv(self.maxSocketBytes)
+        except OSError as excp:
+            logger.debug(f"WebSocket OSError {excp}")
+            if not self.autoReconnect:
+                raise excp
+            reconnectRequired = True
+        except Exception as excp:
+            logger.debug(f"WebSocket exception {excp}")
+            if not self.autoReconnect:
+                raise excp
+            reconnectRequired = True
+        # Check for reconnect
+        if reconnectRequired:
+            if self.reconnectLastTime is None or time.time() > self.reconnectLastTime + self.reconnectRepeatSecs:
+                self.close()
+                try:
+                    if self.onReconnect:
+                        self.onReconnect()
+                    self.open()
+                    logger.debug("WebSocket reopened automatically")
+                except Exception as excp:
+                    logger.debug("WebSocket exception trying to reopen websocket", excp)
+                self.reconnectLastTime = time.time()
+            else:
+                time.sleep(0.01)
+            return
+        if self.sock is None:
+            return
         # Check state of socket connection
         if self.socketState == self.SOCKET_AWAITING_UPGRADE:
             self.rxPreUpgrade += rxData
@@ -88,6 +127,7 @@ class WebSocket():
                 checkForData = False
                 # Check for actions required
                 if self.wsFrameCodec.getPongRequired():
+                    # logging.debug("WebSocket sending pong")
                     self._sendPong()
                     checkForData = True
                 binaryFrame = self.wsFrameCodec.getBinaryMsg()
@@ -108,3 +148,10 @@ class WebSocket():
                     False, WebSocketFrame.OPCODE_PONG, True)
         # logger.debug(f"WebSocket pong {''.join('{:02x}'.format(x) for x in self.wsFrameCodec.getPongData())}") 
         return self.sock.send(frame)
+
+    def _clear(self) -> None:
+        self.sock = None
+        self.socketState = self.SOCKET_AWAITING_UPGRADE
+        self.reconnectLastTime = None
+        self.rxPreUpgrade = bytearray()
+        self.wsFrameCodec = WebSocketFrame()

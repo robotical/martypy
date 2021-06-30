@@ -11,6 +11,7 @@ from .Exceptions import MartyConnectException
 from .WebSocket import WebSocket
 
 logger = logging.getLogger(__name__)
+#logger.setLevel(logging.DEBUG)
 
 class RICCommsWiFi(RICCommsBase):
     '''
@@ -54,7 +55,8 @@ class RICCommsWiFi(RICCommsBase):
                         "ipAddrOrHostname", 
                         "ipPort",
                         "wsPath",
-                        "asciiEscapes"
+                        "asciiEscapes",
+                        "autoReconnect"
         Returns:
             True if open succeeded or already open
         Throws:
@@ -71,6 +73,7 @@ class RICCommsWiFi(RICCommsBase):
         ipPort = openParams.get("ipPort", 80)
         wsPath = openParams.get("wsPath", "/ws")
         hdlcAsciiEscapes = openParams.get("asciiEscapes", False)
+        autoReconnect = openParams.get("autoReconnect", True)
 
         # Validate
         if len(ipAddrOrHostname) == 0:
@@ -81,7 +84,9 @@ class RICCommsWiFi(RICCommsBase):
             self.webSocket = WebSocket(self._onWSBinaryFrame, 
                         self._onWSTextFrame, 
                         self._onWSError, 
-                        ipAddrOrHostname, ipPort, wsPath)
+                        self._onWSReconnect,
+                        ipAddrOrHostname, ipPort, wsPath,
+                        autoReconnect=autoReconnect)
             self.webSocket.open()
         except Exception as excp:
             raise MartyConnectException("Websocket problem") from excp
@@ -170,7 +175,7 @@ class RICCommsWiFi(RICCommsBase):
         self._isOpen = False
 
     def _onWSBinaryFrame(self, rxFrame: bytes) -> None:
-        # logger.debug(f"webSocketRx {''.join('{:02x}'.format(x) for x in rxFrame)}")
+        # logger.debug(f"webSocketRx {rxFrame.hex()}")
         for rxByte in rxFrame:
             self._hdlc.decodeData(rxByte)
 
@@ -179,6 +184,10 @@ class RICCommsWiFi(RICCommsBase):
 
     def _onWSError(self, err: str) -> None:
         logger.debug(f"CommsWiFi WS error {err}")
+
+    def _onWSReconnect(self) -> None:
+        # logger.debug(f"CommsWiFi WS reconnect")
+        self._hdlc.clear()
 
     def getTestOutput(self) -> dict:
         return {}
