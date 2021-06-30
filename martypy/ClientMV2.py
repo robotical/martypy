@@ -434,27 +434,27 @@ class ClientMV2(ClientGeneric):
 
     def disco_color(self, color: Union[int,str,tuple], add_on: str, region: Union[int,str]) -> bool:#mayb switch  color and add_on
         default_colors = {
-            'white':'FFFFFF',
-            'red':'FF0000',
-            'blue':'0000FF',
-            'yellow':'FFFF00',
-            'green':'008000',
-            'teal':'008080',
-            'pink':'800080',
-            'purple':'060014',
-            'orange':'0f0200'
+            'white'  : 'FFFFFF',
+            'red'    : 'FF0000',
+            'blue'   : '0000FF',
+            'yellow' : 'FFFF00',
+            'green'  : '008000',
+            'teal'   : '008080',
+            'pink'   : '800080',
+            'purple' : '060014',
+            'orange' : '0f0200'
         }
         if type(color) is str:
-            try:
-                color_hex = default_colors[color.lower()]
+            color_lowercase= color.lower()
+            if color_lowercase in default_colors:
+                color_hex = default_colors[color_lowercase]
                 return self._disco_cmd_hex(color_hex, add_on, region)
-            except KeyError:
-                if color[0] == '#':
-                    color = color[1:]
-                if self._valid_hex(color): # add other params of hex code here
-                    return self._disco_cmd_hex(color, add_on,region)
-                else:
-                    raise MartyCommandException("Color specified is not a valid hex code or default color")
+            if color[0] == '#':
+                color = color[1:]
+            if self._valid_hex(color):
+                return self._disco_cmd_hex(color, add_on,region)
+            else:
+                raise MartyCommandException("Color specified is not a valid hex code or default color")
         if type(color) is tuple:
             if len(color) != 3:
                 raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
