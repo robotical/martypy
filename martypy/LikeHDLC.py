@@ -242,17 +242,18 @@ class LikeHDLC:
 
         # Validate and callback if finished
         if (self.currentFrame is not None) and self.currentFrame.finished:
-            if not self.currentFrame.error:
+            rxFrame = self.currentFrame
+            self.currentFrame = None
+            if not rxFrame.error:
                 # Success
                 if self.payloadsAreStrings:
-                    self.onFrame(self.currentFrame.toString())
+                    self.onFrame(rxFrame.toString())
                 else:
-                    self.onFrame(self.currentFrame.data)
-            elif self.currentFrame.finished:
+                    self.onFrame(rxFrame.data)
+            elif rxFrame.finished:
                 # Error
                 self.stats.crcErrors += 1
                 self.onError()
-            self.currentFrame = None
 
     def getStats(self) -> HDLCStats:
         

@@ -562,7 +562,10 @@ class RICInterface:
                     logger.warn(f"_onRxFrameCB REPORT is not JSON {excp}")
                 msgKey = reptObj.get("msgKey", '')
                 if type(msgKey) is str:
-                    msgKey = int(msgKey)
+                    try:
+                        msgKey = int(msgKey)
+                    except:
+                        msgKey = 0
                 if msgKey != 0:
                     isUnmatched = False
                     with self._rawQueryOutstandingLock:
