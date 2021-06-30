@@ -31,6 +31,7 @@ class RICHwSmartServos:
                 for field in fieldsToCopy:
                     if field in dictOfHwElemsByIdNo[IDNo]:
                         servosStatus[IDNo][field] = dictOfHwElemsByIdNo[IDNo][field]
+                servosStatus[IDNo]["updateTime"] = self.latestMsgTime
         return servosStatus
 
     def servoStatus(self, servoId: int, dictOfHwElemsByIdNo: Dict) -> Dict:
@@ -76,7 +77,9 @@ class RICHwPowerStatus:
     def powerStatus(self) -> Dict:
         if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
             return {}
-        return RICROSSerial.extractPowerStatus(self.latestMsg)
+        curPowerStatus = RICROSSerial.extractPowerStatus(self.latestMsg)
+        curPowerStatus["updateTime"] = self.latestMsgTime
+        return curPowerStatus
 
 class RICHwAddOnStatus:
     def __init__(self):
@@ -93,6 +96,7 @@ class RICHwAddOnStatus:
         if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
             return {}
         addOnStatus = RICROSSerial.extractAddOnStatus(self.latestMsg)
+        addOnStatus["updateTime"] = self.latestMsgTime
         fieldsToCopy = ["name", "type", "whoAmITypeCode"]
         for IDNo in addOnStatus:
             if IDNo in dictOfHwElemsByIdNo:
@@ -126,8 +130,9 @@ class RICHwRobotStatus:
     def status(self) -> Dict:
         if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
             return {}
-        return RICROSSerial.extractRobotStatus(self.latestMsg)
-
+        curRobotStatus = RICROSSerial.extractRobotStatus(self.latestMsg)
+        curRobotStatus["updateTime"] = self.latestMsgTime
+        return curRobotStatus
 class RICHwPublishMonitor:
     
     def __init__(self):

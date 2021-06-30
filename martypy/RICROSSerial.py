@@ -157,18 +157,28 @@ class RICROSSerial:
     @classmethod
     def extractPowerStatus(cls, buf: bytes) -> Dict:
         pst = struct.unpack(">BBHHhHHB", buf[0:cls.ROS_POWER_STATUS_BYTES])
-        return {
-            "battRemainCapacityPercent": pst[0],
-            "battTempDegC": pst[1],
-            "battRemainCapacityMAH": pst[2],
-            "battFullCapacityMAH": pst[3],
-            "battCurrentMA": pst[4],
-            "power5VOnTimeSecs": pst[5],
+        power5VIsOn = (pst[6] & 0x0002) != 0
+        battInfoValid = (pst[6] & 0x0004) == 0
+        powerInfo = {
             "powerFlags": pst[6],
-            "powerUSBIsConnected": (pst[6] & 0x0001) != 0,
-            "power5VIsOn": (pst[6] & 0x0002) != 0,
+            "power5VIsOn": power5VIsOn,
+            "powerUSBIsConnected": (pst[6] & 0x0001) != 0 and (pst[6] & 0x0008) == 0,
+            "battInfoValid": battInfoValid,
             "IDNo": pst[7]
         }
+        if battInfoValid:
+            powerInfo.update({
+                "battRemainCapacityPercent": pst[0],
+                "battTempDegC": pst[1],
+                "battRemainCapacityMAH": pst[2],
+                "battFullCapacityMAH": pst[3],
+                "battCurrentMA": pst[4],
+            })
+        if power5VIsOn:
+            powerInfo.update({
+                "power5VOnTimeSecs": pst[5]
+            })
+        return powerInfo
 
     @classmethod
     def extractRGBT(cls, rgbtVal:int):
