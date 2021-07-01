@@ -370,8 +370,8 @@ class ClientMV2(ClientGeneric):
     def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
         return self.ricHardware.getAddOn(add_on_name_or_id, self.ricHwElemsInfoByIDNo)
 
-    def add_on_query(self, addOnName: str, dataToWrite: bytes, numBytesToRead: int) -> Dict:
-        return self.ricIF.addOnQueryRaw(addOnName, dataToWrite, numBytesToRead)
+    def add_on_query(self, add_on_name: str, data_to_write: bytes, num_bytes_to_read: int) -> Dict:
+        return self.ricIF.addOnQueryRaw(add_on_name, data_to_write, num_bytes_to_read)
 
     def get_system_info(self) -> Dict:
         return self.ricSystemInfo

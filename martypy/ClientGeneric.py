@@ -293,7 +293,7 @@ class ClientGeneric(ABC):
         return {}
 
     @abstractmethod
-    def add_on_query(self, addOnName: str, dataToWrite: bytes, numBytesToRead: int) -> Dict:
+    def add_on_query(self, add_on_name: str, data_to_write: bytes, num_bytes_to_read: int) -> Dict:
         return {}
 
     @abstractmethod
