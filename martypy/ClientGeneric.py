@@ -321,6 +321,22 @@ class ClientGeneric(ABC):
         return {}
 
     @abstractmethod
+    def disco_off(self, add_on: str = 'all') -> bool :
+        return False
+
+    @abstractmethod
+    def disco_pattern(self, pattern: str, add_on: str) -> bool :
+        return False
+
+    @abstractmethod   
+    def disco_color(self, color: Union[int, str, tuple], add_on: str, region: Union[int, str] = 'all') -> bool:  
+        return False
+
+    @abstractmethod
+    def disco_group_operation(self, disco_operation: str, whoami_type_codes: set = {"00000087","00000088","00000089"}, operation_kwargs: dict = {}) -> bool:
+        return False
+
+    @abstractmethod
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
         pass
 
