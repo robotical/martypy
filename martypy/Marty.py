@@ -23,7 +23,6 @@ from .ClientMV1 import ClientMV1
 from .Exceptions import (MartyCommandException,
                          MartyConfigException)
 
-
 class Marty(object):
 
     CLIENT_TYPES = {
