@@ -391,19 +391,8 @@ class ClientMV2(ClientGeneric):
     def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
         return self.ricIF.cmdRICRESTSync(ricRestCmd)
 
-    def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
-        self.loggingCallback = loggingCallback
-
-    def get_interface_stats(self) -> Dict:
-        return self.ricIF.getStats()
-
-    def preException(self, isFatal: bool) -> None:
-        if isFatal:
-            self.ricIF.close()
-        logger.debug(f"Pre-exception isFatal {isFatal}")
-
-    def _valid_addon(self, add_on:str) -> bool :
-        disco= {"00000087","00000088","00000089"}
+    def _valid_addon(self, add_on: str) -> bool:
+        disco = {"00000087","00000088","00000089"}
         for attached_add_on in self.get_add_ons_status().values():
             if attached_add_on['name'] == add_on:
                 if attached_add_on['whoAmITypeCode'] in disco:
@@ -412,15 +401,15 @@ class ClientMV2(ClientGeneric):
                     raise MartyCommandException("The add on name passed in is not a valid disco add on. Please check the add on name in the scratch app -> configure -> add ons")
         raise MartyCommandException("The add on name passed in is not a valid add on. Please check the add on name in the scratch app -> configure -> add ons")
 
-    def _valid_hex(self, color_hex: str) -> bool :
+    def _valid_hex(self, color_hex: str) -> bool:
         hex_pattern = re.compile("^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
         return bool(hex_pattern.match(color_hex))
 
-    def disco_off(self, add_on: str) -> bool :
+    def disco_off(self, add_on: str) -> bool:
         if self._valid_addon(add_on):
             return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr=01")
 
-    def disco_pattern(self, pattern: str, add_on: str) -> bool :
+    def disco_pattern(self, pattern: str, add_on: str) -> bool:
         if self._valid_addon(add_on):
             return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
 
@@ -432,14 +421,14 @@ class ClientMV2(ClientGeneric):
         if self._valid_addon(add_on):
             return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={region}{color_hex}")
 
-    def _rgb_to_hex(self, color_rgb: tuple):
+    def _rgb_to_hex(self, color_rgb: tuple) -> str:
         if len(color_rgb) != 3:
                 raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
         downscaled_color = tuple(int(c/25) for c in color_rgb)
         color_hex = '%02x%02x%02x' % downscaled_color
         return color_hex
 
-    def _downscale_hex(self, color_hex: str):
+    def _downscale_hex(self, color_hex: str) -> str:
         color_hex = color_hex.lstrip('#')
         if self._valid_hex(color_hex):
                 hexlength = len(color_hex)
@@ -448,7 +437,7 @@ class ClientMV2(ClientGeneric):
         else:
             raise MartyCommandException("Color specified is not a valid hex code or default color")
 
-    def disco_color(self, color: Union[str,tuple], add_on: str, region: Union[int,str]) -> bool:
+    def disco_color(self, color: Union[str, tuple], add_on: str, region: Union[int, str]) -> bool:
         default_colors = {
             'white'  : 'FFFFFF',
             'red'    : 'FF0000',
@@ -473,12 +462,32 @@ class ClientMV2(ClientGeneric):
         return self._disco_cmd_hex(color_hex, add_on,region)
 
     def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:
+        '''
+        Calls disco operations in groups for multiple add ons :two:
+        Args:
+            disco_operation: function for disco add on
+            whoami_type_codes: the add ons that the function applies to
+            operation_kwargs: additional arguments that need to be passed into the operation
+        Returns:
+            True if Marty accepted all requests
+        '''
         result = True
         for attached_add_on in self.get_add_ons_status().values():
             if attached_add_on['whoAmITypeCode'] in whoami_type_codes:
                 addon_name = attached_add_on['name']
-                result= result and disco_operation(add_on=addon_name, **operation_kwargs)
+                result = result and disco_operation(add_on=addon_name, **operation_kwargs)
         return result
+
+    def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
+        self.loggingCallback = loggingCallback
+
+    def get_interface_stats(self) -> Dict:
+        return self.ricIF.getStats()
+
+    def preException(self, isFatal: bool) -> None:
+        if isFatal:
+            self.ricIF.close()
+        logger.debug(f"Pre-exception isFatal {isFatal}")
 
     def _rxDecodedMsg(self, decodedMsg: DecodedMsg, interface: RICInterface):
         if decodedMsg.protocolID == RICProtocols.PROTOCOL_ROSSERIAL:

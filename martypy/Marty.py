@@ -820,13 +820,28 @@ class Marty(object):
         '''
         return self.get_joint_current(motor_id)
 
-    def disco_off(self, add_on: Union[Disco, str] = Disco.ALL) -> bool :
+    def disco_off(self, add_on: Union[Disco, str] = Disco.ALL) -> bool:
+        '''
+        Turn disco add ons off :two:
+        Args:
+            add_on: add on name of which the function applies to
+        Returns:
+            True if Marty accepted the request
+        '''
         if type(add_on) is str:
             return self.client.disco_off(add_on)
         else:
             return self.client.disco_group_operation(self.client.disco_off,add_on.value, {})
 
     def disco_pattern(self, pattern: int, add_on: Union[Disco, str] = Disco.ALL) -> bool:
+        '''
+        Turn disco pattern on disco add on :two:
+        Args:
+            pattern: 1 or 2, pattern of lights that user wants to use
+            add_on: add on name of which the function applies to
+        Returns:
+            True if Marty accepted the request
+        '''
         if pattern == 1:
             pattern = '10'
         elif pattern == 2:
@@ -839,6 +854,15 @@ class Marty(object):
             return self.client.disco_group_operation(self.client.disco_pattern, add_on.value, {'pattern':pattern})
 
     def disco_color(self, color: Union[int, str, tuple] = 'white', add_on: Union[Disco, str] = Disco.ALL, region: Union[int, str] = 'all') -> bool:
+        '''
+        Switch disco add on to a solid color :two:
+        Args:
+            color: built-in color, hex code, or rgb tuple; color to switch the lights to
+            add_on: add on name of which the function applies to
+            region: 0,1,2; region on the add on
+        Returns:
+            True if Marty accepted the request
+        '''
         if type(add_on) is str:
             return self.client.disco_color(color,add_on,region)
         else:
