@@ -432,7 +432,7 @@ class ClientMV2(ClientGeneric):
         if self._valid_addon(add_on):
             return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={region}{color_hex}")
 
-    def disco_color(self, color: Union[int,str,tuple], add_on: str, region: Union[int,str]) -> bool:#mayb switch  color and add_on
+    def disco_color(self, color: Union[int,str,tuple], add_on: str, region: Union[int,str]) -> bool:
         default_colors = {
             'white'  : 'FFFFFF',
             'red'    : 'FF0000',
@@ -461,15 +461,13 @@ class ClientMV2(ClientGeneric):
             color_hex = '%02x%02x%02x' % color
             return self._disco_cmd_hex(color_hex, add_on,region)
 
-    def disco_group(self, function: str, group: set = {"00000087","00000088","00000089"}, params: dict = {}) :
-        result = []
+    def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:
+        result = True
         for attached_add_on in self.get_add_ons_status().values():
-            if attached_add_on['whoAmITypeCode'] in group:
+            if attached_add_on['whoAmITypeCode'] in whoami_type_codes:
                 addon_name = attached_add_on['name']
-                result.append(function(**params,**{'add_on':addon_name}))
-        if result == [True]*len(result):
-            return True
-        return False
+                result= result and disco_operation(add_on=addon_name, **operation_kwargs)
+        return result
 
     def _rxDecodedMsg(self, decodedMsg: DecodedMsg, interface: RICInterface):
         if decodedMsg.protocolID == RICProtocols.PROTOCOL_ROSSERIAL:

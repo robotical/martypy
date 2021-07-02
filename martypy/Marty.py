@@ -84,7 +84,7 @@ class Marty(object):
     ADD_ON_TYPE_NAMES = [
         "IRFoot"
     ]
-    class LED(Enum):
+    class Disco(Enum):
         ARMS = {"00000088"}
         FEET = {"00000087"}
         EYES = {"00000089"}
@@ -820,13 +820,13 @@ class Marty(object):
         '''
         return self.get_joint_current(motor_id)
 
-    def disco_off(self, add_on: str = LED.ALL) -> bool :
+    def disco_off(self, add_on: Union[Disco, str] = Disco.ALL) -> bool :
         if type(add_on) is str:
             return self.client.disco_off(add_on)
         else:
-            return self.client.disco_group(self.client.disco_off,add_on.value)
+            return self.client.disco_group_operation(self.client.disco_off,add_on.value, {})
 
-    def disco_pattern(self, pattern: int, add_on: Union[LED, str] = LED.ALL) -> bool:
+    def disco_pattern(self, pattern: int, add_on: Union[Disco, str] = Disco.ALL) -> bool:
         if pattern == 1:
             pattern = '10'
         elif pattern == 2:
@@ -836,13 +836,13 @@ class Marty(object):
         if type(add_on) is str:
             return self.client.disco_pattern(pattern, add_on)
         else:
-            return self.client.disco_group(self.client.disco_pattern, add_on.value, {'pattern':pattern})
+            return self.client.disco_group_operation(self.client.disco_pattern, add_on.value, {'pattern':pattern})
 
-    def disco_color(self, color: Union[int, str, tuple] = 'white', add_on: str = LED.ALL, region: Union[int, str] = 'all') -> bool:
+    def disco_color(self, color: Union[int, str, tuple] = 'white', add_on: Union[Disco, str] = Disco.ALL, region: Union[int, str] = 'all') -> bool:
         if type(add_on) is str:
             return self.client.disco_color(color,add_on,region)
         else:
-            return self.client.disco_group(self.client.disco_color, add_on.value, {'color':color, 'region':region}) 
+            return self.client.disco_group_operation(self.client.disco_color, add_on.value, {'color':color, 'region':region}) 
 
     ''' 
     ============================================================
