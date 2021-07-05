@@ -822,7 +822,7 @@ class Marty(object):
 
     def disco_off(self, add_on: Union[Disco, str] = Disco.ALL) -> bool:
         '''
-        Turn disco add ons off :two:
+        Turn disco add on LEDs off :two:
         Args:
             add_on: add on name of which the function applies to
         Returns:
@@ -835,7 +835,7 @@ class Marty(object):
 
     def disco_pattern(self, pattern: int, add_on: Union[Disco, str] = Disco.ALL) -> bool:
         '''
-        Turn disco pattern on disco add on :two:
+        Turn on a pattern of lights on the disco LED add on :two:
         Args:
             pattern: 1 or 2, pattern of lights that user wants to use
             add_on: add on name of which the function applies to
@@ -855,9 +855,9 @@ class Marty(object):
 
     def disco_color(self, color: Union[int, str, tuple] = 'white', add_on: Union[Disco, str] = Disco.ALL, region: Union[int, str] = 'all') -> bool:
         '''
-        Switch disco add on to a solid color :two:
+        Turn on disco add on LED lights to a specific color :two:
         Args:
-            color: built-in color, hex code, or rgb tuple; color to switch the lights to
+            color: built-in color, hex code, or rgb tuple; color to switch the LEDs to
             add_on: add on name of which the function applies to
             region: 0,1,2; region on the add on
         Returns:
