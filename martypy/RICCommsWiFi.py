@@ -33,7 +33,10 @@ class RICCommsWiFi(RICCommsBase):
         '''
         Destructor
         '''
-        self.close()
+        try:
+            self.close()
+        except:
+            pass
 
     def isOpen(self) -> bool:
         '''
@@ -41,7 +44,7 @@ class RICCommsWiFi(RICCommsBase):
         Returns:
             True if comms open
         '''
-        return self.isOpen
+        return self._isOpen
 
     def open(self, openParams: Dict) -> bool:
         '''
@@ -50,7 +53,8 @@ class RICCommsWiFi(RICCommsBase):
             openParams: dict containing params used to open the connection, may include
                         "ipAddrOrHostname", 
                         "ipPort",
-                        "wsPath"
+                        "wsPath",
+                        "asciiEscapes"
         Returns:
             True if open succeeded or already open
         Throws:
@@ -61,9 +65,12 @@ class RICCommsWiFi(RICCommsBase):
             return True
 
         # Get params
+        self.commsParams.conn = openParams
+        self.commsParams.fileTransfer = {"fileBlockMax": 5000, "fileXferSync": False}
         ipAddrOrHostname = openParams.get("ipAddrOrHostname", "")
         ipPort = openParams.get("ipPort", 80)
         wsPath = openParams.get("wsPath", "/ws")
+        hdlcAsciiEscapes = openParams.get("asciiEscapes", False)
 
         # Validate
         if len(ipAddrOrHostname) == 0:
@@ -78,6 +85,9 @@ class RICCommsWiFi(RICCommsBase):
             self.webSocket.open()
         except Exception as excp:
             raise MartyConnectException("Websocket problem") from excp
+
+        # Configure HDLC
+        self._hdlc.setAsciiEscapes(hdlcAsciiEscapes)
 
         # Start receive loop
         self.webSocketThreadEnabled = True
@@ -115,7 +125,7 @@ class RICCommsWiFi(RICCommsBase):
         Throws:
             MartyConnectException: if the connection has an error
         '''
-        # logger.debug(f"Sending to IF len {len(bytesToSend)} {str(bytesToSend)}")
+        # logger.debug(f"WiFi send len {len(data)} {''.join('{:02x}'.format(x) for x in data)}")
         hdlcEncoded = self._hdlc.encode(data)
         try:
             self._sendBytesToIF(hdlcEncoded)
@@ -153,11 +163,11 @@ class RICCommsWiFi(RICCommsBase):
             except OSError as excp:
                 logger.debug(f"webSocket problem {excp}")
                 self.webSocketThreadEnabled = False
-                raise MartyConnectException("WebSocket closed unexpectedly")
             except Exception as excp:
                 logger.debug(f"WebSocket exception {excp}")
             time.sleep(0.001)
         logger.debug("Exiting WebSocket thread")
+        self._isOpen = False
 
     def _onWSBinaryFrame(self, rxFrame: bytes) -> None:
         # logger.debug(f"webSocketRx {''.join('{:02x}'.format(x) for x in rxFrame)}")

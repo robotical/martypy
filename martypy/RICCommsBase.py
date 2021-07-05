@@ -1,6 +1,8 @@
 '''
 Generic communications with a Robotical RIC
 '''
+from abc import abstractmethod
+from .RICCommsParams import RICCommsParams
 from typing import Callable, Dict, Union
 import logging
 from .LikeHDLC import LikeHDLC
@@ -19,6 +21,7 @@ class RICCommsBase:
         '''
         self.rxFrameCB = None
         self.logLineCB = None
+        self.commsParams = RICCommsParams()
 
     def __del__(self) -> None:
         '''
@@ -26,6 +29,7 @@ class RICCommsBase:
         '''
         self.close()
 
+    @abstractmethod
     def isOpen(self) -> bool:
         '''
         Check if comms open
@@ -54,6 +58,7 @@ class RICCommsBase:
         '''
         self.logLineCB = onLogLine
 
+    @abstractmethod
     def open(self, openParams: Dict) -> bool:
         '''
         Open connection
@@ -72,12 +77,14 @@ class RICCommsBase:
         '''
         return False
 
+    @abstractmethod
     def close(self) -> None:
         '''
         Close connection
         '''
         pass
 
+    @abstractmethod
     def send(self, data: bytes) -> None:
         '''
         Send data
@@ -90,6 +97,7 @@ class RICCommsBase:
         '''
         pass
 
+    @abstractmethod
     def getTestOutput(self) -> dict:
         return {}
         
