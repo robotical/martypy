@@ -661,7 +661,7 @@ class Marty(object):
             none
         Returns:
             Dictionary containing:
-              "battRemainCapacityPercent" remaining battery capacity in percent
+              "battRemainCapacityPercent" - remaining battery capacity in percent
               "battTempDegC" - battery temperature in degrees C
               "battRemainCapacityMAH" - remaining battery capacity in milli-Amp-Hours
               "battFullCapacityMAH" - capacity of the battery when full in milli-Amp-Hours
@@ -669,6 +669,9 @@ class Marty(object):
               "power5VOnTimeSecs" - number of seconds the power to joints and add-ons has been on
               "powerUSBIsConnected" - True if USB is connected
               "power5VIsOn" - True if power to the joints and add-ons is turned on
+              other values for internal use
+            Note: Some keys may not be included if Marty reports that the
+                  corresponding information is not available.
         '''
         return self.client.get_power_status()
     
