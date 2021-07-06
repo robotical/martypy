@@ -42,7 +42,10 @@ class RICCommsSerial(RICCommsBase):
         '''
         Destructor
         '''
-        self.close()
+        try:
+            self.close()
+        except:
+            pass
 
     @classmethod
     def detect_rics(cls) -> List[str]:
@@ -68,7 +71,8 @@ class RICCommsSerial(RICCommsBase):
             openParams: dict containing params used to open the connection, may include
                         "serialPort" (will be auto-detected if missing/empty),
                         "serialBaud",
-                        "ifType" == "plain" or "overascii"
+                        "ifType" == "plain" or "overascii",
+                        "asciiEscapes"
         Returns:
             True if open succeeded or already open
         Throws:
@@ -79,11 +83,14 @@ class RICCommsSerial(RICCommsBase):
             return True
 
         # Get params
+        self.commsParams.conn = openParams
+        self.commsParams.fileTransfer = {"fileBlockMax": 5000, "fileXferSync": False}
         serialPort = openParams.get("serialPort", "")
         serialBaud = openParams.get("serialBaud", 115200)
         self.overAscii = openParams.get("ifType", "plain") != "plain"
         if self.overAscii:
             self.protocolOverAscii = ProtocolOverAscii()
+        hdlcAsciiEscapes = openParams.get("asciiEscapes", False)
 
         # Open serial port
         rics = self.detect_rics()
@@ -108,6 +115,9 @@ class RICCommsSerial(RICCommsBase):
                             f"connecting to one of the following ports instead: {rics}"
             raise MartyConnectException(error_message) from excp
 
+        # Configure HDLC
+        self._hdlc.setAsciiEscapes(hdlcAsciiEscapes)
+        
         # Start receive loop
         self.serialThreadEnabled = True
         self.serialReaderThread = Thread(target=self._serialRxLoop)

@@ -28,6 +28,7 @@ class ClientMV2(ClientGeneric):
                 port = 80,
                 wsPath = "/ws",
                 subscribeRateHz = 10.0,
+                ricInterface: Optional[RICInterface] = None,
                 *args, **kwargs):
         '''
         Initialise connection to remote Marty
@@ -59,30 +60,38 @@ class ClientMV2(ClientGeneric):
         self.loggingCallback = None
         self._initComplete = False
 
-        # Handle the method of connection
-        if method == "usb" or method == "exp":
-            ifType = "overascii" if method == "usb" else "plain"
-            if serialBaud is None:
-                serialBaud = 115200 if method == "usb" else 921600
-            rifConfig = {
-                "serialPort": locator,
-                "serialBaud": serialBaud,
-                "ifType": ifType,
-            }
-            self.ricIF = RICInterface(RICCommsSerial())
-        elif method == "test":
-            rifConfig = {
-                "testFileName": locator
-            }
-            self.ricIF = RICInterface(RICCommsTest())
+        # Check if we are given a RICInterface
+        if ricInterface is None:
+            # Handle the method of connection
+            if method == "usb" or method == "exp":
+                ifType = "overascii" if method == "usb" else "plain"
+                if serialBaud is None:
+                    serialBaud = 115200 if method == "usb" else 921600
+                rifConfig = {
+                    "serialPort": locator,
+                    "serialBaud": serialBaud,
+                    "ifType": ifType,
+                }
+                self.ricIF = RICInterface(RICCommsSerial())
+            elif method == "test":
+                rifConfig = {
+                    "testFileName": locator
+                }
+                self.ricIF = RICInterface(RICCommsTest())
+            else:
+                rifConfig = {
+                    "ipAddrOrHostname": locator,
+                    "ipPort": port,
+                    "wsPath": wsPath,
+                    "ifType": "plain"
+                }
+                self.ricIF = RICInterface(RICCommsWiFi())
         else:
             rifConfig = {
                 "ipAddrOrHostname": locator,
-                "ipPort": port,
-                "wsPath": wsPath,
                 "ifType": "plain"
             }
-            self.ricIF = RICInterface(RICCommsWiFi())
+            self.ricIF = ricInterface
 
         # Open comms
         try:
@@ -98,7 +107,7 @@ class ClientMV2(ClientGeneric):
         self.ricIF.setLogLineCB(self._logDebugMsg)
 
     def start(self):
-        self.ricSystemInfo = self.ricIF.cmdRICRESTSync("v")
+        self.ricSystemInfo = self.ricIF.cmdRICRESTURLSync("v")
         self._updateHwElemsInfo()
         self._initComplete = True
 
@@ -112,7 +121,7 @@ class ClientMV2(ClientGeneric):
                     '{"name":"MultiStatus","rateHz":0},' + \
                     '{"name":"PowerStatus","rateHz":0},' + \
                     '{"name":"AddOnStatus","rateHz":0}' + \
-                ']}\0')
+                ']}')
         # Allow message to be sent
         time.sleep(0.5)
         # Close the RIC interface
@@ -276,7 +285,7 @@ class ClientMV2(ClientGeneric):
 
     def get_battery_remaining(self) -> float:
         powerStatus = self.ricHardware.getPowerStatus()
-        return powerStatus.get("remCapPC", 0)
+        return powerStatus.get("battRemainCapacityPercent", 0)
 
     def get_distance_sensor(self) -> float:
         # TODO NotImplemented
@@ -318,7 +327,7 @@ class ClientMV2(ClientGeneric):
         return self.ricIF.cmdRICRESTRslt(f"calibrate/setFlag/0")
 
     def is_calibrated(self) -> bool:
-        result = self.ricIF.cmdRICRESTSync("calibrate")
+        result = self.ricIF.cmdRICRESTURLSync("calibrate")
         if result.get("rslt", "") == "ok":
             return result.get("calDone", 0) != 0
         return False
@@ -362,6 +371,9 @@ class ClientMV2(ClientGeneric):
     def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
         return self.ricHardware.getAddOn(add_on_name_or_id, self.ricHwElemsInfoByIDNo)
 
+    def add_on_query(self, add_on_name: str, data_to_write: bytes, num_bytes_to_read: int) -> Dict:
+        return self.ricIF.addOnQueryRaw(add_on_name, data_to_write, num_bytes_to_read)
+
     def get_system_info(self) -> Dict:
         return self.ricSystemInfo
 
@@ -370,13 +382,13 @@ class ClientMV2(ClientGeneric):
         return self.ricIF.cmdRICRESTRslt(f"friendlyname/{escapedName}")
 
     def get_marty_name(self) -> str:
-        result = self.ricIF.cmdRICRESTSync("friendlyname")
+        result = self.ricIF.cmdRICRESTURLSync("friendlyname")
         if result.get("rslt", "") == "ok":
             return result.get("friendlyName", "Marty")
         return "Marty"
 
     def is_marty_name_set(self) -> bool:
-        result = self.ricIF.cmdRICRESTSync("friendlyname")
+        result = self.ricIF.cmdRICRESTURLSync("friendlyname")
         if result.get("rslt", "") == "ok":
             return result.get("friendlyNameIsSet", 0) != 0
         return False
@@ -389,7 +401,12 @@ class ClientMV2(ClientGeneric):
         self.ricIF.sendRICRESTURL(ricRestCmd)
 
     def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
-        return self.ricIF.cmdRICRESTSync(ricRestCmd)
+        return self.ricIF.cmdRICRESTURLSync(ricRestCmd)
+
+    def is_conn_ready(self) -> bool:
+        if not self.ricIF.isOpen():
+            return False
+        return self._initComplete and (self.lastSubscribedMsgTime is not None)
 
     def _valid_addon(self, add_on: str) -> bool:
         disco = {"00000087","00000088","00000089"}
@@ -482,7 +499,10 @@ class ClientMV2(ClientGeneric):
         self.loggingCallback = loggingCallback
 
     def get_interface_stats(self) -> Dict:
-        return self.ricIF.getStats()
+        ricIFStats = self.ricIF.getStats()
+        publishInfo = self.ricHardware.getPublishStats()
+        ricIFStats.update(publishInfo)
+        return ricIFStats
 
     def preException(self, isFatal: bool) -> None:
         if isFatal:
@@ -498,6 +518,9 @@ class ClientMV2(ClientGeneric):
         elif decodedMsg.protocolID == RICProtocols.PROTOCOL_RICREST:
             # logger.debug(f"RIC REST message received {decodedMsg.payload}")
             pass
+        else:
+            # logger.debug(f"RIC OTHER message received {decodedMsg.payload}")
+            pass
 
     def _logDebugMsg(self, logMsg: str) -> None:
         if self.loggingCallback:
@@ -512,14 +535,14 @@ class ClientMV2(ClientGeneric):
             # Subscribe for publication messages
             self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
                             '"pubRecs":[' + \
-         '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
+                                '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
                                 '{"name":"PowerStatus","rateHz":1.0},' + \
                                 '{' + f'"name":"AddOnStatus","rateHz":{self.subscribeRateHz}' + '}' + \
-                            ']}\0')
+                            ']}')
             self.lastSubscribedMsgTime = time.time()
 
     def _updateHwElemsInfo(self):
-        hwElemsInfo = self.ricIF.cmdRICRESTSync("hwstatus")
+        hwElemsInfo = self.ricIF.cmdRICRESTURLSync("hwstatus")
         if hwElemsInfo.get("rslt", "") == "ok":
             self.ricHwElemsList = hwElemsInfo.get("hw", [])
             self.ricHwElemsInfoByIDNo = {}

@@ -3,7 +3,7 @@ RICProtocols
 '''
 import json
 import logging
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class DecodedMsg:
         self.isText = None
         self.payload = None
         self.restType = None
-        self.direction = None
+        self.msgTypeCode = None
 
     def setError(self, errMsg: str) -> None:
         self.errMsg = errMsg
@@ -30,10 +30,10 @@ class DecodedMsg:
     def setProtocol(self, protocolID: int) -> None:
         self.protocolID = protocolID
 
-    def setDirection(self, dirn: int) -> None:
-        self.direction = dirn
+    def setMsgTypeCode(self, msgTypeCode: int) -> None:
+        self.msgTypeCode = msgTypeCode
 
-    def setRESTType(self, restType: int) -> None:
+    def setRESTElemCode(self, restType: int) -> None:
         self.restType = restType
 
     def setPayload(self, isText: bool, payload: bytes) -> None:
@@ -73,12 +73,12 @@ class DecodedMsg:
             else:
                 msgStr += f"OTHER {self.protocolID}"
             msgStr += " "
-        if self.direction is not None:
-            msgStr += "Dirn:"
-            if self.direction >= 0 and self.direction < len(RICProtocols.DIRECTION_STRS):
-                msgStr += RICProtocols.DIRECTION_STRS[self.direction]
+        if self.msgTypeCode is not None:
+            msgStr += "MsgType:"
+            if self.msgTypeCode >= 0 and self.msgTypeCode < len(RICProtocols.MSG_TYPE_STRS):
+                msgStr += RICProtocols.MSG_TYPE_STRS[self.msgTypeCode]
             else:
-                msgStr += f"OTHER {self.direction}"
+                msgStr += f"OTHER {self.msgTypeCode}"
             msgStr += " "
         if self.restType is not None:
             msgStr += "Type:"
@@ -110,11 +110,11 @@ class RICProtocols:
     RICREST_ELEM_CODE_CMD_FRAME = 0x03
     RICREST_ELEM_CODE_FILE_BLOCK = 0x04
     REST_COMMANDS = ["url", "json", "body", "cmd", "fileBlk"]
-    MSG_DIRECTION_COMMAND = 0x00
-    MSG_DIRECTION_RESPONSE = 0x01
-    MSG_DIRECTION_PUBLISH = 0x02
-    MSG_DIRECTION_REPORT = 0x03
-    DIRECTION_STRS = ["cmd", "resp", "publish", "report"]
+    MSG_TYPE_COMMAND = 0x00
+    MSG_TYPE_RESPONSE = 0x01
+    MSG_TYPE_PUBLISH = 0x02
+    MSG_TYPE_REPORT = 0x03
+    MSG_TYPE_STRS = ["cmd", "resp", "publish", "report"]
 
     def __init__(self) -> None:
         self.ricSerialMsgNum = 1
@@ -130,25 +130,30 @@ class RICProtocols:
             self.ricSerialMsgNum = 1
         return cmdFrame, msgNum
 
-    def encodeRICRESTCmdFrame(self, cmdStr: str) -> Tuple[bytes, int]:
+    def encodeRICRESTCmdFrame(self, cmdStr: Union[str,bytes], payload: Union[bytes, str] = None) -> Tuple[bytes, int]:
         # RICSerial command frame
         msgNum = self.ricSerialMsgNum
         cmdFrame = bytearray([msgNum, self.MSG_TYPE_COMMAND + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_CMD_FRAME])
-        cmdFrame += cmdStr.encode() + b"\0"
+        if type(cmdStr) is str:
+            cmdFrame += cmdStr.encode()
+        else:
+            cmdFrame += cmdStr
+        if cmdFrame[-1] != b"\0":
+            cmdFrame = cmdFrame + b"\0"
+        if payload is not None:
+            if type(payload) is str:
+                payload = payload.encode()
+            cmdFrame += payload
         self.ricSerialMsgNum += 1
         if self.ricSerialMsgNum > 255:
             self.ricSerialMsgNum = 1
         return cmdFrame, msgNum
 
     def encodeRICRESTFileBlock(self, cmdBuf: bytes) -> Tuple[bytes, int]:
-        # RICSerial file block
-        msgNum = self.ricSerialMsgNum
-        cmdFrame = bytearray([msgNum, self.MSG_TYPE_COMMAND + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_FILE_BLOCK])
+        # RICSerial file block - not numbered
+        cmdFrame = bytearray([0, self.MSG_TYPE_COMMAND + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_FILE_BLOCK])
         cmdFrame += cmdBuf
-        self.ricSerialMsgNum += 1
-        if self.ricSerialMsgNum > 255:
-            self.ricSerialMsgNum = 1
-        return cmdFrame, msgNum
+        return cmdFrame, 0
 
     def decodeRICFrame(self, fr: bytes) -> DecodedMsg:
         msg = DecodedMsg()
@@ -160,16 +165,17 @@ class RICProtocols:
             msg.setMsgNum(msgNum)
             protocol = fr[1] & 0x3f
             msg.setProtocol(protocol)
-            dirn = fr[1] >> 6
-            msg.setDirection(dirn)
+            msgTypeCode = fr[1] >> 6
+            msg.setMsgTypeCode(msgTypeCode)
             if protocol == self.PROTOCOL_RICREST:
                 restElemCode = fr[2]
-                msg.setRESTType(restElemCode)
+                msg.setRESTElemCode(restElemCode)
                 if restElemCode == self.RICREST_ELEM_CODE_URL or restElemCode == self.RICREST_ELEM_CODE_JSON:
                     msg.setPayload(True, fr[3:].decode('ascii'))
+                    msg.payload = msg.payload.rstrip('\x00')
                 else:
                     msg.setPayload(False, fr[3:])
-                # logging.debug(f"RICREST {DIRECTION_STRS[dirn]} msgNum {msgNum} {fr[3:].decode('ascii')}")
+                # logging.debug(f"RICREST {RICProtocols.MSG_TYPE_STRS[msgTypeCode]} msgNum {msgNum} {fr.hex()}")
             elif protocol == self.PROTOCOL_ROSSERIAL:
                 msg.setPayload(False, fr[2:])
             else:
