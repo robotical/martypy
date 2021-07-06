@@ -72,7 +72,8 @@ class Frame(object):
         Initialise Frame
 
         Args:
-            asciiEscapes: bool - use the standard HDLC escape codes (which are ASCII values)
+            delimiterCode (for HDLC frame start/end)
+            escapeCode (for HDLC escapes)
 
         Returns:
             None
@@ -172,12 +173,24 @@ class LikeHDLC:
         self.onFrame = onFrame
         self.onError = onError
         self.asciiEscapes = asciiEscapes
+        self.setAsciiEscapes(asciiEscapes)
+        self.clear()
+        self.clearStats()
+
+    def setAsciiEscapes(self, asciiEscapes: bool = False) -> None:
+        '''
+        Set HDLC delimiter and escape codes
+
+        Args:
+            asciiEscapes: use standard ASCII values
+
+        Returns:
+            None
+        '''
         self.delimiterCode = Frame.DELIMITER_CODE_ASCII if asciiEscapes \
                         else Frame.DELIMITER_CODE_NON_ASCII
         self.escapeCode = Frame.ESCAPE_CODE_ASCII if asciiEscapes \
                         else Frame.ESCAPE_CODE_NON_ASCII
-        self.clear()
-        self.clearStats()
 
     def clear(self) -> None:
         
@@ -229,17 +242,18 @@ class LikeHDLC:
 
         # Validate and callback if finished
         if (self.currentFrame is not None) and self.currentFrame.finished:
-            if not self.currentFrame.error:
+            rxFrame = self.currentFrame
+            self.currentFrame = None
+            if not rxFrame.error:
                 # Success
                 if self.payloadsAreStrings:
-                    self.onFrame(self.currentFrame.toString())
+                    self.onFrame(rxFrame.toString())
                 else:
-                    self.onFrame(self.currentFrame.data)
-            elif self.currentFrame.finished:
+                    self.onFrame(rxFrame.data)
+            elif rxFrame.finished:
                 # Error
                 self.stats.crcErrors += 1
                 self.onError()
-            self.currentFrame = None
 
     def getStats(self) -> HDLCStats:
         

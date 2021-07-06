@@ -1,5 +1,12 @@
-Version 3.1.1 :
+Version 3.2.1 :
 - Default `movetime` parameter for the `dance()` has been changed to 3000ms instead of 4500ms
+
+Version 3.2.0 :
+- New `Marty.add_on_query` method provides low-level access to Marty's addons
+- New `Marty.is_conn_ready` method for checking if Marty is connected
+- Small changes to the dictionary returned by `get_power_status()`
+- Stale power, servo and other information is no longer presented if updates from Marty cease
+- Various under-the-hood improvements, bugfixes and preparations for future features
 
 Version 3.1.0 :
 - Automatic Marty discovery when connecting over USB

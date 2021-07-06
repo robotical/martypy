@@ -19,12 +19,17 @@ class RICCommsTest(RICCommsBase):
         self.clearTestOutput()
 
     def __del__(self) -> None:
-        self.close()
+        try:
+            self.close()
+        except:
+            pass
 
     def isOpen(self) -> bool:
         return self._isOpen
 
     def open(self, openParams: Dict) -> bool:
+        self.commsParams.conn = openParams
+        self.commsParams.fileTransfer = {"fileBlockMax": 5000, "fileXferSync": False}
         return True
 
     def close(self) -> None:
