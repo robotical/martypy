@@ -163,7 +163,7 @@ class Marty(object):
         # Get Marty details
         self.client.start()
 
-    def dance(self, side: str = 'right', move_time: int = 4500, blocking: Optional[bool] = None) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 3000, blocking: Optional[bool] = None) -> bool:
         '''
         Boogie, Marty! :one: :two:
         Args:
