@@ -142,7 +142,7 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod
-    def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 3000) -> bool:
         return False
 
     @abstractmethod
