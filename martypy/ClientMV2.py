@@ -490,7 +490,7 @@ class ClientMV2(ClientGeneric):
         '''
         result = True
         for attached_add_on in self.get_add_ons_status().values():
-            if attached_add_on['whoAmITypeCode'] in whoami_type_codes:
+            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] in whoami_type_codes:
                 addon_name = attached_add_on['name']
                 result = result and disco_operation(add_on=addon_name, **operation_kwargs)
         return result
