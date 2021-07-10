@@ -2,6 +2,7 @@ import logging
 import os
 import time
 from typing import Callable, Dict, List, Optional, Union
+from packaging import version
 
 from .ClientGeneric import ClientGeneric
 from .RICCommsSerial import RICCommsSerial
@@ -58,6 +59,8 @@ class ClientMV2(ClientGeneric):
         self.ricHwElemsList = []
         self.loggingCallback = None
         self._initComplete = False
+        self._minSysVersForSubscribeAPI = "1.0.0"
+        self._interfaceMethod = method
 
         # Check if we are given a RICInterface
         if ricInterface is None:
@@ -115,14 +118,15 @@ class ClientMV2(ClientGeneric):
             return
         self.isClosing = True
         # Stop any publishing messages
-        self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
+        if self._systemVersionGtEq(self._minSysVersForSubscribeAPI):
+            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
                 '"pubRecs":[' + \
                     '{"name":"MultiStatus","rateHz":0},' + \
                     '{"name":"PowerStatus","rateHz":0},' + \
                     '{"name":"AddOnStatus","rateHz":0}' + \
                 ']}')
-        # Allow message to be sent
-        time.sleep(0.5)
+            # Allow message to be sent
+            time.sleep(0.5)
         # Close the RIC interface
         self.ricIF.close()
 
@@ -441,7 +445,9 @@ class ClientMV2(ClientGeneric):
     def _msgTimerCallback(self) -> None:
         if self.isClosing:
             return
-        if (self._initComplete and self.subscribeRateHz != 0) and \
+        if self._systemVersionGtEq(self._minSysVersForSubscribeAPI) and \
+                 self._initComplete and \
+                 self.subscribeRateHz != 0 and \
                  (self.lastSubscribedMsgTime is None or \
                     time.time() > self.lastSubscribedMsgTime + self.maxTimeBetweenPubs):
             # Subscribe for publication messages
@@ -451,7 +457,8 @@ class ClientMV2(ClientGeneric):
                                 '{"name":"PowerStatus","rateHz":1.0},' + \
                                 '{' + f'"name":"AddOnStatus","rateHz":{self.subscribeRateHz}' + '}' + \
                             ']}')
-            self.lastSubscribedMsgTime = time.time()
+        # Set subscribed message time here even if not subscribed as older firmware auto-subscribes
+        self.lastSubscribedMsgTime = time.time()
 
     def _updateHwElemsInfo(self):
         hwElemsInfo = self.ricIF.cmdRICRESTURLSync("hwstatus")
@@ -464,3 +471,9 @@ class ClientMV2(ClientGeneric):
 
     def get_test_output(self) -> dict:
         return self.ricIF.getTestOutput()
+
+    def _systemVersionGtEq(self, compareToVersion):
+        if self.ricSystemInfo is None:
+            return False
+        versInfo = self.ricSystemInfo.get("SystemVersion","0.0.0")
+        return version.parse(versInfo) >= version.parse(compareToVersion)
