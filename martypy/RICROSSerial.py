@@ -159,11 +159,13 @@ class RICROSSerial:
         pst = struct.unpack(">BBHHhHHB", buf[0:cls.ROS_POWER_STATUS_BYTES])
         power5VIsOn = (pst[6] & 0x0002) != 0
         battInfoValid = (pst[6] & 0x0004) == 0
+        powerUSBIsValid = (pst[6] & 0x0008) == 0
         powerInfo = {
             "powerFlags": pst[6],
             "power5VIsOn": power5VIsOn,
-            "powerUSBIsConnected": (pst[6] & 0x0001) != 0 and (pst[6] & 0x0008) == 0,
+            "powerUSBIsConnected": (pst[6] & 0x0001) != 0 and powerUSBIsValid,
             "battInfoValid": battInfoValid,
+            "powerUSBIsValid": powerUSBIsValid,
             "IDNo": pst[7]
         }
         if battInfoValid:
