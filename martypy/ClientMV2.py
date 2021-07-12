@@ -456,15 +456,15 @@ class ClientMV2(ClientGeneric):
 
     def disco_color(self, color: Union[str, tuple], add_on: str, region: Union[int, str]) -> bool:
         default_colors = {
-            'white'  : '0a0a0a',
-            'red'    : '0a0000',
-            'blue'   : '00000a',
-            'yellow' : '0a0a00',
-            'green'  : '000a00',
-            'teal'   : '000a09',
-            'pink'   : '0a0008',
-            'purple' : '05000a',
-            'orange' : '090200'
+            'white'  : 'FFFFFF',
+            'red'    : 'FF0000',
+            'blue'   : '0000FF',
+            'yellow' : 'FFFF00',
+            'green'  : '008000',
+            'teal'   : '008080',
+            'pink'   : '800080',
+            'purple' : '060014',
+            'orange' : '0f0200'
         }
         if type(color) is str:
             color_lowercase = color.lower()
