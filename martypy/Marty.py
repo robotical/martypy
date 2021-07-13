@@ -875,12 +875,6 @@ class Marty(object):
         Returns:
             True if Marty accepted the request
         '''
-        if pattern == 1:
-            pattern = '10'
-        elif pattern == 2:
-            pattern = '11'
-        else:
-            raise Exception("Pattern must be 1 or 2")
         if type(add_on) is str:
             return self.client.disco_pattern(pattern, add_on)
         else:

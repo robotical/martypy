@@ -424,11 +424,17 @@ class ClientMV2(ClientGeneric):
 
     def disco_off(self, add_on: str) -> bool:
         if self._valid_addon(add_on):
-            return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr=01")
+            return self.add_on_query(add_on, bytes.fromhex('01'), 0)
 
     def disco_pattern(self, pattern: str, add_on: str) -> bool:
+        if pattern == 1:
+                pattern = '10'
+        elif pattern == 2:
+            pattern = '11'
+        else:
+            raise Exception("Pattern must be 1 or 2")
         if self._valid_addon(add_on):
-            return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
+            return self.add_on_query(add_on, bytes.fromhex(pattern), 0)
 
     def _region_to_bytes(self, region: Union[str, int]) -> bytes:
         if region == 'all':
