@@ -1,3 +1,6 @@
+Version 3.2.1 :
+- Default `movetime` parameter for the `dance()` has been changed to 3000ms instead of 4500ms
+
 Version 3.2.0 :
 - New `Marty.add_on_query` method provides low-level access to Marty's addons
 - New `Marty.is_conn_ready` method for checking if Marty is connected

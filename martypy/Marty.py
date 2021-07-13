@@ -155,7 +155,7 @@ class Marty(object):
         # Get Marty details
         self.client.start()
 
-    def dance(self, side: str = 'right', move_time: int = 4500, blocking: Optional[bool] = None) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 3000, blocking: Optional[bool] = None) -> bool:
         '''
         Boogie, Marty! :one: :two:
         Args:
@@ -331,8 +331,9 @@ class Marty(object):
             amount: How much to lean. The defaults and the exact meaning is
                 different between Marty V1 and V2:
                 - :one: If not specified or `None`, `amount` defaults to `50` (no
-                        specific unit).
+                        specific unit). Limit is -60/60 in either direction.
                 - :two: If not specified or `None`, `amount` defaults to `29` degrees.
+                        Limit for foward and back is 45 and limit for left and right is 60.
             move_time: How long this movement should last, in milliseconds.
             blocking: Blocking mode override; whether to wait for physical movement to
                 finish before returning. Defaults to the value returned by `self.is_blocking()`.
@@ -371,8 +372,8 @@ class Marty(object):
         Play a named sound (Marty V2 :two:) or make a tone (Marty V1 :one:)
         Args:
             name_or_freq_start: name of the sound, e.g. 'excited' or 'no_way' :two:
-            name_or_freq_start: starting frequency, Hz :one:
-            freq_end:  ending frequency, Hz :one:
+            name_or_freq_start: starting frequency, min 20, max 20000, Hz :one:
+            freq_end:  ending frequency, min 20, max 20000, Hz :one:
             duration: milliseconds, maximum 5000 :one:
         Returns:
             True if Marty accepted the request
@@ -661,14 +662,19 @@ class Marty(object):
             none
         Returns:
             Dictionary containing:
-              "battRemainCapacityPercent" remaining battery capacity in percent
-              "battTempDegC" - battery temperature in degrees C
-              "battRemainCapacityMAH" - remaining battery capacity in milli-Amp-Hours
-              "battFullCapacityMAH" - capacity of the battery when full in milli-Amp-Hours
-              "battCurrentMA" - current the battery is supplying (or being charged with) milli-Amps
-              "power5VOnTimeSecs" - number of seconds the power to joints and add-ons has been on
-              "powerUSBIsConnected" - True if USB is connected
-              "power5VIsOn" - True if power to the joints and add-ons is turned on
+                "battRemainCapacityPercent": remaining battery capacity in percent
+                "battTempDegC": battery temperature in degrees C
+                "battRemainCapacityMAH": remaining battery capacity in milli-Amp-Hours
+                "battFullCapacityMAH": capacity of the battery when full in milli-Amp-Hours
+                "battCurrentMA": current the battery is supplying (or being charged with) milli-Amps
+                "power5VOnTimeSecs": number of seconds the power to joints and add-ons has been on
+                "powerUSBIsConnected": True if USB is connected
+                "power5VIsOn": True if power to the joints and add-ons is turned on
+
+                 Other values for internal use
+
+            **Note:** Some keys may not be included if Marty reports that the
+                      corresponding information is not available.
         '''
         return self.client.get_power_status()
     
@@ -703,21 +709,21 @@ class Marty(object):
         '''
         return self.client.get_add_on_status(add_on_name_or_id)
 
-    def add_on_query(self, addOnName: str, dataToWrite: bytes, numBytesToRead: int) -> Dict:
+    def add_on_query(self, add_on_name: str, data_to_write: bytes, num_bytes_to_read: int) -> Dict:
         '''
-        Write and read an addOn directly (raw-mode)
+        Write and read an add-on directly (raw-mode) :two:
         Args:
-            addOnName, name of the addOn (see get_add_ons_status() at the top level or response to
-                addon/list REST API command)
-            dataToWrite, can be zero length if nothing is to be written, the first byte will generally
-                be the register or opcode of the addOn
-            numBytesToRead: number of bytes to read from the device - can be zero
+            add_on_name: name of the add-on (see get_add_ons_status() at the top level or response to
+                `addon/list` REST API command)
+            data_to_write: can be zero length if nothing is to be written, the first byte will generally
+                be the register or opcode of the add-on
+            num_bytes_to_read: number of bytes to read from the device - can be zero
         Returns:
             Dict with keys including:
                 "rslt" - the result which will be "ok" if the query succeeded
-                "dataRead" - the data read from the addOn
+                "dataRead" - the data read from the add-on
         '''
-        return self.client.add_on_query(addOnName, dataToWrite, numBytesToRead)
+        return self.client.add_on_query(add_on_name, data_to_write, num_bytes_to_read)
 
     def get_system_info(self) -> Dict:
         '''

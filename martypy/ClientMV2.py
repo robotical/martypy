@@ -240,7 +240,7 @@ class ClientMV2(ClientGeneric):
                                         "".format(side))
         return self.ricIF.cmdRICRESTRslt(f"traj/circle?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}")
 
-    def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 3000) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
@@ -370,8 +370,8 @@ class ClientMV2(ClientGeneric):
     def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
         return self.ricHardware.getAddOn(add_on_name_or_id, self.ricHwElemsInfoByIDNo)
 
-    def add_on_query(self, addOnName: str, dataToWrite: bytes, numBytesToRead: int) -> Dict:
-        return self.ricIF.addOnQueryRaw(addOnName, dataToWrite, numBytesToRead)
+    def add_on_query(self, add_on_name: str, data_to_write: bytes, num_bytes_to_read: int) -> Dict:
+        return self.ricIF.addOnQueryRaw(add_on_name, data_to_write, num_bytes_to_read)
 
     def get_system_info(self) -> Dict:
         return self.ricSystemInfo
