@@ -15,7 +15,7 @@ class WebSocket():
     SOCKET_AWAITING_UPGRADE = 0
     SOCKET_UPGRADED = 1
 
-    def __init__(self, 
+    def __init__(self,
             onBinaryFrame: Callable[[bytes], None],
             onTextFrame: Callable[[str], None],
             onError: Callable[[str], None],
@@ -55,7 +55,7 @@ class WebSocket():
         if not self.sock:
             return 0
         frame = WebSocketFrame.encode(inFrame, False, WebSocketFrame.OPCODE_BINARY, True)
-        # logger.debug(f"WebSocket write {''.join('{:02x}'.format(x) for x in frame)}") 
+        # logger.debug(f"WebSocket write {''.join('{:02x}'.format(x) for x in frame)}")
         return self.sock.send(frame)
 
     def close(self) -> None:
@@ -63,7 +63,7 @@ class WebSocket():
             try:
                 self.sock.close()
             except Exception as excp:
-                logger.debug("WebSocket exception while closing", excp)
+                logger.debug("WebSocket exception while closing", exc_info=True)
         self.sock = None
 
     def _sendUpgradeReq(self) -> None:
@@ -100,7 +100,7 @@ class WebSocket():
                     self.open()
                     logger.debug("WebSocket reopened automatically")
                 except Exception as excp:
-                    logger.debug("WebSocket exception trying to reopen websocket", excp)
+                    logger.debug("WebSocket exception trying to reopen websocket", exc_info=True)
                 self.reconnectLastTime = time.time()
             else:
                 time.sleep(0.01)
@@ -146,7 +146,7 @@ class WebSocket():
             return 0
         frame = WebSocketFrame.encode(self.wsFrameCodec.getPongData(),
                     False, WebSocketFrame.OPCODE_PONG, True)
-        # logger.debug(f"WebSocket pong {''.join('{:02x}'.format(x) for x in self.wsFrameCodec.getPongData())}") 
+        # logger.debug(f"WebSocket pong {''.join('{:02x}'.format(x) for x in self.wsFrameCodec.getPongData())}")
         return self.sock.send(frame)
 
     def _clear(self) -> None:
