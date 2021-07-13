@@ -563,16 +563,16 @@ class ClientMV1(ClientGeneric):
     def is_conn_ready(self) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def disco_off(self, add_on: str = 'all') -> bool :
+    def disco_off(self, add_on: str) -> bool :
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def disco_pattern(self, pattern: str, add_on: str) -> bool :
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
         
-    def disco_color(self, color: Union[int, str, tuple], add_on: str, region: Union[int, str] = 'all') -> bool:  #mayb switch  color and add_on
+    def disco_color(self, color: Union[str, tuple], add_on: str, region: Union[int, str]) -> bool:  
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def disco_group_operation(self, disco_operation: str, whoami_type_codes: set = {"00000087","00000088","00000089"}, operation_kwargs: dict = {}) -> bool:
+    def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     # Encodes Command Type flag, LSB size, MSB size, Data
