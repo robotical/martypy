@@ -430,30 +430,23 @@ class ClientMV2(ClientGeneric):
         if self._valid_addon(add_on):
             return self.ricIF.cmdRICRESTRslt(f"elem/{add_on}/json?cmd=raw&hexWr={pattern}")
 
-    def _region_to_tuple(self, region: Union[str, int]) -> bytes:
+    def _region_to_bytes(self, region: Union[str, int]) -> bytes:
         if region == 'all':
             region = (2,)
         else:
             region = (4, region)
-        return region
+        return bytes(region)
 
-    def _rgb_to_bytes(self, color_rgb: tuple, region: Union[str, int]) -> bytes:
-        if len(color_rgb) != 3:
-                raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
-        downscaled_rgb = tuple(c//25 for c in color_rgb)
-        region_tuple = self._region_to_tuple(region)
-        color_bytes = bytes(region_tuple + downscaled_rgb)
-        return color_bytes
+    def _downscale_color(self, color: Union[tuple, bytes]):
+        return bytes(c//25 for c in color)
 
     def _hex_to_bytes(self, color_hex: str, region: Union[str, int]) -> bytes:
         color_hex = color_hex.lstrip('#')
         if self._valid_hex(color_hex):
             color_bytes = bytes.fromhex(color_hex)
-            region_tuple = self._region_to_tuple(region)
-            downscaled_bytes = bytes(region_tuple + tuple(c//25 for c in color_bytes))
         else:
             raise MartyCommandException("Color specified is not a valid hex code or default color")
-        return downscaled_bytes
+        return color_bytes
 
     def disco_color(self, color: Union[str, tuple], add_on: str, region: Union[int, str]) -> bool:
         default_colors = {
@@ -468,16 +461,18 @@ class ClientMV2(ClientGeneric):
             'orange' : '961900'
         }
         if type(color) is str:
-            color_lowercase = color.lower()
-            if color_lowercase in default_colors:
-                color = default_colors[color_lowercase]
-            color_bytes = self._hex_to_bytes(color, region)
+            color = default_colors.get(color.lower(), color)
+            color = self._hex_to_bytes(color, region)
         elif type(color) is tuple:
-            color_bytes = self._rgb_to_bytes(color, region)
+            if len(color) != 3:
+                raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
         else:
             raise MartyCommandException("Color must be of string or tuple form.")
+        color = self._downscale_color(color)
+        region = self._region_to_bytes(region)
+        command = region + color
         if self._valid_addon(add_on):
-            return self.add_on_query(add_on, color_bytes, 0)
+            return self.add_on_query(add_on, command, 0)
 
     def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:
         '''
