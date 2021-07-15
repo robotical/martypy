@@ -1,5 +1,5 @@
 Version 3.2.2
-- Disco add ons functions
+- New functions for controlling the disco add-on lights
 
 Version 3.2.1 :
 - Default `movetime` parameter for the `dance()` has been changed to 3000ms instead of 4500ms
