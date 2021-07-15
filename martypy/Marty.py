@@ -884,7 +884,7 @@ class Marty(object):
         '''
         Turn on disco add on LED lights to a specific color :two:
         Args:
-            color: built-in color, hex code, or rgb tuple; color to switch the LEDs to
+            color: color to switch the LEDs to; takes in a hex code, rgb tuple, or one of the built in colors: white, red, blue, yellow, green, teal, pink, purple, orange
             add_on: add on name of which the function applies to
             region: 0,1,2; region on the add on
         Returns:

@@ -409,14 +409,16 @@ class ClientMV2(ClientGeneric):
         return self._initComplete and (self.lastSubscribedMsgTime is not None)
 
     def _valid_addon(self, add_on: str) -> bool:
-        disco = {"00000087","00000088","00000089"}
+        disco_type_codes = {"00000087","00000088","00000089"}
         for attached_add_on in self.get_add_ons_status().values():
-            if attached_add_on['name'] == add_on:
-                if attached_add_on['whoAmITypeCode'] in disco:
+            if type(attached_add_on) == dict and attached_add_on['name'] == add_on:
+                if attached_add_on['whoAmITypeCode'] in disco_type_codes:
                     return True
                 else:
-                    raise MartyCommandException("The add on name passed in is not a valid disco add on. Please check the add on name in the scratch app -> configure -> add ons")
-        raise MartyCommandException("The add on name passed in is not a valid add on. Please check the add on name in the scratch app -> configure -> add ons")
+                    raise MartyCommandException(f"The add on name: {add_on} is not a valid disco add on. "
+                                                "Please check the add on name in the scratch app -> configure -> add ons")
+        raise MartyCommandException(f"The add on name {add_on} is not a valid add on. Please check the add on "
+                                    "name in the scratch app -> configure -> add ons")
 
     def _valid_hex(self, color_hex: str) -> bool:
         hex_pattern = re.compile("^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
@@ -447,11 +449,12 @@ class ClientMV2(ClientGeneric):
         return bytes(c//25 for c in color)
 
     def _hex_to_bytes(self, color_hex: str, region: Union[str, int]) -> bytes:
+        input_color = color_hex
         color_hex = color_hex.lstrip('#')
         if self._valid_hex(color_hex):
             color_bytes = bytes.fromhex(color_hex)
         else:
-            raise MartyCommandException("Color specified is not a valid hex code or default color")
+            raise MartyCommandException(f"The string {input_color} is not a valid hex color code or default color")
         return color_bytes
 
     def disco_color(self, color: Union[str, tuple], add_on: str, region: Union[int, str]) -> bool:
@@ -466,12 +469,13 @@ class ClientMV2(ClientGeneric):
             'purple' : '7800c8',
             'orange' : '961900'
         }
+        input_color = str(color)
         if type(color) is str:
             color = default_colors.get(color.lower(), color)
             color = self._hex_to_bytes(color, region)
         elif type(color) is tuple:
             if len(color) != 3:
-                raise MartyCommandException("RGB tuple must be 3 numbers, please enter valid color.")
+                raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of {input_color}. Please enter a valid color.')
         else:
             raise MartyCommandException("Color must be of string or tuple form.")
         color = self._downscale_color(color)
