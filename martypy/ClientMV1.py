@@ -566,7 +566,7 @@ class ClientMV1(ClientGeneric):
     def disco_off(self, add_on: str) -> bool :
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def disco_pattern(self, pattern: str, add_on: str) -> bool :
+    def disco_pattern(self, pattern: int, add_on: str) -> bool :
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
         
     def disco_color(self, color: Union[str, tuple], add_on: str, region: Union[int, str]) -> bool:  

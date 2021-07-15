@@ -864,7 +864,7 @@ class Marty(object):
         if type(add_on) is str:
             return self.client.disco_off(add_on)
         else:
-            return self.client.disco_group_operation(self.client.disco_off,add_on.value, {})
+            return self.client.disco_group_operation(self.client.disco_off, add_on.value, {})
 
     def disco_pattern(self, pattern: int, add_on: Union[Disco, str] = Disco.ALL) -> bool:
         '''
@@ -891,7 +891,7 @@ class Marty(object):
             True if Marty accepted the request
         '''
         if type(add_on) is str:
-            return self.client.disco_color(color,add_on,region)
+            return self.client.disco_color(color, add_on, region)
         else:
             return self.client.disco_group_operation(self.client.disco_color, add_on.value, {'color':color, 'region':region}) 
 

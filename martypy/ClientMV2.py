@@ -408,7 +408,7 @@ class ClientMV2(ClientGeneric):
             return False
         return self._initComplete and (self.lastSubscribedMsgTime is not None)
 
-    def _valid_addon(self, add_on: str) -> bool:
+    def _is_valid_disco_addon(self, add_on: str) -> bool:
         disco_type_codes = {"00000087","00000088","00000089"}
         for attached_add_on in self.get_add_ons_status().values():
             if type(attached_add_on) == dict and attached_add_on['name'] == add_on:
@@ -425,17 +425,17 @@ class ClientMV2(ClientGeneric):
         return bool(hex_pattern.match(color_hex))
 
     def disco_off(self, add_on: str) -> bool:
-        if self._valid_addon(add_on):
+        if self._is_valid_disco_addon(add_on):
             return self.add_on_query(add_on, bytes.fromhex('01'), 0)
 
-    def disco_pattern(self, pattern: str, add_on: str) -> bool:
+    def disco_pattern(self, pattern: int, add_on: str) -> bool:
         if pattern == 1:
                 pattern = '10'
         elif pattern == 2:
             pattern = '11'
         else:
             raise Exception("Pattern must be 1 or 2")
-        if self._valid_addon(add_on):
+        if self._is_valid_disco_addon(add_on):
             return self.add_on_query(add_on, bytes.fromhex(pattern), 0)
 
     def _region_to_bytes(self, region: Union[str, int]) -> bytes:
@@ -448,7 +448,7 @@ class ClientMV2(ClientGeneric):
     def _downscale_color(self, color: Union[tuple, bytes]):
         return bytes(c//25 for c in color)
 
-    def _hex_to_bytes(self, color_hex: str, region: Union[str, int]) -> bytes:
+    def _parse_color_hex(self, color_hex: str, region: Union[str, int]) -> bytes:
         input_color = color_hex
         color_hex = color_hex.lstrip('#')
         if self._valid_hex(color_hex):
@@ -472,7 +472,7 @@ class ClientMV2(ClientGeneric):
         input_color = str(color)
         if type(color) is str:
             color = default_colors.get(color.lower(), color)
-            color = self._hex_to_bytes(color, region)
+            color = self._parse_color_hex(color, region)
         elif type(color) is tuple:
             if len(color) != 3:
                 raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of {input_color}. Please enter a valid color.')
@@ -481,7 +481,7 @@ class ClientMV2(ClientGeneric):
         color = self._downscale_color(color)
         region = self._region_to_bytes(region)
         command = region + color
-        if self._valid_addon(add_on):
+        if self._is_valid_disco_addon(add_on):
             return self.add_on_query(add_on, command, 0)
 
     def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:

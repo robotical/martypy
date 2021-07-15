@@ -329,7 +329,7 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod
-    def disco_pattern(self, pattern: str, add_on: str) -> bool :
+    def disco_pattern(self, pattern: int, add_on: str) -> bool :
         return False
 
     @abstractmethod   
