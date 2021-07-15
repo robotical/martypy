@@ -880,7 +880,7 @@ class Marty(object):
         else:
             return self.client.disco_group_operation(self.client.disco_pattern, add_on.value, {'pattern':pattern})
 
-    def disco_color(self, color: Union[int, str, tuple] = 'white', add_on: Union[Disco, str] = Disco.ALL, region: Union[int, str] = 'all') -> bool:
+    def disco_color(self, color: Union[str, tuple] = 'white', add_on: Union[Disco, str] = Disco.ALL, region: Union[int, str] = 'all') -> bool:
         '''
         Turn on disco add on LED lights to a specific color :two:
         Args:
