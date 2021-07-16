@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, Tuple
 from warnings import warn
 
 class ClientGeneric(ABC):
@@ -333,7 +333,7 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod   
-    def disco_color(self, color: Union[str, tuple], add_on: str, region: Union[int, str]) -> bool:  
+    def disco_color(self, color: Union[str, Tuple[int, int, int]], add_on: str, region: Union[int, str]) -> bool:  
         return False
 
     @abstractmethod

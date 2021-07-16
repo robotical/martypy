@@ -15,7 +15,7 @@ my_marty.dance()
 The tags :one: and :two: indicate when the method is available for Marty V1 :one: and Marty V2 :two:
 '''
 import time
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, Tuple
 from enum import Enum
 from .ClientGeneric import ClientGeneric
 from .ClientMV2 import ClientMV2
@@ -880,11 +880,12 @@ class Marty(object):
         else:
             return self.client.disco_group_operation(self.client.disco_pattern, add_on.value, {'pattern':pattern})
 
-    def disco_color(self, color: Union[str, tuple] = 'white', add_on: Union[Disco, str] = Disco.ALL, region: Union[int, str] = 'all') -> bool:
+    def disco_color(self, color: Union[str, Tuple[int, int, int]] = 'white', add_on: Union[Disco, str] = Disco.ALL, region: Union[int, str] = 'all') -> bool:
         '''
         Turn on disco add on LED lights to a specific color :two:
         Args:
-            color: color to switch the LEDs to; takes in a hex code, rgb tuple, or one of the built in colors: white, red, blue, yellow, green, teal, pink, purple, orange
+            color: color to switch the LEDs to; takes in a hex code, RGB tuple of integers between 0-255, 
+                   or one of the built in colors: white, red, blue, yellow, green, teal, pink, purple, orange
             add_on: add on name of which the function applies to
             region: 0,1,2; region on the add on
         Returns:

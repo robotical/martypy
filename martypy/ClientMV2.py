@@ -2,7 +2,7 @@ import logging
 import os
 import time
 import re
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, Tuple
 
 from .ClientGeneric import ClientGeneric
 from .RICCommsSerial import RICCommsSerial
@@ -415,9 +415,9 @@ class ClientMV2(ClientGeneric):
                 if attached_add_on['whoAmITypeCode'] in disco_type_codes:
                     return True
                 else:
-                    raise MartyCommandException(f"The add on name: {add_on} is not a valid disco add on. "
+                    raise MartyCommandException(f"The add on name: '{add_on}' is not a valid disco add on. "
                                                 "Please check the add on name in the scratch app -> configure -> add ons")
-        raise MartyCommandException(f"The add on name {add_on} is not a valid add on. Please check the add on "
+        raise MartyCommandException(f"The add on name '{add_on}' is not a valid add on. Please check the add on "
                                     "name in the scratch app -> configure -> add ons")
 
     def _valid_hex(self, color_hex: str) -> bool:
@@ -454,10 +454,10 @@ class ClientMV2(ClientGeneric):
         if self._valid_hex(color_hex):
             color_bytes = bytes.fromhex(color_hex)
         else:
-            raise MartyCommandException(f"The string {input_color} is not a valid hex color code or default color")
+            raise MartyCommandException(f"The string '{input_color}' is not a valid hex color code or default color")
         return color_bytes
 
-    def disco_color(self, color: Union[str, tuple], add_on: str, region: Union[int, str]) -> bool:
+    def disco_color(self, color: Union[str, Tuple[int, int, int]], add_on: str, region: Union[int, str]) -> bool:
         default_colors = {
             'white'  : 'FFFFFF',
             'red'    : 'FF0000',
@@ -475,9 +475,9 @@ class ClientMV2(ClientGeneric):
             color = self._parse_color_hex(color, region)
         elif type(color) is tuple:
             if len(color) != 3:
-                raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of {input_color}. Please enter a valid color.')
+                raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of: {input_color}. Please enter a valid color.')
         else:
-            raise MartyCommandException("Color must be of string or tuple form.")
+            raise MartyCommandException(f"Color must be of string or tuple form, not: {input_color}")
         color = self._downscale_color(color)
         region = self._region_to_bytes(region)
         command = region + color
