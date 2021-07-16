@@ -421,7 +421,7 @@ class ClientMV2(ClientGeneric):
                                     "name in the scratch app -> configure -> add ons")
 
     def _valid_hex(self, color_hex: str) -> bool:
-        hex_pattern = re.compile("^([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
+        hex_pattern = re.compile("^([A-Fa-f0-9]{6})$")
         return bool(hex_pattern.match(color_hex))
 
     def disco_off(self, add_on: str) -> bool:
