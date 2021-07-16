@@ -1,4 +1,4 @@
-Version 3.2.2
+Version 3.3.0
 - New functions for controlling the disco add-on lights
 
 Version 3.2.1 :
