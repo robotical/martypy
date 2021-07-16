@@ -430,7 +430,7 @@ class ClientMV2(ClientGeneric):
 
     def disco_pattern(self, pattern: int, add_on: str) -> bool:
         if pattern == 1:
-                pattern = '10'
+            pattern = '10'
         elif pattern == 2:
             pattern = '11'
         else:
@@ -469,15 +469,14 @@ class ClientMV2(ClientGeneric):
             'purple' : '7800c8',
             'orange' : '961900'
         }
-        input_color = str(color)
         if type(color) is str:
             color = default_colors.get(color.lower(), color)
             color = self._parse_color_hex(color, region)
         elif type(color) is tuple:
             if len(color) != 3:
-                raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of: {input_color}. Please enter a valid color.')
+                raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of: {color}. Please enter a valid color.')
         else:
-            raise MartyCommandException(f"Color must be of string or tuple form, not: {input_color}")
+            raise MartyCommandException(f"Color must be of string or tuple form, not {type(color)}")
         color = self._downscale_color(color)
         region = self._region_to_bytes(region)
         command = region + color
