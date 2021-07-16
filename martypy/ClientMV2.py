@@ -420,10 +420,6 @@ class ClientMV2(ClientGeneric):
         raise MartyCommandException(f"The add on name '{add_on}' is not a valid add on. Please check the add on "
                                     "name in the scratch app -> configure -> add ons")
 
-    def _valid_hex(self, color_hex: str) -> bool:
-        hex_pattern = re.compile("^([A-Fa-f0-9]{6})$")
-        return bool(hex_pattern.match(color_hex))
-
     def disco_off(self, add_on: str) -> bool:
         if self._is_valid_disco_addon(add_on):
             return self.add_on_query(add_on, bytes.fromhex('01'), 0)
@@ -448,10 +444,14 @@ class ClientMV2(ClientGeneric):
     def _downscale_color(self, color: Union[tuple, bytes]):
         return bytes(c//25 for c in color)
 
+    def _is_valid_color_hex(self, color_hex: str) -> bool:
+        hex_pattern = re.compile("^([A-Fa-f0-9]{6})$")
+        return bool(hex_pattern.match(color_hex))
+
     def _parse_color_hex(self, color_hex: str, region: Union[str, int]) -> bytes:
         input_color = color_hex
         color_hex = color_hex.lstrip('#')
-        if self._valid_hex(color_hex):
+        if self._is_valid_color_hex(color_hex):
             color_bytes = bytes.fromhex(color_hex)
         else:
             raise MartyCommandException(f"The string '{input_color}' is not a valid hex color code or default color")
