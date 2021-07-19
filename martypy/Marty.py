@@ -83,13 +83,12 @@ class Marty(object):
     ADD_ON_TYPE_NAMES = [
         "IRFoot"
     ]
+
     class Disco(Enum):
         ARMS = {"00000088"}
         FEET = {"00000087"}
         EYES = {"00000089"}
         ALL = {"00000087", "00000088", "00000089"}
-
-
 
     def __init__(self,
                 method: str,
@@ -880,7 +879,9 @@ class Marty(object):
         else:
             return self.client.disco_group_operation(self.client.disco_pattern, add_on.value, {'pattern':pattern})
 
-    def disco_color(self, color: Union[str, Tuple[int, int, int]] = 'white', add_on: Union[Disco, str] = Disco.ALL, region: Union[int, str] = 'all') -> bool:
+    def disco_color(self, color: Union[str, Tuple[int, int, int]] = 'white', 
+                    add_on: Union[Disco, str] = Disco.ALL, 
+                    region: Union[int, str] = 'all') -> bool:
         '''
         Turn on disco add on LED lights to a specific color :two:
         Args:
