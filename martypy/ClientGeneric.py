@@ -189,7 +189,7 @@ class ClientGeneric(ABC):
         return 0
 
     @abstractmethod
-    def get_distance_sensor(self) -> float:
+    def get_distance_sensor(self) -> int:
         return 0
 
     @abstractmethod
