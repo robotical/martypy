@@ -422,7 +422,8 @@ class ClientMV2(ClientGeneric):
 
     def disco_off(self, add_on: str) -> bool:
         if self._is_valid_disco_addon(add_on):
-            return self.add_on_query(add_on, bytes.fromhex('01'), 0)
+            response = self.add_on_query(add_on, bytes.fromhex('01'), 0)
+            return response.get("rslt", "") == "ok"
 
     def disco_pattern(self, pattern: int, add_on: str) -> bool:
         if pattern == 1:
@@ -432,7 +433,8 @@ class ClientMV2(ClientGeneric):
         else:
             raise Exception("Pattern must be 1 or 2")
         if self._is_valid_disco_addon(add_on):
-            return self.add_on_query(add_on, bytes.fromhex(pattern), 0)
+            response = self.add_on_query(add_on, bytes.fromhex(pattern), 0)
+            return response.get("rslt", "") == "ok"
 
     def _region_to_bytes(self, region: Union[str, int]) -> bytes:
         if region == 'all':
@@ -481,7 +483,8 @@ class ClientMV2(ClientGeneric):
         region = self._region_to_bytes(region)
         command = region + color
         if self._is_valid_disco_addon(add_on):
-            return self.add_on_query(add_on, command, 0)
+            response = self.add_on_query(add_on, command, 0)
+            return response.get("rslt", "") == "ok"
 
     def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:
         '''
