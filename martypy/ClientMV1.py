@@ -264,7 +264,7 @@ class ClientMV1(ClientGeneric):
     def get_battery_remaining(self) -> float:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def get_distance_sensor(self) -> int:
+    def get_distance_sensor(self) -> float:
         return self._execute('distance')
 
     def get_accelerometer(self, axis: str, axisCode: int) -> float:
