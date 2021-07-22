@@ -80,11 +80,6 @@ class WebSocket():
         reconnectRequired = False
         try:
             rxData = self.sock.recv(self.maxSocketBytes)
-        except OSError as excp:
-            logger.debug(f"WebSocket OSError {excp}")
-            if not self.autoReconnect:
-                raise excp
-            reconnectRequired = True
         except Exception as excp:
             logger.debug(f"WebSocket exception {excp}")
             if not self.autoReconnect:
