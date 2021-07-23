@@ -1,7 +1,8 @@
 import logging
 import os
 import time
-from typing import Callable, Dict, List, Optional, Union
+import re
+from typing import Callable, Dict, List, Optional, Union, Tuple
 
 from .ClientGeneric import ClientGeneric
 from .RICCommsSerial import RICCommsSerial
@@ -410,6 +411,101 @@ class ClientMV2(ClientGeneric):
         if not self.ricIF.isOpen():
             return False
         return self._initComplete and (self.lastSubscribedMsgTime is not None)
+
+    def _is_valid_disco_addon(self, add_on: str) -> bool:
+        disco_type_codes = {"00000087","00000088","00000089"}
+        for attached_add_on in self.get_add_ons_status().values():
+            if type(attached_add_on) == dict and attached_add_on['name'] == add_on:
+                if attached_add_on['whoAmITypeCode'] in disco_type_codes:
+                    return True
+                else:
+                    raise MartyCommandException(f"The add on name: '{add_on}' is not a valid disco add on. "
+                                                "Please check the add on name in the scratch app -> configure -> add ons")
+        raise MartyCommandException(f"The add on name '{add_on}' is not a valid add on. Please check the add on "
+                                    "name in the scratch app -> configure -> add ons")
+
+    def disco_off(self, add_on: str) -> bool:
+        if self._is_valid_disco_addon(add_on):
+            response = self.add_on_query(add_on, bytes.fromhex('01'), 0)
+            return response.get("rslt", "") == "ok"
+
+    def disco_pattern(self, pattern: int, add_on: str) -> bool:
+        if pattern == 1:
+            pattern = '10'
+        elif pattern == 2:
+            pattern = '11'
+        else:
+            raise Exception("Pattern must be 1 or 2")
+        if self._is_valid_disco_addon(add_on):
+            response = self.add_on_query(add_on, bytes.fromhex(pattern), 0)
+            return response.get("rslt", "") == "ok"
+
+    def _region_to_bytes(self, region: Union[str, int]) -> bytes:
+        if region == 'all':
+            region = (2,)
+        else:
+            region = (4, region)
+        return bytes(region)
+
+    def _downscale_color(self, color: Union[tuple, bytes]):
+        return bytes(c//25 for c in color)
+
+    def _is_valid_color_hex(self, color_hex: str) -> bool:
+        hex_pattern = re.compile("^([A-Fa-f0-9]{6})$")
+        return bool(hex_pattern.match(color_hex))
+
+    def _parse_color_hex(self, color_hex: str, region: Union[str, int]) -> bytes:
+        input_color = color_hex
+        color_hex = color_hex.lstrip('#')
+        if self._is_valid_color_hex(color_hex):
+            color_bytes = bytes.fromhex(color_hex)
+        else:
+            raise MartyCommandException(f"The string '{input_color}' is not a valid hex color code or default color")
+        return color_bytes
+
+    def disco_color(self, color: Union[str, Tuple[int, int, int]], add_on: str, region: Union[int, str]) -> bool:
+        default_colors = {
+            'white'  : 'FFFFFF',
+            'red'    : 'FF0000',
+            'blue'   : '0000FF',
+            'yellow' : 'FFFF00',
+            'green'  : '008000',
+            'teal'   : '008080',
+            'pink'   : 'eb1362',
+            'purple' : '7800c8',
+            'orange' : '961900'
+        }
+        if type(color) is str:
+            color = default_colors.get(color.lower(), color)
+            color = self._parse_color_hex(color, region)
+        elif type(color) is tuple:
+            if len(color) != 3:
+                raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of: {color}. Please enter a valid color.')
+        else:
+            raise MartyCommandException(f"Color must be of string or tuple form, not {type(color)}")
+        color = self._downscale_color(color)
+        region = self._region_to_bytes(region)
+        command = region + color
+        if self._is_valid_disco_addon(add_on):
+            response = self.add_on_query(add_on, command, 0)
+            return response.get("rslt", "") == "ok"
+
+    def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:
+        '''
+        Calls disco operations in groups for multiple add ons :two:
+        Args:
+            disco_operation: function for disco add on
+            whoami_type_codes: the add ons that the function applies to
+            operation_kwargs: additional arguments that need to be passed into the operation
+        Returns:
+            True if Marty accepted all requests
+        '''
+        result = True
+        for attached_add_on in self.get_add_ons_status().values():
+            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] in whoami_type_codes:
+                addon_name = attached_add_on['name']
+                result = result and disco_operation(add_on=addon_name, **operation_kwargs)
+        return result
 
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
         self.loggingCallback = loggingCallback
