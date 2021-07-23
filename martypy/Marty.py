@@ -591,7 +591,7 @@ class Marty(object):
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
         return self.client.get_joint_status(jointIDNo)
 
-    def get_distance_sensor(self) -> int:
+    def get_distance_sensor(self) -> Union[int, float]:
         '''
         Get the latest value from the distance sensor :one: :two:
         Returns:
