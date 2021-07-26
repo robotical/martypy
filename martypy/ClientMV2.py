@@ -290,8 +290,8 @@ class ClientMV2(ClientGeneric):
     def get_distance_sensor(self) -> int:
         for attached_add_on in self.get_add_ons_status().values():
             if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] == '00000083':
-                distance = attached_add_on['data'][1:3]
-                distance = int.from_bytes(distance, 'big')
+                distance_bytes = attached_add_on['data'][1:3]
+                distance = int.from_bytes(distance_bytes, 'big')
                 return distance
         return 0
 

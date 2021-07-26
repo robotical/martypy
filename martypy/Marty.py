@@ -597,8 +597,8 @@ class Marty(object):
         Returns:
             The distance sensor reading. The meaning of the returned value is different 
             between Marty V1 and V2:
-                - :one: Returns a raw distance sensor reading as a 'float'.
-                - :two: Returns the distance in millimeters as 'int'.
+                - :one: Returns a raw distance sensor reading as a `float`.
+                - :two: Returns the distance in millimeters as `int`.
             Both will return 0 if no distance sensor is found.
         '''
         return self.client.get_distance_sensor()
