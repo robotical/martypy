@@ -287,9 +287,13 @@ class ClientMV2(ClientGeneric):
         powerStatus = self.ricHardware.getPowerStatus()
         return powerStatus.get("battRemainCapacityPercent", 0)
 
-    def get_distance_sensor(self) -> float:
-        # TODO NotImplemented
-        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+    def get_distance_sensor(self) -> int:
+        for attached_add_on in self.get_add_ons_status().values():
+            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] == '00000083':
+                distance_bytes = attached_add_on['data'][1:3]
+                distance = int.from_bytes(distance_bytes, 'big')
+                return distance
+        return 0
 
     def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float:
         if axis is None:
