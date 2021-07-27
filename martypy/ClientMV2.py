@@ -295,7 +295,7 @@ class ClientMV2(ClientGeneric):
                 return distance
         return 0
 
-    def get_add_on_data(self, add_on: str) -> bytearray: #change name
+    def get_add_on_data(self, add_on: str) -> bytes: #change name
         for attached_add_on in self.get_add_ons_status().values():
             if type(attached_add_on) == dict and attached_add_on['name'] == add_on:
                 if attached_add_on['whoAmITypeCode'] == '0000008c':
