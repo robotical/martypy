@@ -295,6 +295,24 @@ class ClientMV2(ClientGeneric):
                 return distance
         return 0
 
+    def get_add_on_data(self, add_on: str) -> bytearray: #change name
+        for attached_add_on in self.get_add_ons_status().values():
+            if type(attached_add_on) == dict and attached_add_on['name'] == add_on:
+                if attached_add_on['whoAmITypeCode'] == '0000008c':
+                    return attached_add_on['data'][1]
+                elif attached_add_on['whoAmITypeCode'] == '00000085':
+                    return attached_add_on['data'][6]
+                else:
+                    raise MartyCommandException(f"The add on name: '{add_on}' is not a valid add on for the passed in function.")
+
+    def foot_on_ground(self, add_on: str) -> bool:
+        data = self.get_add_on_data(add_on)
+        return not bool(data >> 1 & 0b1)
+
+    def foot_obstacle_sensed(self, add_on: str) -> bool:
+        data = self.get_add_on_data(add_on)
+        return bool(data & 0b1)
+
     def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float:
         if axis is None:
             return self.ricHardware.getIMUAll()

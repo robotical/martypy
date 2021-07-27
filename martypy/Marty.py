@@ -603,6 +603,14 @@ class Marty(object):
         '''
         return self.client.get_distance_sensor()
 
+    def foot_on_ground(self, add_on: str) -> bool:
+        '''True when ground detected, false otherwise'''
+        return self.client.foot_on_ground(add_on)
+
+    def foot_obstacle_sensed(self, add_on: str) -> bool:
+        '''True when obstacle sensed, false otherwise'''
+        return self.client.foot_obstacle_sensed(add_on)
+        
     def get_battery_remaining(self) -> float:
         '''
         Get the battery remaining percentage :two:
