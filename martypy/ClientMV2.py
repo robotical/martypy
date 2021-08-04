@@ -298,12 +298,29 @@ class ClientMV2(ClientGeneric):
     def _get_obstacle_and_ground_sense(self, add_on: str) -> bytes: 
         for attached_add_on in self.get_add_ons_status().values():
             if type(attached_add_on) == dict and attached_add_on['name'] == add_on:
-                if attached_add_on['whoAmITypeCode'] == '0000008c':
+                if attached_add_on['whoAmITypeCode'] == '0000008c': #add v1 but should i make list or 2 checkers
                     return attached_add_on['data'][1]
                 elif attached_add_on['whoAmITypeCode'] == '00000085':
                     return attached_add_on['data'][6]
                 else:
                     raise MartyCommandException(f"The add on name: '{add_on}' is not a valid add on for the passed in function.")
+
+    # if add on is left or right str
+        ir_whoamicodes = {'0000008c', '00000086'}
+        color_sensor_whoamicodes = {'00000085', '00000091'}
+        sensor_data = {'left': [], 'right': []}     #to track counts of add ons in case theyre not named correctly
+        for attached_add_on in self.get_add_ons_status().values():
+            if add_on == 'left' and attached_add_on['name'] == 'LeftColorSensor':   #if add on is named right
+                return attached_add_on['data'][6]
+            if add_on == 'right' and attached_add_on['name'] == 'RightIRFoot':
+                return attached_add_on['data'][1] 
+            if attached_add_on['whoAmITypeCode'] in ir_whoamicodes:
+                sensor_data['right'].append(attached_add_on['data'][1])     #collecting all data from left and right
+            if attached_add_on['whoAmITypeCode'] in color_sensor_whoamicodes:
+                sensor_data['left'].append(attached_add_on['data'][6])
+        if len(sensor_data[add_on]) == 1:       #if theres only one of the side the user wants
+            return sensor_data[add_on]
+
 
     def foot_on_ground(self, add_on: str) -> bool:
         data = self._get_obstacle_and_ground_sense(add_on)
@@ -311,7 +328,7 @@ class ClientMV2(ClientGeneric):
 
     def foot_obstacle_sensed(self, add_on: str) -> bool:
         data = self._get_obstacle_and_ground_sense(add_on)
-        return (data&0b1) == 0b1
+        return (data & 0b1) == 0b1
 
     def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float:
         if axis is None:
