@@ -295,39 +295,34 @@ class ClientMV2(ClientGeneric):
                 return distance
         return 0
 
-    def _get_obstacle_and_ground_raw_data(self, add_on: str) -> bytes:
+    def _index_data_color_ir(self, attached_add_on: str) -> tuple:
         ir_whoamicodes = {'0000008c', '00000086'}
         color_sensor_whoamicodes = {'00000085', '00000091'}
+        if attached_add_on['whoAmITypeCode'] in ir_whoamicodes:
+            return [attached_add_on['data'][1], attached_add_on['data'][2:4], attached_add_on['data'][4:6]], 'right'
+        if attached_add_on['whoAmITypeCode'] in color_sensor_whoamicodes:
+            return [attached_add_on['data'][6], attached_add_on['data'][8:10], attached_add_on['data'][2]], 'left'
+
+    def _get_obstacle_and_ground_raw_data(self, add_on: str) -> list:
+        sensor_whoamicodes = {'0000008c', '00000086', '00000085', '00000091'}
         sensor_data = {'left': [], 'right': []}  
-        left_names = ['LeftColorSensor', 'LeftIRFoot']
-        right_names=['RightIRFoot', 'RightColorSensor']
-        if add_on.lower() == 'left':
-            addon_names = left_names
-        elif add_on.lower() == 'right':
-            addon_names = right_names
-        else:
-            addon_names = [add_on]
+        sensor_possible_names = {'left': ['LeftColorSensor', 'LeftIRFoot'], 'right': ['RightIRFoot', 'RightColorSensor']}
+        addon_names = sensor_possible_names.get(add_on, [add_on])
         for attached_add_on in self.get_add_ons_status().values():
-            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] in ir_whoamicodes:
-                obstacle_and_ground_data = [attached_add_on['data'][1], attached_add_on['data'][2:4], attached_add_on['data'][4:6]]     #detection bytes, obstacle raw, ground raw
-                if attached_add_on['name'] in addon_names:
-                    return obstacle_and_ground_data
-                else:
-                    sensor_data['right'].append(obstacle_and_ground_data)   
-            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] in color_sensor_whoamicodes:
-                obstacle_and_ground_data = [attached_add_on['data'][6], attached_add_on['data'][8:10], attached_add_on['data'][2]]      #detection bytes, obstacle raw, ground raw
-                if attached_add_on['name'] in addon_names:
-                    return obstacle_and_ground_data
-                else: 
-                    sensor_data['left'].append(obstacle_and_ground_data)
+            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] in sensor_whoamicodes:
+                    obstacle_and_ground_data, side = self._index_data_color_ir(attached_add_on)
+                    if attached_add_on['name'] in addon_names:
+                        return obstacle_and_ground_data
+                    else:
+                        sensor_data[side].append(obstacle_and_ground_data)
         if len(sensor_data[add_on.lower()]) == 1:       
             return sensor_data[add_on.lower()][0]
         elif add_on.lower() == 'left' or add_on.lower() == 'right':
             MartyCommandException(f"Marty could not find a {add_on} sensor. Please make sure your add ons are plugged in and named correctly")
         else:
             MartyCommandException(f"The add on '{add_on}' is not a valid add on for obstacle and ground sensing."
-                                   "Please make sure to pass in the name of an IR sensor or Color sensor.")
-        
+                                 "Please make sure to pass in the name of an IR sensor or Color sensor.")
+            
     def foot_on_ground(self, add_on: str) -> bool:
         data = self._get_obstacle_and_ground_raw_data(add_on)[0]
         return (data & 0b10) == 0b00
