@@ -299,9 +299,15 @@ class ClientMV2(ClientGeneric):
         ir_whoamicodes = {'0000008c', '00000086'}
         color_sensor_whoamicodes = {'00000085', '00000091'}
         if attached_add_on['whoAmITypeCode'] in ir_whoamicodes:
-            return [attached_add_on['data'][1], attached_add_on['data'][2:4], attached_add_on['data'][4:6]], 'right'
+            obstacle_and_ground_detection = attached_add_on['data'][1]
+            obstacle_data_raw = int.from_bytes(attached_add_on['data'][2:4], 'big')
+            ground_data_raw = int.from_bytes(attached_add_on['data'][4:6], 'big')
+            return [obstacle_and_ground_detection, obstacle_data_raw, ground_data_raw], 'right'
         if attached_add_on['whoAmITypeCode'] in color_sensor_whoamicodes:
-            return [attached_add_on['data'][6], attached_add_on['data'][8:10], attached_add_on['data'][2]], 'left'
+            obstacle_and_ground_detection = attached_add_on['data'][6]
+            obstacle_data_raw = int.from_bytes(attached_add_on['data'][8:10], 'big')
+            ground_data_raw = attached_add_on['data'][2]
+            return [obstacle_and_ground_detection, obstacle_data_raw, ground_data_raw], 'left'
 
     def _get_obstacle_and_ground_raw_data(self, add_on: str) -> list:
         sensor_whoamicodes = {'0000008c', '00000086', '00000085', '00000091'}
@@ -310,11 +316,11 @@ class ClientMV2(ClientGeneric):
         addon_names = sensor_possible_names.get(add_on, [add_on])
         for attached_add_on in self.get_add_ons_status().values():
             if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] in sensor_whoamicodes:
-                    obstacle_and_ground_data, side = self._index_data_color_ir(attached_add_on)
-                    if attached_add_on['name'] in addon_names:
-                        return obstacle_and_ground_data
-                    else:
-                        sensor_data[side].append(obstacle_and_ground_data)
+                obstacle_and_ground_data, side = self._index_data_color_ir(attached_add_on)
+                if attached_add_on['name'] in addon_names:
+                    return obstacle_and_ground_data
+                else:
+                    sensor_data[side].append(obstacle_and_ground_data)
         if len(sensor_data[add_on.lower()]) == 1:       
             return sensor_data[add_on.lower()][0]
         elif add_on.lower() == 'left' or add_on.lower() == 'right':
