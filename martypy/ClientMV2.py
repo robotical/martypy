@@ -337,11 +337,11 @@ class ClientMV2(ClientGeneric):
         data = self._get_obstacle_and_ground_raw_data(add_on)[0]
         return (data & 0b1) == 0b1
 
-    def get_obstacle_sensing_data(self, add_on: str) -> bool:
+    def get_obstacle_sensing_data(self, add_on: str) -> int:
         obstacle_data = self._get_obstacle_and_ground_raw_data(add_on)[1]
         return obstacle_data
 
-    def get_ground_sensing_data(self, add_on: str) -> bool:
+    def get_ground_sensing_data(self, add_on: str) -> int:
         ground_data = self._get_obstacle_and_ground_raw_data(add_on)[2]
         return ground_data
 

@@ -193,6 +193,22 @@ class ClientGeneric(ABC):
         return 0
 
     @abstractmethod
+    def foot_on_ground(self, add_on: str) -> bool:
+        return False
+
+    @abstractmethod
+    def foot_obstacle_sensed(self, add_on: str) -> bool:
+        return False
+        
+    @abstractmethod
+    def get_obstacle_sensing_data(self, add_on: str) -> int:
+        return 0
+
+    @abstractmethod
+    def get_ground_sensing_data(self, add_on: str) -> int:
+        return 0
+
+    @abstractmethod
     def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float:
         return 0
 

@@ -267,6 +267,18 @@ class ClientMV1(ClientGeneric):
     def get_distance_sensor(self) -> float:
         return self._execute('distance')
 
+    def foot_on_ground(self, add_on: str) -> bool:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def foot_obstacle_sensed(self, add_on: str) -> bool:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def get_obstacle_sensing_data(self, add_on: str) -> int:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def get_ground_sensing_data(self, add_on: str) -> int:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
     def get_accelerometer(self, axis: str, axisCode: int) -> float:
         M1_ACCEL_AXES = ['\x00','\x01','\x02']
         if axis is None:
