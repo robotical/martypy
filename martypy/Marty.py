@@ -604,13 +604,48 @@ class Marty(object):
         return self.client.get_distance_sensor()
 
     def foot_on_ground(self, add_on: str) -> bool:
-        '''True when ground detected, false otherwise'''
+        '''
+        Checks whether the foot is on a surface :two:
+        Args:
+            add_on: takes in the name of a color sensor, name of an IR sensor, 'left' for the add on connected to the left foot,
+             or 'right' for the add on connected to the right foot. 
+        Returns:
+            A boolean for whether the addon detects the ground. True for ground detected, False otherwise.
+        '''
         return self.client.foot_on_ground(add_on)
 
     def foot_obstacle_sensed(self, add_on: str) -> bool:
-        '''True when obstacle sensed, false otherwise'''
+        '''
+        Checks whether there is an obstacle in front of the foot :two:
+        Args:
+            add_on: takes in the name of a color sensor, name of an IR sensor, 'left' for the add on connected to the left foot,
+             or 'right' for the add on connected to the right foot. 
+        Returns:
+            A boolean for whether the addon detects and obstacle. True for obstacle detected, False otherwise.
+        '''
         return self.client.foot_obstacle_sensed(add_on)
-        
+
+    def get_obstacle_sensing_data(self, add_on: str) -> bool:
+        '''
+        Gets a raw obstacle sensor reading from an IR or color sensor :two:
+        Args:
+            add_on: takes in the name of a color sensor, name of an IR sensor, 'left' for the add on connected to the left foot,
+             or 'right' for the add on connected to the right foot. 
+        Returns:
+            Raw reading of obstacle sensor data from the add on.
+        '''
+        return self.client.get_obstacle_sensing_data(add_on)
+
+    def get_ground_sensing_data(self, add_on: str) -> bool:
+        '''Gets a raw ground sensor reading from an IR or color sensor :two:
+        Args:
+            add_on: takes in the name of a color sensor, name of an IR sensor, 'left' for the add on connected to the left foot,
+             or 'right' for the add on connected to the right foot. 
+        Returns:
+            Raw reading of ground sensor data from the add on.
+        '''
+        return self.client.get_obstacle_sensing_data()
+
     def get_battery_remaining(self) -> float:
         '''
         Get the battery remaining percentage :two:
