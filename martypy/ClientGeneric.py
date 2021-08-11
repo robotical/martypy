@@ -201,11 +201,11 @@ class ClientGeneric(ABC):
         return False
         
     @abstractmethod
-    def get_obstacle_sensing_data(self, add_on: str) -> int:
+    def get_obstacle_sensor_reading(self, add_on: str) -> int:
         return 0
 
     @abstractmethod
-    def get_ground_sensing_data(self, add_on: str) -> int:
+    def get_ground_sensor_reading(self, add_on: str) -> int:
         return 0
 
     @abstractmethod

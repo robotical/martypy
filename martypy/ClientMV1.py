@@ -273,10 +273,10 @@ class ClientMV1(ClientGeneric):
     def foot_obstacle_sensed(self, add_on: str) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def get_obstacle_sensing_data(self, add_on: str) -> int:
+    def get_obstacle_sensor_reading(self, add_on: str) -> int:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def get_ground_sensing_data(self, add_on: str) -> int:
+    def get_ground_sensor_reading(self, add_on: str) -> int:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def get_accelerometer(self, axis: str, axisCode: int) -> float:

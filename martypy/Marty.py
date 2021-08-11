@@ -625,7 +625,7 @@ class Marty(object):
         '''
         return self.client.foot_obstacle_sensed(add_on)
 
-    def get_obstacle_sensing_data(self, add_on: str) -> int:
+    def get_obstacle_sensor_reading(self, add_on: str) -> int:
         '''
         Gets a raw obstacle sensor reading from an IR or color sensor :two:
         Args:
@@ -634,9 +634,9 @@ class Marty(object):
         Returns:
             Raw reading of obstacle sensor data from the add on.
         '''
-        return self.client.get_obstacle_sensing_data(add_on)
+        return self.client.get_obstacle_sensor_reading(add_on)
 
-    def get_ground_sensing_data(self, add_on: str) -> int:
+    def get_ground_sensor_reading(self, add_on: str) -> int:
         '''Gets a raw ground sensor reading from an IR or color sensor :two:
         Args:
             add_on: takes in the name of a color sensor, name of an IR sensor, 'left' for the add on connected to the left foot,
@@ -644,7 +644,7 @@ class Marty(object):
         Returns:
             Raw reading of ground sensor data from the add on.
         '''
-        return self.client.get_obstacle_sensing_data()
+        return self.client.get_ground_sensor_reading()
 
     def get_battery_remaining(self) -> float:
         '''
