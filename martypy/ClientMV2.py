@@ -295,19 +295,19 @@ class ClientMV2(ClientGeneric):
                 return distance
         return 0
 
-    def _index_data_color_ir(self, attached_add_on: str) -> tuple:
+    def _index_data_color_ir(self, attached_add_on: str) -> Tuple[Tuple[int, int, int], str]:
         ir_whoamicodes = {'0000008c', '00000086'}
         color_sensor_whoamicodes = {'00000085', '00000091'}
         if attached_add_on['whoAmITypeCode'] in ir_whoamicodes:
-            obstacle_and_ground_detection = attached_add_on['data'][1]
+            detection_flags = attached_add_on['data'][1]
             obstacle_data_raw = int.from_bytes(attached_add_on['data'][2:4], 'big')
             ground_data_raw = int.from_bytes(attached_add_on['data'][4:6], 'big')
-            return [obstacle_and_ground_detection, obstacle_data_raw, ground_data_raw], 'right'
+            return (detection_flags, obstacle_data_raw, ground_data_raw), 'right'
         if attached_add_on['whoAmITypeCode'] in color_sensor_whoamicodes:
-            obstacle_and_ground_detection = attached_add_on['data'][6]
+            detection_flags = attached_add_on['data'][6]
             obstacle_data_raw = int.from_bytes(attached_add_on['data'][8:10], 'big')
             ground_data_raw = attached_add_on['data'][2]
-            return [obstacle_and_ground_detection, obstacle_data_raw, ground_data_raw], 'left'
+            return (detection_flags, obstacle_data_raw, ground_data_raw), 'left'
 
     def _get_obstacle_and_ground_raw_data(self, add_on_or_side: str) -> list:
         sensor_whoamicodes = {'0000008c', '00000086', '00000085', '00000091'}

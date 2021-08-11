@@ -607,10 +607,10 @@ class Marty(object):
         '''
         Checks whether the foot is on a surface :two:
         Args:
-            add_on_or_side: takes in the name of a color sensor, name of an IR sensor, 'left' for the add on connected to the left foot,
-             or 'right' for the add on connected to the right foot. 
+            add_on_or_side: Takes in the name of a color sensor, name of an IR sensor, `'left'` for the add on connected to the left foot,
+             or `'right'` for the add on connected to the right foot. 
         Returns:
-            A boolean for whether the addon detects the ground. True for ground detected, False otherwise.
+            A boolean for whether the addon detects the ground. `True` for ground detected, `False` otherwise.
         '''
         return self.client.foot_on_ground(add_on_or_side)
 
@@ -618,10 +618,10 @@ class Marty(object):
         '''
         Checks whether there is an obstacle in front of the foot :two:
         Args:
-            add_on_or_side: takes in the name of a color sensor, name of an IR sensor, 'left' for the add on connected to the left foot,
-             or 'right' for the add on connected to the right foot. 
+            add_on_or_side: Takes in the name of a color sensor, name of an IR sensor, `'left'` for the add on connected to the left foot,
+             or `'right'` for the add on connected to the right foot. 
         Returns:
-            A boolean for whether the addon detects and obstacle. True for obstacle detected, False otherwise.
+            A boolean for whether the addon detects and obstacle. `True` for obstacle detected, `False` otherwise.
         '''
         return self.client.foot_obstacle_sensed(add_on_or_side)
 
@@ -629,8 +629,8 @@ class Marty(object):
         '''
         Gets a raw obstacle sensor reading from an IR or color sensor :two:
         Args:
-            add_on_or_side: takes in the name of a color sensor, name of an IR sensor, 'left' for the add on connected to the left foot,
-             or 'right' for the add on connected to the right foot. 
+            add_on_or_side: Takes in the name of a color sensor, name of an IR sensor, `'left'` for the add on connected to the left foot,
+             or `'right'` for the add on connected to the right foot. 
         Returns:
             Raw reading of obstacle sensor data from the add on.
         '''
@@ -639,8 +639,8 @@ class Marty(object):
     def get_ground_sensor_reading(self, add_on_or_side: str) -> int:
         '''Gets a raw ground sensor reading from an IR or color sensor :two:
         Args:
-            add_on_or_side: takes in the name of a color sensor, name of an IR sensor, 'left' for the add on connected to the left foot,
-             or 'right' for the add on connected to the right foot. 
+            add_on_or_side: Takes in the name of a color sensor, name of an IR sensor, `'left'` for the add on connected to the left foot,
+             or `'right'` for the add on connected to the right foot. 
         Returns:
             Raw reading of ground sensor data from the add on.
         '''
