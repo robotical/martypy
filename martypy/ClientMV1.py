@@ -267,16 +267,16 @@ class ClientMV1(ClientGeneric):
     def get_distance_sensor(self) -> float:
         return self._execute('distance')
 
-    def foot_on_ground(self, add_on: str) -> bool:
+    def foot_on_ground(self, add_on_or_side: str) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def foot_obstacle_sensed(self, add_on: str) -> bool:
+    def foot_obstacle_sensed(self, add_on_or_side: str) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def get_obstacle_sensor_reading(self, add_on: str) -> int:
+    def get_obstacle_sensor_reading(self, add_on_or_side: str) -> int:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def get_ground_sensor_reading(self, add_on: str) -> int:
+    def get_ground_sensor_reading(self, add_on_or_side: str) -> int:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def get_accelerometer(self, axis: str, axisCode: int) -> float:

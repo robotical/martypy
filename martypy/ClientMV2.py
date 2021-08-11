@@ -309,11 +309,11 @@ class ClientMV2(ClientGeneric):
             ground_data_raw = attached_add_on['data'][2]
             return [obstacle_and_ground_detection, obstacle_data_raw, ground_data_raw], 'left'
 
-    def _get_obstacle_and_ground_raw_data(self, add_on: str) -> list:
+    def _get_obstacle_and_ground_raw_data(self, add_on_or_side: str) -> list:
         sensor_whoamicodes = {'0000008c', '00000086', '00000085', '00000091'}
         sensor_data = {'left': [], 'right': []}  
         sensor_possible_names = {'left': ['LeftColorSensor', 'LeftIRFoot'], 'right': ['RightIRFoot', 'RightColorSensor']}
-        addon_names = sensor_possible_names.get(add_on, [add_on])
+        addon_names = sensor_possible_names.get(add_on_or_side, [add_on_or_side])
         for attached_add_on in self.get_add_ons_status().values():
             if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] in sensor_whoamicodes:
                 obstacle_and_ground_data, side = self._index_data_color_ir(attached_add_on)
@@ -321,28 +321,28 @@ class ClientMV2(ClientGeneric):
                     return obstacle_and_ground_data
                 else:
                     sensor_data[side].append(obstacle_and_ground_data)
-        if len(sensor_data[add_on.lower()]) == 1:       
-            return sensor_data[add_on.lower()][0]
-        elif add_on.lower() == 'left' or add_on.lower() == 'right':
-            MartyCommandException(f"Marty could not find a {add_on} sensor. Please make sure your add ons are plugged in and named correctly")
+        if len(sensor_data[add_on_or_side.lower()]) == 1:       
+            return sensor_data[add_on_or_side.lower()][0]
+        elif add_on_or_side.lower() == 'left' or add_on_or_side.lower() == 'right':
+            MartyCommandException(f"Marty could not find a {add_on_or_side} sensor. Please make sure your add ons are plugged in and named correctly")
         else:
-            MartyCommandException(f"The add on '{add_on}' is not a valid add on for obstacle and ground sensing."
+            MartyCommandException(f"The add on '{add_on_or_side}' is not a valid add on for obstacle and ground sensing."
                                  "Please make sure to pass in the name of an IR sensor or Color sensor.")
             
-    def foot_on_ground(self, add_on: str) -> bool:
-        data = self._get_obstacle_and_ground_raw_data(add_on)[0]
+    def foot_on_ground(self, add_on_or_side: str) -> bool:
+        data = self._get_obstacle_and_ground_raw_data(add_on_or_side)[0]
         return (data & 0b10) == 0b00
 
-    def foot_obstacle_sensed(self, add_on: str) -> bool:
-        data = self._get_obstacle_and_ground_raw_data(add_on)[0]
+    def foot_obstacle_sensed(self, add_on_or_side: str) -> bool:
+        data = self._get_obstacle_and_ground_raw_data(add_on_or_side)[0]
         return (data & 0b1) == 0b1
 
-    def get_obstacle_sensor_reading(self, add_on: str) -> int:
-        obstacle_data = self._get_obstacle_and_ground_raw_data(add_on)[1]
+    def get_obstacle_sensor_reading(self, add_on_or_side: str) -> int:
+        obstacle_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)[1]
         return obstacle_data
 
-    def get_ground_sensor_reading(self, add_on: str) -> int:
-        ground_data = self._get_obstacle_and_ground_raw_data(add_on)[2]
+    def get_ground_sensor_reading(self, add_on_or_side: str) -> int:
+        ground_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)[2]
         return ground_data
 
     def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float:
