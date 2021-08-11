@@ -296,6 +296,14 @@ class ClientMV2(ClientGeneric):
         return 0
 
     def _index_data_color_ir(self, attached_add_on: str) -> Tuple[Tuple[int, int, int], str]:
+        '''
+        Parses data of passed-in color or IR sensor :two:
+        Args:
+            attached_add_on: Name of IR or color sensor add on
+        Returns:
+            A tuple with three integers of data (detection byte, obstacle value, ground value) 
+            and a string of whether the sensor is a default 'left' or 'right' add on
+        '''
         ir_whoamicodes = {'0000008c', '00000086'}
         color_sensor_whoamicodes = {'00000085', '00000091'}
         if attached_add_on['whoAmITypeCode'] in ir_whoamicodes:
@@ -310,6 +318,14 @@ class ClientMV2(ClientGeneric):
             return (detection_flags, obstacle_data_raw, ground_data_raw), 'left'
 
     def _get_obstacle_and_ground_raw_data(self, add_on_or_side: str) -> list:
+        '''
+        Finds the wanted color or IR sensor and gets the parsed obstacle and ground data :two:
+        Args:
+            add_on_or_side: Takes in the name of a color sensor, name of an IR sensor, `'left'` for the add on connected to the left foot,
+            or `'right'` for the add on connected to the right foot
+        Returns: 
+            A tuple of the detection byte, obstacle reading, and ground reading of the add on
+        '''
         sensor_whoamicodes = {'0000008c', '00000086', '00000085', '00000091'}
         sensor_data = {'left': [], 'right': []}  
         sensor_possible_names = {'left': ['LeftColorSensor', 'LeftIRFoot'], 'right': ['RightIRFoot', 'RightColorSensor']}
