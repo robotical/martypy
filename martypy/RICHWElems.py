@@ -236,4 +236,3 @@ class RICHWElems:
 
     def getPublishStats(self):
         return self._publishMonitor.getPublishStats()
-
