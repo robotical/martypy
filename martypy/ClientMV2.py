@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, Tuple
 from packaging import version
 
 from .ClientGeneric import ClientGeneric
@@ -560,10 +560,17 @@ class ClientMV2(ClientGeneric):
     def get_test_output(self) -> dict:
         return self.ricIF.getTestOutput()
 
+    def _systemVersionGtEq(self, compareToVersion):
+        if self.ricSystemInfo is None:
+            return False
+        versInfo = self.ricSystemInfo.get("SystemVersion","0.0.0")
+        return version.parse(versInfo) >= version.parse(compareToVersion)
+
     def _subscribeToPubMessages(self, forceResubscribe: bool):
+        versOk = self._systemVersionGtEq(self._minSysVersForSubscribeAPI)
         timeForSubscr = self.lastRICSerialMsgTime is None or time.time() > self.lastRICSerialMsgTime + self.maxTimeBetweenPubs
         resubscrReqd = self.lastSubscrReqMsgTime is None or time.time() > self.lastSubscrReqMsgTime + self.minTimeBetweenSubReqs
-        if self._initComplete and self.subscribeRateHz != 0 and (forceResubscribe or (timeForSubscr and resubscrReqd)):
+        if versOk and self._initComplete and self.subscribeRateHz != 0 and (forceResubscribe or (timeForSubscr and resubscrReqd)):
             # Subscribe for publication messages
             logger.debug(f"Subscribe to published messages")
             self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
