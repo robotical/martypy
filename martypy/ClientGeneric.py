@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, Tuple
 from warnings import warn
 
 class ClientGeneric(ABC):
@@ -189,7 +189,7 @@ class ClientGeneric(ABC):
         return 0
 
     @abstractmethod
-    def get_distance_sensor(self) -> float:
+    def get_distance_sensor(self) -> Union[int, float]:
         return 0
 
     @abstractmethod
@@ -323,6 +323,22 @@ class ClientGeneric(ABC):
     @abstractmethod
     def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
         return {}
+
+    @abstractmethod
+    def disco_off(self, add_on: str) -> bool :
+        return False
+
+    @abstractmethod
+    def disco_pattern(self, pattern: int, add_on: str) -> bool :
+        return False
+
+    @abstractmethod   
+    def disco_color(self, color: Union[str, Tuple[int, int, int]], add_on: str, region: Union[int, str]) -> bool:  
+        return False
+
+    @abstractmethod
+    def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:
+        return False
 
     @abstractmethod
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:

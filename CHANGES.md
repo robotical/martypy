@@ -1,3 +1,7 @@
+Version 3.3.0 :
+- New functions for controlling the disco add-on lights
+- New distance sensor function for Marty V2 that returns the distance in mm
+
 Version 3.2.1 :
 - Default `movetime` parameter for the `dance()` has been changed to 3000ms instead of 4500ms
 

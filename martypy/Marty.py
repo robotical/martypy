@@ -15,7 +15,8 @@ my_marty.dance()
 The tags :one: and :two: indicate when the method is available for Marty V1 :one: and Marty V2 :two:
 '''
 import time
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, Tuple
+from enum import Enum
 from .ClientGeneric import ClientGeneric
 from .ClientMV2 import ClientMV2
 from .ClientMV1 import ClientMV1
@@ -82,6 +83,12 @@ class Marty(object):
     ADD_ON_TYPE_NAMES = [
         "IRFoot"
     ]
+
+    class Disco(Enum):
+        ARMS = {"00000088"}
+        FEET = {"00000087"}
+        EYES = {"00000089"}
+        ALL = {"00000087", "00000088", "00000089"}
 
     def __init__(self,
                 method: str,
@@ -584,11 +591,15 @@ class Marty(object):
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
         return self.client.get_joint_status(jointIDNo)
 
-    def get_distance_sensor(self) -> float:
+    def get_distance_sensor(self) -> Union[int, float]:
         '''
         Get the latest value from the distance sensor :one: :two:
         Returns:
-            The distance sensor reading (will return 0 if no distance sensor is found)
+            The distance sensor reading. The meaning of the returned value is different 
+            between Marty V1 and V2:
+                - :one: Returns a raw distance sensor reading as a `float`.
+                - :two: Returns the distance in millimeters as `int`.
+            Both will return 0 if no distance sensor is found.
         '''
         return self.client.get_distance_sensor()
 
@@ -845,6 +856,51 @@ class Marty(object):
         '''
         return self.client.is_conn_ready()
         
+    def disco_off(self, add_on: Union[Disco, str] = Disco.ALL) -> bool:
+        '''
+        Turn disco add on LEDs off :two:
+        Args:
+            add_on: add on name of which the function applies to
+        Returns:
+            True if Marty accepted the request
+        '''
+        if type(add_on) is str:
+            return self.client.disco_off(add_on)
+        else:
+            return self.client.disco_group_operation(self.client.disco_off, add_on.value, {})
+
+    def disco_pattern(self, pattern: int, add_on: Union[Disco, str] = Disco.ALL) -> bool:
+        '''
+        Turn on a pattern of lights on the disco LED add on :two:
+        Args:
+            pattern: 1 or 2, pattern of lights that user wants to use
+            add_on: add on name of which the function applies to
+        Returns:
+            True if Marty accepted the request
+        '''
+        if type(add_on) is str:
+            return self.client.disco_pattern(pattern, add_on)
+        else:
+            return self.client.disco_group_operation(self.client.disco_pattern, add_on.value, {'pattern':pattern})
+
+    def disco_color(self, color: Union[str, Tuple[int, int, int]] = 'white', 
+                    add_on: Union[Disco, str] = Disco.ALL, 
+                    region: Union[int, str] = 'all') -> bool:
+        '''
+        Turn on disco add on LED lights to a specific color :two:
+        Args:
+            color: color to switch the LEDs to; takes in a hex code, RGB tuple of integers between 0-255, 
+                   or one of the built in colors: white, red, blue, yellow, green, teal, pink, purple, orange
+            add_on: add on name of which the function applies to
+            region: 0,1,2; region on the add on
+        Returns:
+            True if Marty accepted the request
+        '''
+        if type(add_on) is str:
+            return self.client.disco_color(color, add_on, region)
+        else:
+            return self.client.disco_group_operation(self.client.disco_color, add_on.value, {'color':color, 'region':region}) 
+
     ''' 
     ============================================================
     The following commands are for Marty V1 Only

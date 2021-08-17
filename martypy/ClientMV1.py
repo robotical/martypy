@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union, Tuple
 import sys
 import time
 import socket
@@ -561,6 +561,18 @@ class ClientMV1(ClientGeneric):
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def is_conn_ready(self) -> bool:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def disco_off(self, add_on: str) -> bool :
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def disco_pattern(self, pattern: int, add_on: str) -> bool :
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+        
+    def disco_color(self, color: Union[str, Tuple[int, int, int]], add_on: str, region: Union[int, str]) -> bool:  
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     # Encodes Command Type flag, LSB size, MSB size, Data
