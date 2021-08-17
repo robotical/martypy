@@ -49,8 +49,10 @@ class ClientMV2(ClientGeneric):
 
         # Initialise vars
         self.subscribeRateHz = subscribeRateHz
-        self.lastSubscribedMsgTime = None
+        self.lastRICSerialMsgTime = None
+        self.lastSubscrReqMsgTime = None
         self.maxTimeBetweenPubs = 10
+        self.minTimeBetweenSubReqs = 10
         self.max_blocking_wait_time = 120  # seconds
         self.ricHardware = RICHWElems()
         self.isClosing = False
@@ -87,7 +89,7 @@ class ClientMV2(ClientGeneric):
                     "wsPath": wsPath,
                     "ifType": "plain"
                 }
-                self.ricIF = RICInterface(RICCommsWiFi())
+                self.ricIF = RICInterface(RICCommsWiFi(self._onReconnect))
         else:
             rifConfig = {
                 "ipAddrOrHostname": locator,
@@ -244,7 +246,7 @@ class ClientMV2(ClientGeneric):
                                         "".format(side))
         return self.ricIF.cmdRICRESTRslt(f"traj/circle?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}")
 
-    def dance(self, side: str = 'right', move_time: int = 4500) -> bool:
+    def dance(self, side: str = 'right', move_time: int = 3000) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
@@ -290,9 +292,13 @@ class ClientMV2(ClientGeneric):
         powerStatus = self.ricHardware.getPowerStatus()
         return powerStatus.get("battRemainCapacityPercent", 0)
 
-    def get_distance_sensor(self) -> float:
-        # TODO NotImplemented
-        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+    def get_distance_sensor(self) -> int:
+        for attached_add_on in self.get_add_ons_status().values():
+            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] == '00000083':
+                distance_bytes = attached_add_on['data'][1:3]
+                distance = int.from_bytes(distance_bytes, 'big')
+                return distance
+        return 0
 
     def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float:
         if axis is None:
@@ -374,8 +380,8 @@ class ClientMV2(ClientGeneric):
     def get_add_on_status(self, add_on_name_or_id: Union[int, str]) -> Dict:
         return self.ricHardware.getAddOn(add_on_name_or_id, self.ricHwElemsInfoByIDNo)
 
-    def add_on_query(self, addOnName: str, dataToWrite: bytes, numBytesToRead: int) -> Dict:
-        return self.ricIF.addOnQueryRaw(addOnName, dataToWrite, numBytesToRead)
+    def add_on_query(self, add_on_name: str, data_to_write: bytes, num_bytes_to_read: int) -> Dict:
+        return self.ricIF.addOnQueryRaw(add_on_name, data_to_write, num_bytes_to_read)
 
     def get_system_info(self) -> Dict:
         return self.ricSystemInfo
@@ -409,7 +415,102 @@ class ClientMV2(ClientGeneric):
     def is_conn_ready(self) -> bool:
         if not self.ricIF.isOpen():
             return False
-        return self._initComplete and (self.lastSubscribedMsgTime is not None)
+        return self._initComplete and (self.lastRICSerialMsgTime is not None)
+
+    def _is_valid_disco_addon(self, add_on: str) -> bool:
+        disco_type_codes = {"00000087","00000088","00000089"}
+        for attached_add_on in self.get_add_ons_status().values():
+            if type(attached_add_on) == dict and attached_add_on['name'] == add_on:
+                if attached_add_on['whoAmITypeCode'] in disco_type_codes:
+                    return True
+                else:
+                    raise MartyCommandException(f"The add on name: '{add_on}' is not a valid disco add on. "
+                                                "Please check the add on name in the scratch app -> configure -> add ons")
+        raise MartyCommandException(f"The add on name '{add_on}' is not a valid add on. Please check the add on "
+                                    "name in the scratch app -> configure -> add ons")
+
+    def disco_off(self, add_on: str) -> bool:
+        if self._is_valid_disco_addon(add_on):
+            response = self.add_on_query(add_on, bytes.fromhex('01'), 0)
+            return response.get("rslt", "") == "ok"
+
+    def disco_pattern(self, pattern: int, add_on: str) -> bool:
+        if pattern == 1:
+            pattern = '10'
+        elif pattern == 2:
+            pattern = '11'
+        else:
+            raise Exception("Pattern must be 1 or 2")
+        if self._is_valid_disco_addon(add_on):
+            response = self.add_on_query(add_on, bytes.fromhex(pattern), 0)
+            return response.get("rslt", "") == "ok"
+
+    def _region_to_bytes(self, region: Union[str, int]) -> bytes:
+        if region == 'all':
+            region = (2,)
+        else:
+            region = (4, region)
+        return bytes(region)
+
+    def _downscale_color(self, color: Union[tuple, bytes]):
+        return bytes(c//25 for c in color)
+
+    def _is_valid_color_hex(self, color_hex: str) -> bool:
+        hex_pattern = re.compile("^([A-Fa-f0-9]{6})$")
+        return bool(hex_pattern.match(color_hex))
+
+    def _parse_color_hex(self, color_hex: str, region: Union[str, int]) -> bytes:
+        input_color = color_hex
+        color_hex = color_hex.lstrip('#')
+        if self._is_valid_color_hex(color_hex):
+            color_bytes = bytes.fromhex(color_hex)
+        else:
+            raise MartyCommandException(f"The string '{input_color}' is not a valid hex color code or default color")
+        return color_bytes
+
+    def disco_color(self, color: Union[str, Tuple[int, int, int]], add_on: str, region: Union[int, str]) -> bool:
+        default_colors = {
+            'white'  : 'FFFFFF',
+            'red'    : 'FF0000',
+            'blue'   : '0000FF',
+            'yellow' : 'FFFF00',
+            'green'  : '008000',
+            'teal'   : '008080',
+            'pink'   : 'eb1362',
+            'purple' : '7800c8',
+            'orange' : '961900'
+        }
+        if type(color) is str:
+            color = default_colors.get(color.lower(), color)
+            color = self._parse_color_hex(color, region)
+        elif type(color) is tuple:
+            if len(color) != 3:
+                raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of: {color}. Please enter a valid color.')
+        else:
+            raise MartyCommandException(f"Color must be of string or tuple form, not {type(color)}")
+        color = self._downscale_color(color)
+        region = self._region_to_bytes(region)
+        command = region + color
+        if self._is_valid_disco_addon(add_on):
+            response = self.add_on_query(add_on, command, 0)
+            return response.get("rslt", "") == "ok"
+
+    def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:
+        '''
+        Calls disco operations in groups for multiple add ons :two:
+        Args:
+            disco_operation: function for disco add on
+            whoami_type_codes: the add ons that the function applies to
+            operation_kwargs: additional arguments that need to be passed into the operation
+        Returns:
+            True if Marty accepted all requests
+        '''
+        result = True
+        for attached_add_on in self.get_add_ons_status().values():
+            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] in whoami_type_codes:
+                addon_name = attached_add_on['name']
+                result = result and disco_operation(add_on=addon_name, **operation_kwargs)
+        return result
 
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
         self.loggingCallback = loggingCallback
@@ -428,7 +529,7 @@ class ClientMV2(ClientGeneric):
     def _rxDecodedMsg(self, decodedMsg: DecodedMsg, interface: RICInterface):
         if decodedMsg.protocolID == RICProtocols.PROTOCOL_ROSSERIAL:
             # logger.debug(f"ROSSERIAL message received {len(decodedMsg.payload)}")
-            self.lastSubscribedMsgTime = time.time()
+            self.lastRICSerialMsgTime = time.time()
             if decodedMsg.payload:
                 RICROSSerial.decode(decodedMsg.payload, 0, self.ricHardware.updateWithROSSerialMsg)
         elif decodedMsg.protocolID == RICProtocols.PROTOCOL_RICREST:
@@ -445,20 +546,7 @@ class ClientMV2(ClientGeneric):
     def _msgTimerCallback(self) -> None:
         if self.isClosing:
             return
-        if self._systemVersionGtEq(self._minSysVersForSubscribeAPI) and \
-                 self._initComplete and \
-                 self.subscribeRateHz != 0 and \
-                 (self.lastSubscribedMsgTime is None or \
-                    time.time() > self.lastSubscribedMsgTime + self.maxTimeBetweenPubs):
-            # Subscribe for publication messages
-            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
-                            '"pubRecs":[' + \
-                                '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
-                                '{"name":"PowerStatus","rateHz":1.0},' + \
-                                '{' + f'"name":"AddOnStatus","rateHz":{self.subscribeRateHz}' + '}' + \
-                            ']}')
-        # Set subscribed message time here even if not subscribed as older firmware auto-subscribes
-        self.lastSubscribedMsgTime = time.time()
+        self._subscribeToPubMessages(False)
 
     def _updateHwElemsInfo(self):
         hwElemsInfo = self.ricIF.cmdRICRESTURLSync("hwstatus")
@@ -472,8 +560,19 @@ class ClientMV2(ClientGeneric):
     def get_test_output(self) -> dict:
         return self.ricIF.getTestOutput()
 
-    def _systemVersionGtEq(self, compareToVersion):
-        if self.ricSystemInfo is None:
-            return False
-        versInfo = self.ricSystemInfo.get("SystemVersion","0.0.0")
-        return version.parse(versInfo) >= version.parse(compareToVersion)
+    def _subscribeToPubMessages(self, forceResubscribe: bool):
+        timeForSubscr = self.lastRICSerialMsgTime is None or time.time() > self.lastRICSerialMsgTime + self.maxTimeBetweenPubs
+        resubscrReqd = self.lastSubscrReqMsgTime is None or time.time() > self.lastSubscrReqMsgTime + self.minTimeBetweenSubReqs
+        if self._initComplete and self.subscribeRateHz != 0 and (forceResubscribe or (timeForSubscr and resubscrReqd)):
+            # Subscribe for publication messages
+            logger.debug(f"Subscribe to published messages")
+            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
+                            '"pubRecs":[' + \
+                                '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
+                                '{"name":"PowerStatus","rateHz":1.0},' + \
+                                '{' + f'"name":"AddOnStatus","rateHz":{self.subscribeRateHz}' + '}' + \
+                            ']}')
+            self.lastSubscrReqMsgTime = time.time()
+
+    def _onReconnect(self):
+        self._subscribeToPubMessages(True)
