@@ -18,7 +18,7 @@ class RICCommsWiFi(RICCommsBase):
     RICCommsWiFi
     Provides an interface for RIC communications
     '''
-    def __init__(self) -> None:
+    def __init__(self, onReconnect: Callable[[],None]) -> None:
         '''
         Initialise RICCommsWiFi
         '''
@@ -29,6 +29,7 @@ class RICCommsWiFi(RICCommsBase):
         self.webSocketThreadEnabled = False
         self._hdlc = LikeHDLC(self._onHDLCFrame, self._onHDLCError)
         self.socketErrors = 0
+        self._onReconnect = onReconnect
 
     def __del__(self) -> None:
         '''
@@ -188,6 +189,8 @@ class RICCommsWiFi(RICCommsBase):
     def _onWSReconnect(self) -> None:
         # logger.debug(f"CommsWiFi WS reconnect")
         self._hdlc.clear()
+        if self._onReconnect:
+            self._onReconnect()
 
     def getTestOutput(self) -> dict:
         return {}

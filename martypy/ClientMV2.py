@@ -49,8 +49,10 @@ class ClientMV2(ClientGeneric):
 
         # Initialise vars
         self.subscribeRateHz = subscribeRateHz
-        self.lastSubscribedMsgTime = None
+        self.lastRICSerialMsgTime = None
+        self.lastSubscrReqMsgTime = None
         self.maxTimeBetweenPubs = 10
+        self.minTimeBetweenSubReqs = 10
         self.max_blocking_wait_time = 120  # seconds
         self.ricHardware = RICHWElems()
         self.isClosing = False
@@ -85,7 +87,7 @@ class ClientMV2(ClientGeneric):
                     "wsPath": wsPath,
                     "ifType": "plain"
                 }
-                self.ricIF = RICInterface(RICCommsWiFi())
+                self.ricIF = RICInterface(RICCommsWiFi(self._onReconnect))
         else:
             rifConfig = {
                 "ipAddrOrHostname": locator,
@@ -410,7 +412,7 @@ class ClientMV2(ClientGeneric):
     def is_conn_ready(self) -> bool:
         if not self.ricIF.isOpen():
             return False
-        return self._initComplete and (self.lastSubscribedMsgTime is not None)
+        return self._initComplete and (self.lastRICSerialMsgTime is not None)
 
     def _is_valid_disco_addon(self, add_on: str) -> bool:
         disco_type_codes = {"00000087","00000088","00000089"}
@@ -524,7 +526,7 @@ class ClientMV2(ClientGeneric):
     def _rxDecodedMsg(self, decodedMsg: DecodedMsg, interface: RICInterface):
         if decodedMsg.protocolID == RICProtocols.PROTOCOL_ROSSERIAL:
             # logger.debug(f"ROSSERIAL message received {len(decodedMsg.payload)}")
-            self.lastSubscribedMsgTime = time.time()
+            self.lastRICSerialMsgTime = time.time()
             if decodedMsg.payload:
                 RICROSSerial.decode(decodedMsg.payload, 0, self.ricHardware.updateWithROSSerialMsg)
         elif decodedMsg.protocolID == RICProtocols.PROTOCOL_RICREST:
@@ -541,17 +543,7 @@ class ClientMV2(ClientGeneric):
     def _msgTimerCallback(self) -> None:
         if self.isClosing:
             return
-        if (self._initComplete and self.subscribeRateHz != 0) and \
-                 (self.lastSubscribedMsgTime is None or \
-                    time.time() > self.lastSubscribedMsgTime + self.maxTimeBetweenPubs):
-            # Subscribe for publication messages
-            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
-                            '"pubRecs":[' + \
-                                '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
-                                '{"name":"PowerStatus","rateHz":1.0},' + \
-                                '{' + f'"name":"AddOnStatus","rateHz":{self.subscribeRateHz}' + '}' + \
-                            ']}')
-            self.lastSubscribedMsgTime = time.time()
+        self._subscribeToPubMessages(False)
 
     def _updateHwElemsInfo(self):
         hwElemsInfo = self.ricIF.cmdRICRESTURLSync("hwstatus")
@@ -564,3 +556,20 @@ class ClientMV2(ClientGeneric):
 
     def get_test_output(self) -> dict:
         return self.ricIF.getTestOutput()
+
+    def _subscribeToPubMessages(self, forceResubscribe: bool):
+        timeForSubscr = self.lastRICSerialMsgTime is None or time.time() > self.lastRICSerialMsgTime + self.maxTimeBetweenPubs
+        resubscrReqd = self.lastSubscrReqMsgTime is None or time.time() > self.lastSubscrReqMsgTime + self.minTimeBetweenSubReqs
+        if self._initComplete and self.subscribeRateHz != 0 and (forceResubscribe or (timeForSubscr and resubscrReqd)):
+            # Subscribe for publication messages
+            logger.debug(f"Subscribe to published messages")
+            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
+                            '"pubRecs":[' + \
+                                '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
+                                '{"name":"PowerStatus","rateHz":1.0},' + \
+                                '{' + f'"name":"AddOnStatus","rateHz":{self.subscribeRateHz}' + '}' + \
+                            ']}')
+            self.lastSubscrReqMsgTime = time.time()
+
+    def _onReconnect(self):
+        self._subscribeToPubMessages(True)
