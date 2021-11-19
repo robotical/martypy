@@ -4,6 +4,15 @@ This uses the blocking: False option so martypy queues up the
 movements and sounds and then goes on to show the posiiotn of
 marty as it moves
 '''
+
+# If you are running this with martypy "pip installed", you can 
+# just comment out the following 4 lines
+import sys
+import pathlib
+cur_path = pathlib.Path(__file__).parent.resolve()
+sys.path.append(str(cur_path.parent.resolve()))
+
+# Import Marty from the martypy library and the time library
 from martypy import Marty
 import time
 
