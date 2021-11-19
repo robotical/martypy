@@ -1,9 +1,13 @@
 import pytest
 import time
+import sys
+import pathlib
+cur_path = pathlib.Path(__file__).parent.resolve()
+sys.path.append(str(cur_path.parent.parent.resolve()))
 from martypy import Marty
 
 def test_close() -> None:
-    marty = Marty("test", "")
+    marty = Marty("test", "", blocking=True)
     time.sleep(6)
     marty.close()
     testOutput = marty.get_test_output()

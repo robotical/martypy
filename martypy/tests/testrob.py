@@ -3,6 +3,9 @@ import logging
 import os
 import sys
 import json
+import pathlib
+cur_path = pathlib.Path(__file__).parent.resolve()
+sys.path.append(str(cur_path.parent.parent.resolve()))
 from martypy import Marty
 
 jointNames = [
@@ -48,7 +51,7 @@ mymarty = None
 try:
     # mymarty = Marty('wifi', '192.168.86.11')
     # mymarty = Marty('wifi', '192.168.86.11', subscribeRateHz=0)
-    mymarty = Marty('socket://192.168.86.41')
+    mymarty = Marty('wifi://192.168.86.18', blocking=True)
     # mymarty = Marty("usb", "COM9", debug=True)
     # mymarty = Marty('usb:///dev/tty.SLAB_USBtoUART', debug=True)
 except Exception as excp:
