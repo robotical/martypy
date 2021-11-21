@@ -59,6 +59,7 @@ class ClientMV2(ClientGeneric):
         self.ricHwElemsList = []
         self.loggingCallback = None
         self._initComplete = False
+        self.maxWaitForConnReadySecs = 10
 
         # Check if we are given a RICInterface
         if ricInterface is None:
@@ -110,6 +111,15 @@ class ClientMV2(ClientGeneric):
         self.ricSystemInfo = self.ricIF.cmdRICRESTURLSync("v")
         self._updateHwElemsInfo()
         self._initComplete = True
+        # Wait for connection to be ready
+        waitStartTime = time.time()
+        while not self.is_conn_ready():
+            time.sleep(0.1)
+            if time.time() - waitStartTime > self.maxWaitForConnReadySecs:
+                raise MartyConnectException("Connection to Marty not ready")
+        # A flag is set on the first subscribed message - wait a little longer
+        # to ensure that one of each subscribed message type has been received
+        time.sleep(0.5)
 
     def close(self):
         if self.isClosing:
@@ -329,9 +339,17 @@ class ClientMV2(ClientGeneric):
         sensor_whoamicodes = {'0000008c', '00000086', '00000085', '00000091'}
         sensor_data = {'left': [], 'right': []}  
         sensor_possible_names = {'left': ['LeftColorSensor', 'LeftIRFoot'], 'right': ['RightIRFoot', 'RightColorSensor']}
-        addon_names = sensor_possible_names.get(add_on_or_side, [add_on_or_side])
-        for attached_add_on in self.get_add_ons_status().values():
-            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] in sensor_whoamicodes:
+        addon_names = sensor_possible_names.get(add_on_or_side, [])
+        # There may be a situation just after connecting to RIC where publication messages from the addon have not yet
+        # been received so we need to wait for them to be received before we can parse them
+        for retryLoop in range(10):
+            addon_values = self.get_add_ons_status().values()
+            if len(addon_values) != 0:
+                break
+            time.sleep(0.1)
+        # Get the add-on values
+        for attached_add_on in addon_values:
+            if type(attached_add_on) == dict and attached_add_on.get('whoAmITypeCode','') in sensor_whoamicodes:
                 obstacle_and_ground_data, side = self._index_data_color_ir(attached_add_on)
                 if attached_add_on['name'] in addon_names:
                     return obstacle_and_ground_data
@@ -340,26 +358,34 @@ class ClientMV2(ClientGeneric):
         if len(sensor_data[add_on_or_side.lower()]) == 1:       
             return sensor_data[add_on_or_side.lower()][0]
         elif add_on_or_side.lower() == 'left' or add_on_or_side.lower() == 'right':
-            MartyCommandException(f"Marty could not find a {add_on_or_side} sensor. Please make sure your add ons are plugged in and named correctly")
+            raise MartyCommandException(f"Marty could not find a {add_on_or_side} sensor. Please make sure your add ons are plugged in and named correctly")
         else:
-            MartyCommandException(f"The add on '{add_on_or_side}' is not a valid add on for obstacle and ground sensing."
+            raise MartyCommandException(f"The add on '{add_on_or_side}' is not a valid add on for obstacle and ground sensing."
                                  "Please make sure to pass in the name of an IR sensor or Color sensor.")
             
     def foot_on_ground(self, add_on_or_side: str) -> bool:
-        data = self._get_obstacle_and_ground_raw_data(add_on_or_side)[0]
-        return (data & 0b10) == 0b00
+        raw_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)
+        if len(raw_data) > 0:
+            return (raw_data[0] & 0b10) == 0b00
+        return False
 
     def foot_obstacle_sensed(self, add_on_or_side: str) -> bool:
-        data = self._get_obstacle_and_ground_raw_data(add_on_or_side)[0]
-        return (data & 0b1) == 0b1
+        raw_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)
+        if len(raw_data) > 0:
+            return (raw_data[0] & 0b1) == 0b1
+        return False
 
     def get_obstacle_sensor_reading(self, add_on_or_side: str) -> int:
-        obstacle_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)[1]
-        return obstacle_data
+        raw_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)
+        if len(raw_data) > 1:
+            return raw_data[1]
+        return 0
 
     def get_ground_sensor_reading(self, add_on_or_side: str) -> int:
-        ground_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)[2]
-        return ground_data
+        raw_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)
+        if len(raw_data) > 2:
+            return raw_data[2]
+        return 0
 
     def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float:
         if axis is None:
