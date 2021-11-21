@@ -23,7 +23,11 @@ for i in range(100):
     try:
         onGroundL = mm.foot_on_ground('left')
         onGroundR = mm.foot_on_ground('right')
-        print(f"onGroundL = {onGroundL}, onGroundR = {onGroundR}")
+        obstacleL = mm.foot_obstacle_sensed('left')
+        obstacleR = mm.foot_obstacle_sensed('right')
+        obstSensorL = mm.get_obstacle_sensor_reading('left')
+        groundSensorL = mm.get_ground_sensor_reading('left')
+        print(f"onGroundL = {onGroundL} onGroundR = {onGroundR} obstacleL {obstacleL} obstacleR {obstacleR} obstSensorL {obstSensorL} groundSensorL {groundSensorL}")
     except Exception as e:
         print(f"Failed to get addon values")        
     time.sleep(.2)
