@@ -101,3 +101,16 @@ class RICCommsBase:
     def getTestOutput(self) -> dict:
         return {}
         
+    @abstractmethod
+    def getMsgRespTimeoutSecs(self, defaultValue):
+        '''
+        Get the timeout for a message response
+        '''
+        return defaultValue
+
+    @abstractmethod
+    def hintMsgTimeout(self, numTimedOut):
+        '''
+        Hint that messages are timing out from upper layers
+        '''
+        pass

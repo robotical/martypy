@@ -17,6 +17,7 @@ class HDLCStats:
     HDLCStats - statistics on HDLC-like communication
     '''
     crcErrors = 0
+    framesRxOk = 0
 
 class HDLCState(Enum):
     STATE_READ = 1
@@ -195,7 +196,7 @@ class LikeHDLC:
     def clear(self) -> None:
         
         '''
-        Get statistics on HDLC conversion
+        Clear the frame buffer
         Args:
             none
         Returns:
@@ -250,6 +251,7 @@ class LikeHDLC:
                     self.onFrame(rxFrame.toString())
                 else:
                     self.onFrame(rxFrame.data)
+                self.stats.framesRxOk += 1
             elif rxFrame.finished:
                 # Error
                 self.stats.crcErrors += 1
