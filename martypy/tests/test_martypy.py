@@ -3,7 +3,7 @@ import time
 import sys
 import pathlib
 cur_path = pathlib.Path(__file__).parent.resolve()
-sys.path.append(str(cur_path.parent.parent.resolve()))
+sys.path.insert(0, str(cur_path.parent.parent.resolve()))
 from martypy import Marty
 
 def test_close() -> None:
