@@ -1,3 +1,6 @@
+Version 3.3.1 :
+- Improved connection setup process (preparation for higher USB speeds)
+
 Version 3.3.0 :
 - New functions for controlling the disco add-on lights
 - New distance sensor function for Marty V2 that returns the distance in mm
