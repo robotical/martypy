@@ -194,7 +194,6 @@ class LikeHDLC:
                         else Frame.ESCAPE_CODE_NON_ASCII
 
     def clear(self) -> None:
-        
         '''
         Clear the frame buffer
         Args:
@@ -258,7 +257,6 @@ class LikeHDLC:
                 self.onError()
 
     def getStats(self) -> HDLCStats:
-        
         '''
         Get statistics on HDLC conversion
 
@@ -300,7 +298,6 @@ class LikeHDLC:
 
     @classmethod
     def calcCRC(cls, data: bytes) -> bytes:
-        
         '''
         Calculate CRC-CCITT 16Bit check code
         https://en.wikipedia.org/wiki/High-Level_Data_Link_Control
@@ -311,7 +308,7 @@ class LikeHDLC:
         Returns:
             bytes representing the checksum (2 bytes big-endian)
         '''
-        
+
         crc = 0xffff
         for c in data:
             crc = ((crc<<8)&0xff00) ^ Frame.CRC16_LUT[((crc>>8)&0xff)^c]
