@@ -1,4 +1,4 @@
-import sys    
+import sys
 import logging
 
 import pathlib
@@ -11,9 +11,6 @@ import time
 # Setup logging
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(funcName)s(%(lineno)d) -- %(message)s', level=logging.DEBUG)
 logger = logging.getLogger("testBaudRateSelection")
-handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(logging.DEBUG)
-logger.addHandler(handler)
 
 mm = Marty("usb")
 # try:
@@ -25,7 +22,10 @@ mm = Marty("usb")
 # mm.eyes(100)
 # mm.eyes(0)
 
+logger.info(f"RIC version info 1: {mm.get_system_info()}")
 mm.circle_dance()
+logger.info(f"RIC version info 2: {mm.get_system_info()}")
 time.sleep(5)
+logger.info(f"RIC version info 3: {mm.get_system_info()}")
 
 mm.close()
