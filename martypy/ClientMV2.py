@@ -61,6 +61,7 @@ class ClientMV2(ClientGeneric):
         self.publishedMsgCallback = None
         self.reportMsgCallback = None
         self._initComplete = False
+        self._numHwStatusRetries = 10
 
         # Check if we are given a RICInterface
         if ricInterface is None:
@@ -68,7 +69,7 @@ class ClientMV2(ClientGeneric):
             if method == "usb" or method == "exp":
                 ifType = "overascii" if method == "usb" else "plain"
                 if serialBaud is None:
-                    serialBaud = 115200 if method == "usb" else 921600
+                    serialBaud = 2000000 if method == "usb" else 921600
                 rifConfig = {
                     "serialPort": locator,
                     "serialBaud": serialBaud,
@@ -96,12 +97,9 @@ class ClientMV2(ClientGeneric):
             self.ricIF = ricInterface
 
         # Open comms
-        try:
-            openOk = self.ricIF.open(rifConfig)
-            if not openOk:
-                raise MartyConnectException("Failed to open connection")
-        except Exception as excp:
-            raise MartyConnectException(str(excp))
+        openOk = self.ricIF.open(rifConfig)
+        if not openOk:
+            raise MartyConnectException("Failed to open connection")
 
         # Callbacks
         self.ricIF.setDecodedMsgCB(self._rxDecodedMsg)
@@ -109,7 +107,7 @@ class ClientMV2(ClientGeneric):
         self.ricIF.setLogLineCB(self._logDebugMsg)
 
     def start(self):
-        self.ricSystemInfo = self.ricIF.cmdRICRESTURLSync("v")
+        self._getRICVersion()
         self._updateHwElemsInfo()
         self._initComplete = True
 
@@ -600,6 +598,16 @@ class ClientMV2(ClientGeneric):
                     time.time() > self.lastSubscribedMsgTime + self.maxTimeBetweenPubs):
             # Subscribe for publication messages
             self._subscribeToPubMessages()
+
+    def _getRICVersion(self) -> bool:
+        # Retries here to allow for baud-rate changes, etc
+        for retries in range(self._numHwStatusRetries):
+            # logger.debug(f"_getRICVersion attempt {retries+1}")
+            self.ricSystemInfo = self.ricIF.cmdRICRESTURLSync("v")
+            if self.ricSystemInfo.get("rslt", "") == "ok":
+                break
+        logger.debug(f"_getRICVersion rslt {self.ricSystemInfo.get('rslt', '')}")
+        return self.ricSystemInfo.get("rslt", "") == "ok"
 
     def _updateHwElemsInfo(self):
         hwElemsInfo = self.ricIF.cmdRICRESTURLSync("hwstatus")

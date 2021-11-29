@@ -74,6 +74,9 @@ class RICInterface:
         self.commsHandler.setRxLogLineCB(self._onLogLineCB)
         openOk = self.commsHandler.open(openParams)
 
+        # Set default timeout based on interface
+        self.msgRespTimeoutSecs = self.commsHandler.getMsgRespTimeoutSecs(self.msgRespTimeoutSecs)
+
         # Start timer to check message completion
         self.msgTimeoutCheckTimer = threading.Timer(1.0, self._msgTimeoutCheck)
         self.msgTimeoutCheckTimer.daemon = True
@@ -154,6 +157,7 @@ class RICInterface:
         # logger.debug(f"msgNum {msgNum} msg {msg}")
         msgSendTime = time.time()
         timeOutSecs = timeOutSecs if timeOutSecs is not None else self.msgRespTimeoutSecs
+        # logger.debug(f"cmdRICRESTURLSync msgNum {msgNum} timeout {timeOutSecs} msg {msg}")
         with self._msgsOutstandingLock:
             self._msgsOutstanding[msgNum] = {"timeSent": msgSendTime, "timeOutSecs": timeOutSecs, "awaited":True}
         self.commsHandler.send(ricRestMsg)
@@ -163,6 +167,7 @@ class RICInterface:
             with self._msgsOutstandingLock:
                 # Should be an outstanding message - if not there's a problem
                 if msgNum not in self._msgsOutstanding:
+                    logger.debug(f"sendRICRESTURLSync msgNum {msgNum} not in _msgsOutstanding")
                     return {"rslt":"failResponse"}
                 # Check if response received
                 if self._msgsOutstanding[msgNum].get("respValid", False):
@@ -178,6 +183,8 @@ class RICInterface:
                     except Exception as excp:
                         logger.warn(f"sendRICRESTURLSync msgNum {msgNum} response is not JSON {excp}")
             time.sleep(0.01)
+        # Debug - if we get here we timed out
+        logger.debug(f"sendRICRESTURLSync msgNum {msgNum} failTimeout")
         return {"rslt":"failTimeout"}
 
     def cmdRICRESTRslt(self, msg: str, timeOutSecs: Optional[float] = None) -> bool:
@@ -636,6 +643,10 @@ class RICInterface:
                     if not msgItem[1].get("respValid", False):
                         msgIdxsTimedOut.append(msgItem[0])
                     msgIdxsToRemove.append(msgItem[0])
+
+        # Hint to comms layer if messages are failing
+        if len(msgIdxsTimedOut) > 0:
+            self.commsHandler.hintMsgTimeout(len(msgIdxsTimedOut))
 
         # Debug
         for msgIdx in msgIdxsTimedOut:
