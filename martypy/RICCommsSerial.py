@@ -15,7 +15,6 @@ from .LikeHDLC import LikeHDLC
 from .ProtocolOverAscii import ProtocolOverAscii
 from .Exceptions import MartyConnectException
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +36,12 @@ class RICCommsSerial(RICCommsBase):
         self.overAscii = False
         self.serialLogLine = ""
         self.serialPortErrors = 0
+        self.baudRateAlternates = [2000000, 115200]
+        self.curBaudRate = 0
+        self.baudRateCheckedOk = False
+        self.msgRespTimeoutSecs = 1.5
+        self.numMsgsTimedOutSinceRateChange = 0
+        self.numMsgsTimedOutBeforeRateChange = 1
 
     def __del__(self) -> None:
         '''
@@ -86,13 +91,13 @@ class RICCommsSerial(RICCommsBase):
         self.commsParams.conn = openParams
         self.commsParams.fileTransfer = {"fileBlockMax": 5000, "fileXferSync": False}
         serialPort = openParams.get("serialPort", "")
-        serialBaud = openParams.get("serialBaud", 115200)
+        serialBaud = openParams.get("serialBaud", 2000000)
         self.overAscii = openParams.get("ifType", "plain") != "plain"
         if self.overAscii:
             self.protocolOverAscii = ProtocolOverAscii()
         hdlcAsciiEscapes = openParams.get("asciiEscapes", False)
 
-        # Open serial port
+        # Detect serial port with correct chip code
         rics = self.detect_rics()
         if not serialPort:
             if len(rics) == 0:
@@ -103,7 +108,11 @@ class RICCommsSerial(RICCommsBase):
                 warn(f"Multiple Martys detected ({rics}). Connecting to {rics[0]}.",
                      stacklevel=0)
             serialPort = rics[0]
+
+        # Try to open serial port
         try:
+            self.baudRateCheckedOk = False
+            self.curBaudRate = serialBaud
             self.serialDevice = serial.Serial(port=None, baudrate=serialBaud)
             self.serialDevice.port = serialPort
             self.serialDevice.rts = 0
@@ -160,7 +169,7 @@ class RICCommsSerial(RICCommsBase):
             if self.overAscii:
                 encodedFrame = ProtocolOverAscii.encode(hdlcEncoded)
                 self._sendBytesToIF(encodedFrame)
-                # logger.debug(f"send {''.join('{:02x}'.format(x) for x in encodedFrame)}")
+                # logger.debug(f"send {encodedFrame.hex()}")
             else:
                 self._sendBytesToIF(hdlcEncoded)
         except Exception as excp:
@@ -192,7 +201,7 @@ class RICCommsSerial(RICCommsBase):
                             self.serialLogLine += chr(b)
                 else:
                     self._hdlc.decodeData(b)
-            # logger.debug(f"CommsSerial rx {''.join('{:02x}'.format(x) for x in byt)}")
+            # logger.debug(f"CommsSerial rx {byt.hex()}")
         # logger.debug("Exiting serialRxLoop")
 
     def _onHDLCFrame(self, frame: bytes) -> None:
@@ -218,3 +227,36 @@ class RICCommsSerial(RICCommsBase):
 
     def getTestOutput(self) -> dict:
         return {}
+
+    def getMsgRespTimeoutSecs(self, defaultValue):
+        '''
+        Get the timeout for a message response
+        '''
+        return self.msgRespTimeoutSecs
+
+    def hintMsgTimeout(self, numTimedOut):
+        '''
+        Hint that messages are timing out from upper layers
+        '''
+        # Check if we've already found the right baud rate
+        if not self.baudRateCheckedOk:
+            # Count failed messages since last rate change
+            self.numMsgsTimedOutSinceRateChange += numTimedOut
+            if self.numMsgsTimedOutSinceRateChange >= self.numMsgsTimedOutBeforeRateChange:
+                # Enough messages timed out since last rate change, so try next rate
+                self._skipToNextBaudRate()
+                self.numMsgsTimedOutSinceRateChange = 0
+                # Back off the next rate change by a factor of 2
+                self.numMsgsTimedOutBeforeRateChange *= 2
+
+    def _skipToNextBaudRate(self):
+        '''
+        Skip to the next baud rate in the list
+        '''
+        if self.curBaudRate in self.baudRateAlternates:
+            curBaudIdx = self.baudRateAlternates.index(self.curBaudRate)
+            self.curBaudRate = self.baudRateAlternates[(curBaudIdx + 1) % len(self.baudRateAlternates)]
+        else:
+            self.curBaudRate = self.baudRateAlternates[0]
+        self.serialDevice.baudrate = self.curBaudRate
+        logger.debug(f"_skipToNextBaudRate comms failing - changing baud-rate to {self.curBaudRate}")
