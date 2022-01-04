@@ -81,7 +81,7 @@ class WebSocket():
         try:
             rxData = self.sock.recv(self.maxSocketBytes)
         except Exception as excp:
-            logger.debug(f"WebSocket exception {excp}")
+            logger.debug("WebSocket exception on recv:", exc_info=True)
             if not self.autoReconnect:
                 raise excp
             reconnectRequired = True
@@ -95,7 +95,7 @@ class WebSocket():
                     self.open()
                     logger.debug("WebSocket reopened automatically")
                 except Exception as excp:
-                    logger.debug("WebSocket exception trying to reopen websocket", exc_info=True)
+                    logger.debug("WebSocket exception trying to reopen websocket:", exc_info=True)
                 self.reconnectLastTime = time.time()
             else:
                 time.sleep(0.01)
