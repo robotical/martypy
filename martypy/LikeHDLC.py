@@ -11,6 +11,7 @@ from enum import Enum
 from typing import Callable, Union
 
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 class HDLCStats:
     '''
@@ -136,7 +137,7 @@ class Frame(object):
         '''
         res = bool(self.crc == LikeHDLC.calcCRC(self.data))
         if not res:
-            logger.warning(f"invalid crc {self.crc} != {LikeHDLC.calcCRC(self.data)}")
+            logger.debug(f"invalid crc {self.crc} != {LikeHDLC.calcCRC(self.data)}")
             self.error = True
         return res
         
