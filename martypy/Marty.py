@@ -1139,7 +1139,8 @@ class Marty(object):
 
     def register_logging_callback(self, loggingCallback: Callable[[str], None]) -> None:
         '''
-        Register a callback function to be called on every log message from RIC.
+        Register a callback function to be called on every log message from RIC. :two:
+
         Log messages are used mainly for debugging and error reporting.
         Args:
             messageCallback: a callback function (with one string argument - the log message)
@@ -1151,7 +1152,8 @@ class Marty(object):
 
     def register_publish_callback(self, messageCallback: Callable[[int],None]) -> None:
         '''
-        Register a callback function to be called on every message published by RIC.
+        Register a callback function to be called on every message published by RIC. :two:
+
         RIC publishes information like the accelerometer and joint positions constantly.
         If registered, the callback is called after the message is fully decoded, so a common
         use-case is to check the topic (the int passed to the callback) to see if the information
@@ -1169,7 +1171,8 @@ class Marty(object):
 
     def register_report_callback(self, messageCallback: Callable[[str],None]) -> None:
         '''
-        Register a callback function to be called on every report message recieved from RIC.
+        Register a callback function to be called on every report message recieved from RIC. :two:
+
         Report messages are used for alert conditions such as Falling, Over Current, etc.
         The report message (passed in the callback function str) is a JSON string.
         The elements of the JSON string include:
@@ -1190,7 +1193,8 @@ class Marty(object):
 
     def get_interface_stats(self) -> Dict:
         '''
-        Get interface statistics from Marty.
+        Get interface statistics from Marty. :two:
+
         This is mainly useful for debugging and troubleshooting of martypy itself.
         Returns:
             A dictionary of interface statistics including:
@@ -1213,6 +1217,6 @@ class Marty(object):
     def get_test_output(self) -> str:
         '''
         This is only used for self-testing of martypy when the test interface is chosen instead of
-        wifi, serial, etc
+        wifi, serial, etc :two:
         '''
         return self.client.get_test_output()
