@@ -1,4 +1,4 @@
-# If you are running this with martypy "pip installed", you can 
+# If you are running this with martypy "pip installed", you can
 # just comment out the following 4 lines
 import sys
 import pathlib
@@ -7,7 +7,7 @@ sys.path.append(str(cur_path.parent.resolve()))
 
 # Import Marty from the martypy library and other libraries
 from martypy import Marty
-import sys    
+import sys
 import logging
 import time
 
@@ -18,10 +18,18 @@ logger = logging.getLogger(__name__)
 # Callback function for when a publish message is received
 # Example is new servo positions, accelerometer data, etc.
 def publishCallback(topic):
-    logger.debug(f"publishCallback {topic}") 
+    topic_name = (
+        "SERVOS" if topic == Marty.PUBLISH_TOPIC_SERVOS else
+        "ACCELEROMETER" if topic == Marty.PUBLISH_TOPIC_ACCELEROMETER else
+        "POWER" if topic == Marty.PUBLISH_TOPIC_POWER else
+        "ADDONS" if topic == Marty.PUBLISH_TOPIC_ADDONS else
+        "ROBOT_STATUS" if topic == Marty.PUBLISH_TOPIC_ROBOT_STATUS else
+        "UNKNOWN_TOPIC"
+    )
+    logger.debug(f"publishCallback {topic} ({topic_name})")
 
 # Callback function for when a report message is received
-# Example is free-fall or over-current detected 
+# Example is free-fall or over-current detected
 def reportCallback(report_info):
     logger.debug(f"reportCallback {report_info}")
 
@@ -30,7 +38,7 @@ def reportCallback(report_info):
 # via the callbacks.
 # We also set the subscribe rate to 1Hz (normally its 10Hz) to reduce the
 # number of callbacks we get with published information
-my_marty = Marty("wifi://192.168.86.18", blocking=True, subscribeRateHz=1)
+my_marty = Marty("wifi", "192.168.0.42", blocking=True, subscribeRateHz=1)
 
 # Register callbacks
 my_marty.register_publish_callback(publishCallback)
