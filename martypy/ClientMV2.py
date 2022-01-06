@@ -576,7 +576,10 @@ class ClientMV2(ClientGeneric):
             # logger.debug(f"RIC REST message received {decodedMsg.payload}")
             # Callback for REPORT messages
             if (self.reportMsgCallback is not None) and (decodedMsg.msgTypeCode == RICProtocols.MSG_TYPE_REPORT):
-                self.reportMsgCallback(decodedMsg.payload)
+                try:
+                    self.reportMsgCallback(decodedMsg.payload)
+                except:
+                    logger.exception("Report callback failed:")
         else:
             logger.debug(f"RIC UNKNOWN message received {decodedMsg.payload}")
             pass
@@ -586,11 +589,17 @@ class ClientMV2(ClientGeneric):
         self.ricHardware.updateWithROSSerialMsg(topicID, payload)
         # Callback on published messages
         if self.publishedMsgCallback is not None:
-            self.publishedMsgCallback(topicID)
+            try:
+                self.publishedMsgCallback(topicID)
+            except:
+                logger.exception("Publish callback failed:")
 
     def _logDebugMsg(self, logMsg: str) -> None:
         if self.loggingCallback:
-            self.loggingCallback(logMsg)
+            try:
+                self.loggingCallback(logMsg)
+            except:
+                logger.exception("Logging callback failed:")
 
     def _msgTimerCallback(self) -> None:
         if self.isClosing:
