@@ -3,6 +3,7 @@ import os
 import time
 import re
 from typing import Callable, Dict, List, Optional, Union, Tuple
+from packaging import version
 
 from .ClientGeneric import ClientGeneric
 from .RICCommsSerial import RICCommsSerial
@@ -49,8 +50,10 @@ class ClientMV2(ClientGeneric):
 
         # Initialise vars
         self.subscribeRateHz = subscribeRateHz
-        self.lastSubscribedMsgTime = None
+        self.lastRICSerialMsgTime = None
+        self.lastSubscrReqMsgTime = None
         self.maxTimeBetweenPubs = 10
+        self.minTimeBetweenSubReqs = 10
         self.max_blocking_wait_time = 120  # seconds
         self.ricHardware = RICHWElems()
         self.isClosing = False
@@ -58,8 +61,13 @@ class ClientMV2(ClientGeneric):
         self.ricHwElemsInfoByIDNo = {}
         self.ricHwElemsList = []
         self.loggingCallback = None
+        self.publishedMsgCallback = None
+        self.reportMsgCallback = None
         self._initComplete = False
         self.maxWaitForConnReadySecs = 10
+        self._minSysVersForSubscribeAPI = "1.0.0"
+        self._interfaceMethod = method
+        self._numHwStatusRetries = 10
 
         # Check if we are given a RICInterface
         if ricInterface is None:
@@ -67,7 +75,7 @@ class ClientMV2(ClientGeneric):
             if method == "usb" or method == "exp":
                 ifType = "overascii" if method == "usb" else "plain"
                 if serialBaud is None:
-                    serialBaud = 115200 if method == "usb" else 921600
+                    serialBaud = 2000000 if method == "usb" else 921600
                 rifConfig = {
                     "serialPort": locator,
                     "serialBaud": serialBaud,
@@ -86,7 +94,7 @@ class ClientMV2(ClientGeneric):
                     "wsPath": wsPath,
                     "ifType": "plain"
                 }
-                self.ricIF = RICInterface(RICCommsWiFi())
+                self.ricIF = RICInterface(RICCommsWiFi(self._onReconnect))
         else:
             rifConfig = {
                 "ipAddrOrHostname": locator,
@@ -95,12 +103,9 @@ class ClientMV2(ClientGeneric):
             self.ricIF = ricInterface
 
         # Open comms
-        try:
-            openOk = self.ricIF.open(rifConfig)
-            if not openOk:
-                raise MartyConnectException("Failed to open connection")
-        except Exception as excp:
-            raise MartyConnectException(str(excp))
+        openOk = self.ricIF.open(rifConfig)
+        if not openOk:
+            raise MartyConnectException("Failed to open connection")
 
         # Callbacks
         self.ricIF.setDecodedMsgCB(self._rxDecodedMsg)
@@ -108,7 +113,7 @@ class ClientMV2(ClientGeneric):
         self.ricIF.setLogLineCB(self._logDebugMsg)
 
     def start(self):
-        self.ricSystemInfo = self.ricIF.cmdRICRESTURLSync("v")
+        self._getRICVersion()
         self._updateHwElemsInfo()
         self._initComplete = True
         # Wait for connection to be ready
@@ -126,19 +131,14 @@ class ClientMV2(ClientGeneric):
             return
         self.isClosing = True
         # Stop any publishing messages
-        self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
-                '"pubRecs":[' + \
-                    '{"name":"MultiStatus","rateHz":0},' + \
-                    '{"name":"PowerStatus","rateHz":0},' + \
-                    '{"name":"AddOnStatus","rateHz":0}' + \
-                ']}')
-        # Allow message to be sent
-        time.sleep(0.5)
+        self._unsubscribeFromPubMessages()
         # Close the RIC interface
         self.ricIF.close()
 
     def wait_if_required(self, expected_wait_ms: int, blocking_override: Union[bool, None]):
         if not self.is_blocking(blocking_override):
+            return
+        if self.subscribeRateHz <= 0:
             return
 
         deadline = time.time() + expected_wait_ms/1000 + self.max_blocking_wait_time
@@ -502,7 +502,7 @@ class ClientMV2(ClientGeneric):
     def is_conn_ready(self) -> bool:
         if not self.ricIF.isOpen():
             return False
-        return self._initComplete and (self.lastSubscribedMsgTime is not None)
+        return self._initComplete and (self.lastRICSerialMsgTime is not None)
 
     def _is_valid_disco_addon(self, add_on: str) -> bool:
         disco_type_codes = {"00000087","00000088","00000089"}
@@ -600,7 +600,52 @@ class ClientMV2(ClientGeneric):
         return result
 
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
+        '''
+        Register a callback function to be called on every log message from RIC.
+        Log messages are used mainly for debugging and error reporting.
+        Args:
+            messageCallback: a callback function (with one string argument - the log message)
+        Returns:
+            None
+        '''
         self.loggingCallback = loggingCallback
+
+    def register_publish_callback(self, messageCallback: Callable[[int],None]) -> None:
+        '''
+        Register a callback function to be called on every message published by RIC.
+        RIC publishes information like the accelerometer and joint positions constantly.
+        If registered, the callback is called after the message is fully decoded, so a common
+        use-case is to check the topic (the int passed to the callback) to see if the information
+        is of interest (for example topic == Marty.PUBLISH_TOPIC_ACCELEROMETER if new accelerometer
+        data is available). Then get the changed information using the regular get_accelerometer method
+        (or get_joints, etc for other data).
+        Args:
+            messageCallback: a callback function (with one argument - the topic code of the published
+                    message) that will be called on every message published by RIC.
+        Returns:
+            None
+        '''
+        self.publishedMsgCallback = messageCallback
+
+    def register_report_callback(self, messageCallback: Callable[[str],None]) -> None:
+        '''
+        Register a callback function to be called on every report message recieved from RIC.
+        Report messages are used for alert conditions such as Falling, Over Current, etc.
+        The report message (passed in the callback function str) is a JSON string.
+        The elements of the JSON string include:
+            msgType: the type of report message (this will be "warn" for all alerts)
+            msgBody: the message text (this is "freeFallDet" or "overCurrentDet")
+            IDNo: the IDNo of the element that generated the report (the codes for these
+                are in the Marty.HW_ELEM_IDS dictionary but additional ones may appear if
+                add-ons create warnings - the IDNos of add-ons are not fixed numbers but you
+                can see the IDNo of add-ons by using the get_add_ons_status() method)
+        Args:
+            messageCallback: a callback function (with one string argument)
+                    that will be called on every message published by RIC.
+        Returns:
+            None
+        '''
+        self.reportMsgCallback = messageCallback
 
     def get_interface_stats(self) -> Dict:
         ricIFStats = self.ricIF.getStats()
@@ -616,34 +661,52 @@ class ClientMV2(ClientGeneric):
     def _rxDecodedMsg(self, decodedMsg: DecodedMsg, interface: RICInterface):
         if decodedMsg.protocolID == RICProtocols.PROTOCOL_ROSSERIAL:
             # logger.debug(f"ROSSERIAL message received {len(decodedMsg.payload)}")
-            self.lastSubscribedMsgTime = time.time()
+            self.lastRICSerialMsgTime = time.time()
             if decodedMsg.payload:
-                RICROSSerial.decode(decodedMsg.payload, 0, self.ricHardware.updateWithROSSerialMsg)
+                RICROSSerial.decode(decodedMsg.payload, 0, self._rxPublishedMsg)
         elif decodedMsg.protocolID == RICProtocols.PROTOCOL_RICREST:
             # logger.debug(f"RIC REST message received {decodedMsg.payload}")
-            pass
+            # Callback for REPORT messages
+            if (self.reportMsgCallback is not None) and (decodedMsg.msgTypeCode == RICProtocols.MSG_TYPE_REPORT):
+                try:
+                    self.reportMsgCallback(decodedMsg.payload)
+                except:
+                    logger.exception("Report callback failed:")
         else:
-            # logger.debug(f"RIC OTHER message received {decodedMsg.payload}")
+            logger.debug(f"RIC UNKNOWN message received {decodedMsg.payload}")
             pass
+
+    def _rxPublishedMsg(self, topicID: int, payload: bytes):
+        # Decode the message
+        self.ricHardware.updateWithROSSerialMsg(topicID, payload)
+        # Callback on published messages
+        if self.publishedMsgCallback is not None:
+            try:
+                self.publishedMsgCallback(topicID)
+            except:
+                logger.exception("Publish callback failed:")
 
     def _logDebugMsg(self, logMsg: str) -> None:
         if self.loggingCallback:
-            self.loggingCallback(logMsg)
+            try:
+                self.loggingCallback(logMsg)
+            except:
+                logger.exception("Logging callback failed:")
 
     def _msgTimerCallback(self) -> None:
         if self.isClosing:
             return
-        if (self._initComplete and self.subscribeRateHz != 0) and \
-                 (self.lastSubscribedMsgTime is None or \
-                    time.time() > self.lastSubscribedMsgTime + self.maxTimeBetweenPubs):
-            # Subscribe for publication messages
-            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
-                            '"pubRecs":[' + \
-                                '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
-                                '{"name":"PowerStatus","rateHz":1.0},' + \
-                                '{' + f'"name":"AddOnStatus","rateHz":{self.subscribeRateHz}' + '}' + \
-                            ']}')
-            self.lastSubscribedMsgTime = time.time()
+        self._subscribeToPubMessages(False)
+
+    def _getRICVersion(self) -> bool:
+        # Retries here to allow for baud-rate changes, etc
+        for retries in range(self._numHwStatusRetries):
+            # logger.debug(f"_getRICVersion attempt {retries+1}")
+            self.ricSystemInfo = self.ricIF.cmdRICRESTURLSync("v")
+            if self.ricSystemInfo.get("rslt", "") == "ok":
+                break
+        logger.debug(f"_getRICVersion rslt {self.ricSystemInfo.get('rslt', '')}")
+        return self.ricSystemInfo.get("rslt", "") == "ok"
 
     def _updateHwElemsInfo(self):
         hwElemsInfo = self.ricIF.cmdRICRESTURLSync("hwstatus")
@@ -656,3 +719,39 @@ class ClientMV2(ClientGeneric):
 
     def get_test_output(self) -> dict:
         return self.ricIF.getTestOutput()
+
+    def _systemVersionGtEq(self, compareToVersion):
+        if self.ricSystemInfo is None:
+            return False
+        versInfo = self.ricSystemInfo.get("SystemVersion","0.0.0")
+        return version.parse(versInfo) >= version.parse(compareToVersion)
+
+    def _subscribeToPubMessages(self, forceResubscribe: bool):
+        versOk = self._systemVersionGtEq(self._minSysVersForSubscribeAPI)
+        timeForSubscr = self.lastRICSerialMsgTime is None or time.time() > self.lastRICSerialMsgTime + self.maxTimeBetweenPubs
+        resubscrReqd = self.lastSubscrReqMsgTime is None or time.time() > self.lastSubscrReqMsgTime + self.minTimeBetweenSubReqs
+        if versOk and self._initComplete and self.subscribeRateHz != 0 and (forceResubscribe or (timeForSubscr and resubscrReqd)):
+            # Subscribe for publication messages
+            logger.debug(f"Subscribe to published messages")
+            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
+                            '"pubRecs":[' + \
+                                '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
+                                '{"name":"PowerStatus","rateHz":1.0},' + \
+                                '{' + f'"name":"AddOnStatus","rateHz":{self.subscribeRateHz}' + '}' + \
+                            ']}')
+            self.lastSubscrReqMsgTime = time.time()
+
+    def _unsubscribeFromPubMessages(self):
+        if self._systemVersionGtEq(self._minSysVersForSubscribeAPI):
+            # Send unsubscribe request
+            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
+                '"pubRecs":[' + \
+                    '{"name":"MultiStatus","rateHz":0},' + \
+                    '{"name":"PowerStatus","rateHz":0},' + \
+                    '{"name":"AddOnStatus","rateHz":0}' + \
+                ']}')
+            # Allow message to be sent
+            time.sleep(0.5)
+
+    def _onReconnect(self):
+        self._subscribeToPubMessages(True)

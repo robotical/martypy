@@ -11,12 +11,14 @@ from enum import Enum
 from typing import Callable, Union
 
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 class HDLCStats:
     '''
     HDLCStats - statistics on HDLC-like communication
     '''
     crcErrors = 0
+    framesRxOk = 0
 
 class HDLCState(Enum):
     STATE_READ = 1
@@ -135,7 +137,7 @@ class Frame(object):
         '''
         res = bool(self.crc == LikeHDLC.calcCRC(self.data))
         if not res:
-            logger.warning(f"invalid crc {self.crc} != {LikeHDLC.calcCRC(self.data)}")
+            logger.debug(f"invalid crc {self.crc} != {LikeHDLC.calcCRC(self.data)}")
             self.error = True
         return res
         
@@ -193,9 +195,8 @@ class LikeHDLC:
                         else Frame.ESCAPE_CODE_NON_ASCII
 
     def clear(self) -> None:
-        
         '''
-        Get statistics on HDLC conversion
+        Clear the frame buffer
         Args:
             none
         Returns:
@@ -250,13 +251,13 @@ class LikeHDLC:
                     self.onFrame(rxFrame.toString())
                 else:
                     self.onFrame(rxFrame.data)
+                self.stats.framesRxOk += 1
             elif rxFrame.finished:
                 # Error
                 self.stats.crcErrors += 1
                 self.onError()
 
     def getStats(self) -> HDLCStats:
-        
         '''
         Get statistics on HDLC conversion
 
@@ -298,7 +299,6 @@ class LikeHDLC:
 
     @classmethod
     def calcCRC(cls, data: bytes) -> bytes:
-        
         '''
         Calculate CRC-CCITT 16Bit check code
         https://en.wikipedia.org/wiki/High-Level_Data_Link_Control
@@ -309,7 +309,7 @@ class LikeHDLC:
         Returns:
             bytes representing the checksum (2 bytes big-endian)
         '''
-        
+
         crc = 0xffff
         for c in data:
             crc = ((crc<<8)&0xff00) ^ Frame.CRC16_LUT[((crc>>8)&0xff)^c]

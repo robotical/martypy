@@ -184,7 +184,7 @@ class RICHWElems:
         self._robotStatus = RICHwRobotStatus()
         self._publishMonitor = RICHwPublishMonitor()
 
-    def updateWithROSSerialMsg(self, topicID: int, payload: bytes):
+    def updateWithROSSerialMsg(self, topicID: int, payload: bytes) -> None:
         # logger.debug(f"Received ROSSerial topicID {topicID}")
         if topicID == RICROSSerial.ROSTOPIC_V2_SMART_SERVOS:
             self._smartServos.update(payload)

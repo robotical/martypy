@@ -361,6 +361,14 @@ class ClientGeneric(ABC):
         pass
 
     @abstractmethod
+    def register_publish_callback(self, messageCallback: Callable[[int],None]) -> None:
+        pass
+
+    @abstractmethod
+    def register_report_callback(self, messageCallback: Callable[[str],None]) -> None:
+        pass
+
+    @abstractmethod
     def get_interface_stats(self) -> Dict:
         return {}
 
