@@ -2,12 +2,7 @@
 A program to demonstrate Marty and Python
 '''
 
-# If you are running this with martypy "pip installed", you can 
-# just comment out the following 4 lines
-import sys
-import pathlib
-cur_path = pathlib.Path(__file__).parent.resolve()
-sys.path.append(str(cur_path.parent.resolve()))
+# See README.md for instructions on how to run this
 
 # Import Marty from the martypy library
 from martypy import Marty
