@@ -119,9 +119,9 @@ class ClientMV2(ClientGeneric):
         # Wait for connection to be ready
         waitStartTime = time.time()
         while not self.is_conn_ready():
-            time.sleep(0.1)
             if time.time() - waitStartTime > self.maxWaitForConnReadySecs:
                 raise MartyConnectException("Connection to Marty not ready")
+            time.sleep(0.1)
         # A flag is set on the first subscribed message - wait a little longer
         # to ensure that one of each subscribed message type has been received
         time.sleep(0.5)
