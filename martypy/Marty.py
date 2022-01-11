@@ -22,6 +22,7 @@ from .ClientMV2 import ClientMV2
 from .ClientMV1 import ClientMV1
 from .Exceptions import (MartyCommandException,
                          MartyConfigException)
+from .RICROSSerial import RICROSSerial
 
 class Marty(object):
 
@@ -51,7 +52,7 @@ class Marty(object):
         'right knee'     : 5,
         'left arm'       : 6,
         'right arm'      : 7,
-        'eyes'          : 8        
+        'eyes'           : 8        
     }
 
     JOINT_STATUS = {
@@ -80,9 +81,28 @@ class Marty(object):
         "PowerCtrl"
         ]
 
+    HW_ELEM_IDS = {
+        'LeftHip'        : 0,
+        'LeftTwist'      : 1,
+        'LeftKnee'       : 2,
+        'RightHip'       : 3,
+        'RightTwist'     : 4,
+        'RightKnee'      : 5,
+        'LeftArm'        : 6,
+        'RightArm'       : 7,
+        'Eyes'           : 8,
+        'IMU0'           : 19,
+    }
+
     ADD_ON_TYPE_NAMES = [
         "IRFoot"
     ]
+
+    PUBLISH_TOPIC_SERVOS = RICROSSerial.ROSTOPIC_V2_SMART_SERVOS
+    PUBLISH_TOPIC_ACCELEROMETER = RICROSSerial.ROSTOPIC_V2_ACCEL
+    PUBLISH_TOPIC_POWER = RICROSSerial.ROSTOPIC_V2_POWER_STATUS
+    PUBLISH_TOPIC_ADDONS = RICROSSerial.ROSTOPIC_V2_ADDONS
+    PUBLISH_TOPIC_ROBOT_STATUS = RICROSSerial.ROSTOPIC_V2_ROBOT_STATUS
 
     class Disco(Enum):
         ARMS = {"00000088"}
@@ -1118,11 +1138,85 @@ class Marty(object):
             self.client.close()
 
     def register_logging_callback(self, loggingCallback: Callable[[str], None]) -> None:
+        '''
+        Register a callback function to be called on every log message from RIC. :two:
+
+        Log messages are used mainly for debugging and error reporting.
+        Args:
+            messageCallback: a callback function (with one string argument - the log message)
+        Returns:
+            None
+        '''
         if self.client:
             self.client.register_logging_callback(loggingCallback)
 
+    def register_publish_callback(self, messageCallback: Callable[[int],None]) -> None:
+        '''
+        Register a callback function to be called on every message published by RIC. :two:
+
+        RIC publishes information like the accelerometer and joint positions constantly.
+        If registered, the callback is called after the message is fully decoded, so a common
+        use-case is to check the topic (the int passed to the callback) to see if the information
+        is of interest (for example topic == Marty.PUBLISH_TOPIC_ACCELEROMETER if new accelerometer 
+        data is available). Then get the changed information using the regular get_accelerometer method
+        (or get_joints, etc for other data).
+        Args:
+            messageCallback: a callback function (with one argument - the topic code of the published 
+                    message) that will be called on every message published by RIC.
+        Returns:
+            None
+        '''
+        if self.client:
+            self.client.register_publish_callback(messageCallback)
+
+    def register_report_callback(self, messageCallback: Callable[[str],None]) -> None:
+        '''
+        Register a callback function to be called on every report message recieved from RIC. :two:
+
+        Report messages are used for alert conditions such as Falling, Over Current, etc.
+        The report message (passed in the callback function str) is a JSON string.
+        The elements of the JSON string include:
+            msgType: the type of report message (this will be "warn" for all alerts)
+            msgBody: the message text (this is "freeFallDet" or "overCurrentDet")
+            IDNo: the IDNo of the element that generated the report (the codes for these
+                are in the Marty.HW_ELEM_IDS dictionary but additional ones may appear if
+                add-ons create warnings - the IDNos of add-ons are not fixed numbers but you
+                can see the IDNo of add-ons by using the get_add_ons_status() method)
+        Args:
+            messageCallback: a callback function (with one string argument) 
+                    that will be called on every message published by RIC.
+        Returns:
+            None
+        '''
+        if self.client:
+            self.client.register_report_callback(messageCallback)
+
     def get_interface_stats(self) -> Dict:
+        '''
+        Get interface statistics from Marty. :two:
+
+        This is mainly useful for debugging and troubleshooting of martypy itself.
+        Returns:
+            A dictionary of interface statistics including:
+                roundTripAvgMS: average round trip time for command/response messages in milliseconds
+                msgRxRatePS: max number of messages received per second
+                msgTxRatePS: max number of messages sent per second
+                unmatched: number of unmatched messages
+                matched: number of matched messages
+                unnumbered: number of unnumbered messages
+                timedOut: number of messages that timed out
+                uploadBPS: upload speed in bytes per second (for file uploads, etc)
+                rxCount: number of messages received
+                txCount: number of messages sent
+            The dictionary may also include several records of the form:
+                <topic>PS: number of messages published on each topic where <topic> is the topic name
+                       and can be servos, imu, robot, power or addons
+        '''
         return self.client.get_interface_stats()
 
     def get_test_output(self) -> str:
+        '''
+        This is only used for self-testing of martypy when the test interface is chosen instead of
+        wifi, serial, etc :two:
+        '''
         return self.client.get_test_output()

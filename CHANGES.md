@@ -1,3 +1,7 @@
+Version 3.4.0 :
+- User callbacks on data received from the robot in the background
+- Automatically re-establish the WiFi connection if Marty reboots
+
 Version 3.3.1 :
 - Improved connection setup process (preparation for higher USB speeds)
 

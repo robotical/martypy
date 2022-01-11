@@ -531,9 +531,11 @@ class RICInterface:
         return {"rslt":"failTimeout"}
 
     def _onRxFrameCB(self, frame: bytes) -> None:
-        # logger.debug(f"_onRxFrameCB Rx len {len(frame)} data {frame.hex()}")
         self.msgRxRate.addSample()
         decodedMsg = self.ricProtocols.decodeRICFrame(frame)
+        # logger.debug(f"_onRxFrameCB len {len(frame)} msgNum {decodedMsg.msgNum} type {decodedMsg.msgTypeCode} data {frame.hex()}")
+        # if decodedMsg.protocolID != RICProtocols.PROTOCOL_ROSSERIAL:
+        #     logger.debug(f"_onRxFrameCB {decodedMsg.toString()}")
         doRxCallback = True
         if decodedMsg.msgNum != 0:
             # Numbered message - this is the response to a REST API command
@@ -595,7 +597,7 @@ class RICInterface:
                 try:
                     reptObj = json.loads(decodedMsg.payload.rstrip('\0'))
                 except Exception as excp:
-                    logger.warn(f"_onRxFrameCB REPORT is not JSON {excp}")
+                    logger.warn(f"_onRxFrameCB RESPONSE is not JSON {excp}")
                 if "okto" in reptObj:
                     okto = reptObj.get("okto", -1)
                     if self._fileSendOkTo < okto:

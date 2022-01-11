@@ -839,6 +839,12 @@ class ClientMV1(ClientGeneric):
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
         return
 
+    def register_publish_callback(self, messageCallback: Callable[[int],None]) -> None:
+        return
+
+    def register_report_callback(self, messageCallback: Callable[[str],None]) -> None:
+        return
+        
     def get_interface_stats(self) -> Dict:
         return {}
 
