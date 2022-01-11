@@ -10,12 +10,12 @@ import time
 
 # Setup logging
 logging.basicConfig(format='%(levelname)s: %(asctime)s %(funcName)s(%(lineno)d) -- %(message)s', level=logging.DEBUG)
-logger = logging.getLogger("testBaudRateSelection")
+logger = logging.getLogger("testColourSensor")
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
-mm = Marty("usb", "COM19")
+mm = Marty("usb")
 
 # time.sleep(2)
 
@@ -26,10 +26,17 @@ for i in range(100):
         obstacleL = mm.foot_obstacle_sensed('left')
         obstacleR = mm.foot_obstacle_sensed('right')
         obstSensorL = mm.get_obstacle_sensor_reading('left')
+        obstSensorR = mm.get_obstacle_sensor_reading('right')
         groundSensorL = mm.get_ground_sensor_reading('left')
-        print(f"onGroundL = {onGroundL} onGroundR = {onGroundR} obstacleL {obstacleL} obstacleR {obstacleR} obstSensorL {obstSensorL} groundSensorL {groundSensorL}")
+        groundSensorR = mm.get_ground_sensor_reading('right')
+        print(
+            f"onGroundL={onGroundL!s:<5} onGroundR={onGroundR!s:<5} | "
+            f"obstacleL={obstacleL!s:<5} obstacleR={obstacleR!s:<5} || "
+            f"obstSensorL={obstSensorL:5} obstSensorR={obstSensorR:5} | "
+            f"groundSensorL={groundSensorL:5} groundSensorR={groundSensorR:5}"
+        )
     except Exception as e:
-        print(f"Failed to get addon values")        
+        logger.exception(f"Failed to get addon values")        
     time.sleep(.2)
 
 # try:
@@ -37,7 +44,6 @@ for i in range(100):
 # except Exception as excp:
 #     print(f"Couldn't connect to marty")
 #     exit()
-
 
 
 # time.sleep(5)
