@@ -299,7 +299,7 @@ class ClientMV2(ClientGeneric):
 
     def get_distance_sensor(self) -> int:
         for attached_add_on in self.get_add_ons_status().values():
-            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] == '00000083':
+            if type(attached_add_on) == dict and attached_add_on['whoAmI'] == 'VCNL4200':
                 distance_bytes = attached_add_on['data'][1:3]
                 distance = int.from_bytes(distance_bytes, 'big')
                 return distance
@@ -314,14 +314,12 @@ class ClientMV2(ClientGeneric):
             A tuple with three integers of data (detection byte, obstacle value, ground value) 
             and a string of whether the sensor is a default 'left' or 'right' add on
         '''
-        ir_whoamicodes = {'0000008c', '00000086'}
-        color_sensor_whoamicodes = {'00000085', '00000091'}
-        if attached_add_on['whoAmITypeCode'] in ir_whoamicodes:
+        if attached_add_on['whoAmI'] == 'IRFoot':
             detection_flags = attached_add_on['data'][1]
             obstacle_data_raw = int.from_bytes(attached_add_on['data'][2:4], 'big')
             ground_data_raw = int.from_bytes(attached_add_on['data'][4:6], 'big')
             return (detection_flags, obstacle_data_raw, ground_data_raw), 'right'
-        if attached_add_on['whoAmITypeCode'] in color_sensor_whoamicodes:
+        if attached_add_on['whoAmI'] == 'coloursensor':
             detection_flags = attached_add_on['data'][6]
             obstacle_data_raw = int.from_bytes(attached_add_on['data'][8:10], 'big')
             ground_data_raw = attached_add_on['data'][2]
@@ -336,26 +334,28 @@ class ClientMV2(ClientGeneric):
         Returns: 
             A tuple of the detection byte, obstacle reading, and ground reading of the add on
         '''
-        sensor_whoamicodes = {'0000008c', '00000086', '00000085', '00000091'}
+        sensor_whoamis = {'IRFoot', 'coloursensor'}
         sensor_data = {'left': [], 'right': []}  
         sensor_possible_names = {'left': ['LeftColorSensor', 'LeftIRFoot'], 'right': ['RightIRFoot', 'RightColorSensor']}
         addon_names = sensor_possible_names.get(add_on_or_side, [])
+
         # There may be a situation just after connecting to RIC where publication messages from the addon have not yet
         # been received so we need to wait for them to be received before we can parse them
         for retryLoop in range(10):
-            addon_values = self.get_add_ons_status().values()
-            if len(addon_values) != 0:
+            addon_statuses = self.get_add_ons_status().values()
+            if len(addon_statuses) != 0:
                 break
             time.sleep(0.1)
+
         # Get the add-on values
-        for attached_add_on in addon_values:
-            if type(attached_add_on) == dict and attached_add_on.get('whoAmITypeCode','') in sensor_whoamicodes:
+        for attached_add_on in addon_statuses:
+            if type(attached_add_on) == dict and attached_add_on.get('whoAmI','') in sensor_whoamis:
                 obstacle_and_ground_data, side = self._index_data_color_ir(attached_add_on)
                 if attached_add_on['name'] in addon_names:
                     return obstacle_and_ground_data
                 else:
                     sensor_data[side].append(obstacle_and_ground_data)
-        if len(sensor_data[add_on_or_side.lower()]) == 1:       
+        if len(sensor_data[add_on_or_side.lower()]) == 1:
             return sensor_data[add_on_or_side.lower()][0]
         elif add_on_or_side.lower() == 'left' or add_on_or_side.lower() == 'right':
             raise MartyCommandException(f"Marty could not find a {add_on_or_side} sensor. Please make sure your add ons are plugged in and named correctly")
@@ -505,10 +505,10 @@ class ClientMV2(ClientGeneric):
         return self._initComplete and (self.lastRICSerialMsgTime is not None)
 
     def _is_valid_disco_addon(self, add_on: str) -> bool:
-        disco_type_codes = {"00000087","00000088","00000089"}
+        disco_whoamis = {"LEDfoot", "LEDarm", "LEDeye"}
         for attached_add_on in self.get_add_ons_status().values():
             if type(attached_add_on) == dict and attached_add_on['name'] == add_on:
-                if attached_add_on['whoAmITypeCode'] in disco_type_codes:
+                if attached_add_on['whoAmI'] in disco_whoamis:
                     return True
                 else:
                     raise MartyCommandException(f"The add on name: '{add_on}' is not a valid disco add on. "
@@ -582,7 +582,7 @@ class ClientMV2(ClientGeneric):
             response = self.add_on_query(add_on, command, 0)
             return response.get("rslt", "") == "ok"
 
-    def disco_group_operation(self, disco_operation: Callable, whoami_type_codes: set, operation_kwargs: dict) -> bool:
+    def disco_group_operation(self, disco_operation: Callable, whoamis: set, operation_kwargs: dict) -> bool:
         '''
         Calls disco operations in groups for multiple add ons :two:
         Args:
@@ -594,7 +594,7 @@ class ClientMV2(ClientGeneric):
         '''
         result = True
         for attached_add_on in self.get_add_ons_status().values():
-            if type(attached_add_on) == dict and attached_add_on['whoAmITypeCode'] in whoami_type_codes:
+            if type(attached_add_on) == dict and attached_add_on['whoAmI'] in whoamis:
                 addon_name = attached_add_on['name']
                 result = result and disco_operation(add_on=addon_name, **operation_kwargs)
         return result
