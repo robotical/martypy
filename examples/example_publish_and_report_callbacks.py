@@ -47,5 +47,5 @@ for i in range(5):
     my_marty.walk(1)
 time.sleep(10)
 
-# Close
+# Disconnect from Marty
 my_marty.close()

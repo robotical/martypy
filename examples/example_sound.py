@@ -16,3 +16,6 @@ my_marty = Marty(connection_method, ip_address, blocking=True)
 
 # Ask Marty to play a sound
 my_marty.play_sound("no_way")
+
+# Disconnect from Marty
+my_marty.close()

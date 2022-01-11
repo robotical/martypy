@@ -27,3 +27,6 @@ time.sleep(1)
 while my_marty.is_moving():
     print(f"Marty's left leg is at {my_marty.get_joints()[0]['pos']}")
     time.sleep(0.5)
+
+# Disconnect from Marty
+my_marty.close()

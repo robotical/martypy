@@ -16,3 +16,6 @@ my_marty = Marty(connection_method, ip_address, blocking=True)
 
 # Ask Marty to dance
 my_marty.dance()
+
+# Disconnect from Marty
+my_marty.close()
