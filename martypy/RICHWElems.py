@@ -97,7 +97,7 @@ class RICHwAddOnStatus:
             return {}
         addOnStatus = RICROSSerial.extractAddOnStatus(self.latestMsg)
         addOnStatus["updateTime"] = self.latestMsgTime
-        fieldsToCopy = ["name", "type", "whoAmITypeCode"]
+        fieldsToCopy = ["name", "type", "whoAmI", "whoAmITypeCode"]
         for IDNo in addOnStatus:
             if IDNo in dictOfHwElemsByIdNo:
                 for field in fieldsToCopy:

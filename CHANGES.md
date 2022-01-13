@@ -1,4 +1,5 @@
 Version 3.4.0 :
+- Support for ground and obstacle detection using the IR/Colour foot sensors
 - User callbacks on data received from the robot in the background
 - Automatically re-establish the WiFi connection if Marty reboots
 
