@@ -311,7 +311,7 @@ class ClientMV2(ClientGeneric):
         Args:
             attached_add_on: Name of IR or color sensor add on
         Returns:
-            A tuple with three integers of data (detection byte, obstacle value, ground value) 
+            A tuple with three integers of data (detection byte, obstacle value, ground value)
             and a string of whether the sensor is a default 'left' or 'right' add on
         '''
         if attached_add_on['whoAmI'] == 'IRFoot':
@@ -329,18 +329,22 @@ class ClientMV2(ClientGeneric):
         '''
         Finds the wanted color or IR sensor and gets the parsed obstacle and ground data :two:
         Args:
-            add_on_or_side: Takes in the name of a color sensor, name of an IR sensor, `'left'` for the add on connected to the left foot,
+            add_on_or_side: Takes in the name of a color sensor, name of an IR
+            sensor, `'left'` for the add on connected to the left foot,
             or `'right'` for the add on connected to the right foot
-        Returns: 
+        Returns:
             A tuple of the detection byte, obstacle reading, and ground reading of the add on
         '''
         sensor_whoamis = {'IRFoot', 'coloursensor'}
-        sensor_data = {'left': [], 'right': []}  
-        sensor_possible_names = {'left': ['LeftColorSensor', 'LeftIRFoot'], 'right': ['RightIRFoot', 'RightColorSensor']}
+        sensor_data = {'left': [], 'right': []}
+        sensor_possible_names = {
+            'left': ['LeftColorSensor', 'LeftIRFoot'],
+            'right': ['RightIRFoot', 'RightColorSensor']
+        }
         addon_names = sensor_possible_names.get(add_on_or_side, [])
 
-        # There may be a situation just after connecting to RIC where publication messages from the addon have not yet
-        # been received so we need to wait for them to be received before we can parse them
+        # There may be a situation just after connecting to RIC where publication messages from the addon
+        # have not yet been received so we need to wait for them to be received before we can parse them
         for retryLoop in range(10):
             addon_statuses = self.get_add_ons_status().values()
             if len(addon_statuses) != 0:
@@ -358,11 +362,16 @@ class ClientMV2(ClientGeneric):
         if len(sensor_data[add_on_or_side.lower()]) == 1:
             return sensor_data[add_on_or_side.lower()][0]
         elif add_on_or_side.lower() == 'left' or add_on_or_side.lower() == 'right':
-            raise MartyCommandException(f"Marty could not find a {add_on_or_side} sensor. Please make sure your add ons are plugged in and named correctly")
+            raise MartyCommandException(
+                f"Marty could not find a {add_on_or_side} sensor. "
+                "Please make sure your add ons are plugged in and named correctly"
+            )
         else:
-            raise MartyCommandException(f"The add on '{add_on_or_side}' is not a valid add on for obstacle and ground sensing."
-                                 "Please make sure to pass in the name of an IR sensor or Color sensor.")
-            
+            raise MartyCommandException(
+                f"The add on '{add_on_or_side}' is not a valid add on for obstacle and ground sensing."
+                "Please make sure to pass in the name of an IR sensor or Color sensor."
+            )
+
     def foot_on_ground(self, add_on_or_side: str) -> bool:
         raw_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)
         if len(raw_data) > 0:
