@@ -453,7 +453,7 @@ class RICInterface:
 
             # End frame
             resp = self.sendRICRESTCmdFrameSync('{' + f'"cmdName":"ufEnd","reqStr":"fileupload","fileType":"{fileDest}",' + \
-                            f'"fileName":"{filename}","fileLen":{str(binaryImageLen)},' + \
+                            f'"fileName":"{uploadName}","fileLen":{str(binaryImageLen)},' + \
                             f'"blockCount":{str(numBlocks)}' + '}', 
                             timeOutSecs = 5)
             if resp.get("rslt","") != "ok":
