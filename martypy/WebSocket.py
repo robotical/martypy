@@ -90,9 +90,9 @@ class WebSocket():
             if self.reconnectLastTime is None or time.time() > self.reconnectLastTime + self.reconnectRepeatSecs:
                 self.close()
                 try:
+                    self.open()
                     if self.onReconnect:
                         self.onReconnect()
-                    self.open()
                     logger.debug("WebSocket reopened automatically")
                 except Exception as excp:
                     logger.debug("WebSocket exception trying to reopen websocket:", exc_info=True)

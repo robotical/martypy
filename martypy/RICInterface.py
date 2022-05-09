@@ -462,14 +462,14 @@ class RICInterface:
 
     def getStats(self) -> Dict:
         return {
-            "roundTripAvgMS":self.roundTripInfo.getAvg()*1000,
-            "msgRxRatePS":self.msgRxRate.getAvg(),
-            "msgTxRatePS":self.msgTxRate.getAvg(),
+            "roundTripAvgMS":round(self.roundTripInfo.getAvg()*1000,2),
+            "msgRxRatePS":round(self.msgRxRate.getAvg(),2),
+            "msgTxRatePS":round(self.msgTxRate.getAvg(),2),
             "unmatched":self.statsUnMatched,
             "matched":self.statsMatched,
             "unnumbered":self.statsUnNumbered,
             "timedOut":self.statsTimedOut,
-            "uploadBPS":self.uploadBytesPerSec.getAvg(),
+            "uploadBPS":round(self.uploadBytesPerSec.getAvg(),2),
             "rxCount":self.msgRxRate.getTotal(),
             "txCount":self.msgTxRate.getTotal(),
         }
