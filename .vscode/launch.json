@@ -1,0 +1,44 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Dance Example",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/examples/example_dance.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "WiFi",
+                "192.168.86.41"
+            ],
+        },
+        {
+            "name": "Python: MP3 Example",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/examples/example_play_mp3.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "WiFi",
+                "192.168.86.41"
+            ],
+        },
+        {
+            "name": "Python: Send File Example",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/examples/example_send_file.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "WiFi",
+                "192.168.86.41"
+            ],
+        }        
+    ]
+}

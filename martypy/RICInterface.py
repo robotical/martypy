@@ -55,6 +55,13 @@ class RICInterface:
         self._fileFailedInFirmware = False
         self.BLOCK_ACK_TIMEOUT = 15
         self.BATCH_RETRY_MAX = 3
+        self._fileFailedWrite = False
+        self._streamSendOkTo = 0
+        self._streamClosed = False
+        self._streamSendNewOkTo = False
+        # Streaming
+        from .RICStreamHandler import RICStreamHandler
+        self._ricStreamHandler = RICStreamHandler(self)
 
     def __del__(self) -> None:
         self.commsHandler.close()
@@ -163,29 +170,7 @@ class RICInterface:
         self.commsHandler.send(ricRestMsg)
         self.msgTxRate.addSample()
         # Wait for result
-        while time.time() < msgSendTime + timeOutSecs:
-            with self._msgsOutstandingLock:
-                # Should be an outstanding message - if not there's a problem
-                if msgNum not in self._msgsOutstanding:
-                    logger.debug(f"sendRICRESTURLSync msgNum {msgNum} not in _msgsOutstanding")
-                    return {"rslt":"failResponse"}
-                # Check if response received
-                if self._msgsOutstanding[msgNum].get("respValid", False):
-                    try:
-                        # Get response
-                        respStr = self._msgsOutstanding[msgNum].get("resp", None)
-                        respObj = {}
-                        if respStr:
-                            respObj = json.loads(respStr.payload.rstrip('\0'))
-                        debugMsgRespTime = self._msgsOutstanding[msgNum].get("respTime", 0)
-                        # logger.debug(f"sendRICRESTURLSync msgNum {msgNum} msg {msg} resp {json.dumps(respObj)} sendTime {msgSendTime} respTime {debugMsgRespTime}")
-                        return respObj
-                    except Exception as excp:
-                        logger.warn(f"sendRICRESTURLSync msgNum {msgNum} response is not JSON {excp}")
-            time.sleep(0.01)
-        # Debug - if we get here we timed out
-        logger.debug(f"sendRICRESTURLSync msgNum {msgNum} failTimeout")
-        return {"rslt":"failTimeout"}
+        return self.waitForSyncResult(msgNum, msgSendTime, timeOutSecs)
 
     def cmdRICRESTRslt(self, msg: str, timeOutSecs: Optional[float] = None) -> bool:
         '''
@@ -241,11 +226,14 @@ class RICInterface:
         self.commsHandler.send(ricRestMsg)
         self.msgTxRate.addSample()
         # Wait for result
+        return self.waitForSyncResult(msgNum, msgSendTime, timeOutSecs)
+
+    def waitForSyncResult(self, msgNum: int, msgSendTime: float, timeOutSecs: int):
         while time.time() < msgSendTime + timeOutSecs:
-            logger.debug(f"sendRICRESTCmdFrameSync while loop")
             with self._msgsOutstandingLock:
                 # Should be an outstanding message - if not there's a problem
                 if msgNum not in self._msgsOutstanding:
+                    logger.warn(f"sendRICRESTURLSync msgNum {msgNum} not in _msgsOutstanding")
                     return {"rslt":"failResponse"}
                 # Check if response received
                 if self._msgsOutstanding[msgNum].get("respValid", False):
@@ -255,13 +243,14 @@ class RICInterface:
                         respObj = {}
                         if respStr:
                             respObj = json.loads(respStr.payload.rstrip('\0'))
-                        debugMsgRespTime = self._msgsOutstanding[msgNum].get("respTime", 0)
-                        # logger.debug(f"sendRICRESTCmdFrameSync msgNum {msgNum} msg {msg} resp {json.dumps(respObj)} sendTime {msgSendTime} respTime {debugMsgRespTime}")
+                        # debugMsgRespTime = self._msgsOutstanding[msgNum].get("respTime", 0)
+                        # logger.debug(f"waitForSyncResult msgNum {msgNum} msg {msg} resp {json.dumps(respObj)} sendTime {msgSendTime} respTime {debugMsgRespTime}")
                         return respObj
                     except Exception as excp:
-                        logger.debug(f"msgNum {msgNum} response is not JSON {excp}", )
+                        logger.warn(f"sendRICRESTURLSync msgNum {msgNum} response is not JSON", exc_info=True)
             time.sleep(0.01)
-        logger.debug(f"sendRICRESTCmdFrameSync msgNum {msgNum} msg {msg} sendTime {msgSendTime} timeNow {time.time()} timeout {timeOutSecs}")
+        # Debug - if we get here we timed out
+        logger.warn(f"waitForSyncResult failTimeout msgNum {msgNum} sendTime {msgSendTime} timeNow {time.time()} timeout {timeOutSecs}")
         return {"rslt":"failTimeout"}
 
     def sendRICRESTFileBlock(self, data: bytes) -> bool:
@@ -306,37 +295,38 @@ class RICInterface:
 
     def _sendFileProgressCheckAbort(self, progressCB: Callable[[int, int, 'RICInterface'], bool], 
                     currentPos: int, fileSize: int) -> bool:
-        if self._fileOTAStartFailed or self._fileNotStarted or self._fileUserCancel or self._fileFailedInFirmware:
+        if self._fileOTAStartFailed or self._fileNotStarted or self._fileUserCancel or self._fileFailedInFirmware or self._fileFailedWrite:
             return True
-        if not progressCB:
+        if progressCB is None:
             return False
         if not progressCB(currentPos, fileSize, self):
             self.sendRICRESTCmdFrameSync('{"cmdName":"ufCancel"}')
             return True
         return False
 
-    def sendFile(self, filename: str, fileDest: str, reqStr: str = '', 
-                progressCB: Callable[[int, int, 'RICInterface'], bool] = None) -> bool:
+    def sendFile(self, filename: str, 
+                progressCB: Callable[[int, int, 'RICInterface'], bool] = None,
+                fileDest: str = "fs", reqStr: str = '') -> bool:
         '''
         Send a file (from the file system)
         Args:
             filename: name of file to send
-            fileDest: "fs" to upload to file system, "ricfw" for new RIC firmware
-            reqStr: API request used for transfer, if left blank this is inferred from fileDest, other
-                    values include "fileupload" and "espfwupdate" - see RIC documentation for API
             progressCB: callback used to indicate how file send is progressing, callable takes three params
                     which are bytesSent, totalBytes and the interface to RIC (of type RICInterface) and
                     returns a bool which should be True to continue the file upload or False to abort
+            fileDest: "fs" to upload to file system, "ricfw" for new RIC firmware
+            reqStr: API request used for transfer, if left blank this is inferred from fileDest, other
+                    values include "fileupload" and "espfwupdate" - see RIC documentation for API
         Returns:
             True if operation succeeded
         Throws:
             OSError: operating system exceptions
             May throw other exceptions so include a general exception handler
         '''
-        # Send new firmware in the bin folder using the CommandHandler protocol
+        # Send the file using the file upload
         with open(filename, "rb") as f:
 
-            # Read firmware
+            # Read data
             binaryImage = f.read()
             binaryImageLen = len(binaryImage)
             # logger.debug(f"File {filename} is {binaryImageLen} bytes long")
@@ -350,23 +340,32 @@ class RICInterface:
             self._fileOTAStartedOK = False
             self._fileNotStarted = False
             self._fileUserCancel = False
+            self._fileFailedWrite = False
             self._fileFailedInFirmware = False
 
+            # Block and batch sizes
+            blockMaxSize = self.commsHandler.commsParams.fileTransfer.get("fileBlockMax", 5000)
+            batchAckSize = self.commsHandler.commsParams.fileTransfer.get("fileBatchAck", 1)
+
+            # Debug
+            # logger.warn(f"ricIF sendFile ideal blockMaxSize {blockMaxSize} batchAckSize {batchAckSize}")
+
             # Frames follow the approach used in the web interface start, block..., end
-            resp = self.sendRICRESTCmdFrameSync('{' + f'"cmdName":"ufStart","reqStr":"{reqStr}","fileType":"{fileDest}",' + \
-                            f'"fileName":"{uploadName}","fileLen":{str(binaryImageLen)}' + '}', 
+            sendFileReq = '{' + f'"cmdName":"ufStart","reqStr":"{reqStr}","fileType":"{fileDest}",' + \
+                            f'"batchMsgSize":{blockMaxSize},"batchAckSize":{batchAckSize},' + \
+                            f'"fileName":"{uploadName}","fileLen":{str(binaryImageLen)}' + '}'
+            resp = self.sendRICRESTCmdFrameSync(sendFileReq, 
                             timeOutSecs = 10)
             if resp.get("rslt","") != "ok":
                 raise MartyTransferException("File transfer start not acknowledged")
 
             # Block and batch sizes
-            blockMaxSize = self.commsHandler.commsParams.fileTransfer.get("fileBlockMax", 5000)
             blockMaxSize = resp.get("batchMsgSize", blockMaxSize)
             batchAckSize = resp.get("batchAckSize", 50)
             self._fileSendOkTo = 0
 
             # Debug
-            # logger.debug(f"ricIF sendFile blockMaxSize {blockMaxSize} batchAckSize {batchAckSize} resp {resp}")
+            # logger.warn(f"ricIF sendFile negotiated blockMaxSize {blockMaxSize} batchAckSize {batchAckSize} resp {resp}")
 
             # Progress and check for abort
             if self._sendFileProgressCheckAbort(progressCB, self._fileSendOkTo, binaryImageLen):
@@ -409,11 +408,11 @@ class RICInterface:
                     batchBlockIdx += 1
 
                     # Check if we have received an error
-                    if self._fileNotStarted or self._fileUserCancel or self._fileFailedInFirmware:
+                    if self._fileNotStarted or self._fileUserCancel or self._fileFailedInFirmware or self._fileFailedWrite:
                         break
 
                 # Debug
-                # logger.debug(f"ricIF sendFile sent batch - start at {batchStartPos} end at {sendFromPos} okto {self._fileSendOkTo}")
+                # logger.warn(f"ricIF sendFile sent batch - start at {batchStartPos} end at {sendFromPos} okto {self._fileSendOkTo}")
 
                 # Wait for response (there is a timeout at the ESP end to ensure a response is always returned
                 # even if blocks are dropped on reception at ESP) - the timeout here is for these responses
@@ -425,7 +424,7 @@ class RICInterface:
                         return False
 
                     # Debug
-                    # logger.debug(f"ricIF sendFile checking for OKTO {self._fileSendOkTo} batchStartPos {batchStartPos}")
+                    # logger.warn(f"ricIF sendFile checking for OKTO {self._fileSendOkTo} batchStartPos {batchStartPos}")
 
                     # Check for okto
                     if self._fileSendNewOkTo:
@@ -449,16 +448,33 @@ class RICInterface:
                 numBlocks += 1
 
             # Debug
-            # logger.debug(f"ricIF sendFile sending END")
+            # logger.warn(f"ricIF sendFile sending END")
 
             # End frame
             resp = self.sendRICRESTCmdFrameSync('{' + f'"cmdName":"ufEnd","reqStr":"fileupload","fileType":"{fileDest}",' + \
-                            f'"fileName":"{filename}","fileLen":{str(binaryImageLen)},' + \
+                            f'"fileName":"{uploadName}","fileLen":{str(binaryImageLen)},' + \
                             f'"blockCount":{str(numBlocks)}' + '}', 
                             timeOutSecs = 5)
             if resp.get("rslt","") != "ok":
                 return False
             return True
+
+    def streamSoundFile(self, fileName: str, targetEndpoint: str,
+                progressCB: Callable[[int, int, 'RICInterface'], bool] = None) -> bool:
+        '''
+        Stream sound from the file system
+        Args:
+            fileName: The file to stream
+            progressCB: callback used to indicate how stream is progressing, callable takes three params
+                    which are bytesSent, totalBytes and the interface to RIC (of type RICInterface) and
+                    returns a bool which should be True to continue the stream or False to abort
+        Returns:
+            True if operation succeeded
+        Throws:
+            OSError: operating system exceptions
+            May throw other exceptions so include a general exception handler
+        '''
+        return self._ricStreamHandler.streamSoundFile(fileName, targetEndpoint, progressCB)
 
     def getStats(self) -> Dict:
         return {
@@ -604,6 +620,12 @@ class RICInterface:
                         self._fileSendOkTo = okto
                     self._fileSendNewOkTo = True
                     # logger.debug(f"OKTO MESSAGE {reptObj['okto']}")
+                if "sokto" in reptObj:
+                    sokto = reptObj.get("sokto", -1)
+                    if self._streamSendOkTo < sokto:
+                        self._streamSendOkTo = sokto
+                    self._streamSendNewOkTo = True
+                    # logger.debug(f"SOKTO MESSAGE {reptObj['sokto']}")
                 elif "cmdName" in reptObj:
                     cmdName = reptObj.get("cmdName","")
                     if cmdName == "ufBlock" or cmdName == "ufStatus" or cmdName == "ufCancel":
@@ -618,7 +640,13 @@ class RICInterface:
                             self._fileUserCancel = True
                         elif reason == "failRetries" or reason == "failTimeout":
                             self._fileFailedInFirmware = True
+                        elif reason == 'failFileWrite':
+                            self._fileFailedWrite = True
                     logger.warn(f"_onRxFrameCB {cmdName} reason {reason}")
+                elif "rslt" in reptObj:
+                    if reptObj["rslt"].startswith("fail"):
+                        logger.warn(f"_onRxFrameCB {reptObj['rslt']}")
+                        self._streamClosed = True
                 else:
                     logger.warn(f"_onRxFrameCB response not OkTo or fileUpload ... {decodedMsg.payload}")
 
@@ -629,7 +657,7 @@ class RICInterface:
 
     def _onLogLineCB(self, line: str) -> None:
         if self.logLineCB:
-            self.logLineCB(line)
+            self.logLineCB(line.rstrip())
 
     def _msgTimeoutCheck(self) -> None:
         # Check messages outstanding
@@ -690,3 +718,13 @@ class RICInterface:
 
     def getTestOutput(self) -> dict:
         return self.commsHandler.getTestOutput()
+
+    def _streamStart(self):
+        self._streamSendOkTo = 0
+        self._streamSendNewOkTo = False
+        self._streamClosed = False
+
+    def _streamGetLatest(self):
+        isNew = self._streamSendNewOkTo
+        self._streamSendNewOkTo = False
+        return isNew, self._streamSendOkTo, self._streamClosed

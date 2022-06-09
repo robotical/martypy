@@ -1,3 +1,6 @@
+Version 3.5.0 :
+- Add streaming sound support
+
 Version 3.4.0 :
 - Support for ground and obstacle detection using the IR/Colour foot sensors
 - User callbacks on data received from the robot in the background

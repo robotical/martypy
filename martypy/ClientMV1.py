@@ -217,6 +217,12 @@ class ClientMV1(ClientGeneric):
                                    dur_lsb, dur_msb,
                                    self._pack_int8(step_length))
 
+    def set_volume(self, volume: int) -> bool:
+        return MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def get_volume(self) -> int:
+        return MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
     def play_sound(self, freq_start: Union[float, str],
             freq_end: float,
             duration: int) -> bool:
@@ -865,3 +871,18 @@ class ClientMV1(ClientGeneric):
 
     def get_test_output(self) -> dict:
         return ""
+
+    def send_file(self, filename: str,
+                progress_callback: Callable[[int, int], bool] = None,
+                file_dest:str = "fs") -> bool:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def play_mp3(self, filename: str,
+                progress_callback: Callable[[int, int], bool] = None) -> bool:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+        
+    def get_file_list(self) -> List[str]:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+
+    def delete_file(self, filename: str) -> bool:
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)

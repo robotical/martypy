@@ -1,18 +1,21 @@
 '''
-A program to play a sound on Marty
+A program to play one of the sounds built into Marty
 '''
 
 # See README.md for instructions on how to run this
+
+# Arguments
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('connMethod', type=str, help='Connection method (wifi or usb)')
+parser.add_argument('locator', type=str, help = 'IP Address for Wifi or Serial Port for USB', nargs='?')
+args = parser.parse_args()
 
 # Import Marty from the martypy library
 from martypy import Marty
 
 # Connect to a Marty and# use the variable my_marty to refer to that Marty
-# This assumes you are connecting via WiFi - check the documentation for other options
-# You will need to set the ip_address variable with the IP address of your Marty
-connection_method = "wifi"
-ip_address = "192.168.86.18"
-my_marty = Marty(connection_method, ip_address, blocking=True)
+my_marty = Marty(args.connMethod, args.locator, blocking=True)
 
 # Ask Marty to play a sound
 my_marty.play_sound("no_way")

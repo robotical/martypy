@@ -68,6 +68,8 @@ class ClientMV2(ClientGeneric):
         self._minSysVersForSubscribeAPI = "1.0.0"
         self._interfaceMethod = method
         self._numHwStatusRetries = 10
+        self._sendFileProgressCB = None
+        self._playMP3ProgressCB = None
 
         # Check if we are given a RICInterface
         if ricInterface is None:
@@ -75,7 +77,7 @@ class ClientMV2(ClientGeneric):
             if method == "usb" or method == "exp":
                 ifType = "overascii" if method == "usb" else "plain"
                 if serialBaud is None:
-                    serialBaud = 2000000 if method == "usb" else 921600
+                    serialBaud = 115200 if method == "usb" else 921600
                 rifConfig = {
                     "serialPort": locator,
                     "serialBaud": serialBaud,
@@ -130,7 +132,7 @@ class ClientMV2(ClientGeneric):
         if self.isClosing:
             return
         self.isClosing = True
-        # Stop any publishing messages
+        # Send unsubscribe request
         self._unsubscribeFromPubMessages()
         # Close the RIC interface
         self.ricIF.close()
@@ -268,11 +270,22 @@ class ClientMV2(ClientGeneric):
         return self.ricIF.cmdRICRESTRslt(f"traj/sidestep/{steps}?side={ClientGeneric.SIDE_CODES[side]}"
                                          f"&stepLength={step_length}&moveTime={move_time}")
 
+    def set_volume(self, volume: int) -> bool:
+        return self.ricIF.cmdRICRESTRslt(f"audio/vol/{volume}")
+
+    def get_volume(self) -> int:
+        result = self.ricIF.cmdRICRESTURLSync("audio/vol")
+        if result.get("rslt", "") == "ok":
+            return result.get("volPC", 0)
+        return 0
+
     def play_sound(self, name_or_freq_start: Union[str,float],
             freq_end: Optional[float] = None,
             duration: Optional[int] = None) -> bool:
+        if name_or_freq_start.lower().endswith(".mp3"):
+            return self.ricIF.play_mp3(name_or_freq_start)
         if not name_or_freq_start.lower().endswith(".raw"):
-                name_or_freq_start += ".raw"
+            name_or_freq_start += ".raw"
         return self.ricIF.cmdRICRESTRslt(f"filerun/{name_or_freq_start}")
 
     def pinmode_gpio(self, gpio: int, mode: str) -> bool:
@@ -751,16 +764,48 @@ class ClientMV2(ClientGeneric):
             self.lastSubscrReqMsgTime = time.time()
 
     def _unsubscribeFromPubMessages(self):
-        if self._systemVersionGtEq(self._minSysVersForSubscribeAPI):
-            # Send unsubscribe request
-            self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
-                '"pubRecs":[' + \
-                    '{"name":"MultiStatus","rateHz":0},' + \
-                    '{"name":"PowerStatus","rateHz":0},' + \
-                    '{"name":"AddOnStatus","rateHz":0}' + \
-                ']}')
-            # Allow message to be sent
-            time.sleep(0.5)
+        # Send unsubscribe request
+        self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
+            '"pubRecs":[' + \
+                '{"name":"MultiStatus","rateHz":0},' + \
+                '{"name":"PowerStatus","rateHz":0},' + \
+                '{"name":"AddOnStatus","rateHz":0}' + \
+            ']}')
+        # Allow message to be sent
+        time.sleep(0.5)
 
     def _onReconnect(self):
         self._subscribeToPubMessages(True)
+
+    def _sendFileProgressAdapter(self, fileSize: int, bytesSent: int,
+                progress_callback: Callable[[int, int, 'RICInterface'], bool] = None):
+        if self._sendFileProgressCB:
+            return self._sendFileProgressCB(fileSize, bytesSent)
+        return True
+
+    def send_file(self, filename: str,  
+                progress_callback: Callable[[int, int], bool] = None,
+                file_dest:str = "fs") -> bool:
+        self._sendFileProgressCB = progress_callback
+        return self.ricIF.sendFile(filename, self._sendFileProgressAdapter, file_dest)
+
+    def _playMP3ProgressAdapter(self, fileSize: int, bytesSent: int,
+                progress_callback: Callable[[int, int, 'RICInterface'], bool] = None):
+        if self._playMP3ProgressCB:
+            return self._playMP3ProgressCB(fileSize, bytesSent)
+        return True
+
+    def play_mp3(self, filename: str, 
+                progress_callback: Callable[[int, int], bool] = None) -> bool:
+        self._playMP3ProgressCB = progress_callback
+        return self.ricIF.streamSoundFile(filename, "streamaudio", self._playMP3ProgressAdapter)
+
+    def get_file_list(self) -> List[str]:
+        result = self.ricIF.cmdRICRESTURLSync("filelist")
+        if result.get("rslt", "") == "ok":
+            return result.get("files", [])
+        return []
+
+    def delete_file(self, filename: str) -> bool:
+        result = self.ricIF.cmdRICRESTURLSync(f"filedelete/local/{filename}")
+        return result.get("rslt", "") == "ok"

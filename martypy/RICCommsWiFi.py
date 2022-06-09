@@ -69,7 +69,7 @@ class RICCommsWiFi(RICCommsBase):
 
         # Get params
         self.commsParams.conn = openParams
-        self.commsParams.fileTransfer = {"fileBlockMax": 5000, "fileXferSync": False}
+        self.commsParams.fileTransfer = {"fileBlockMax": 5000, "fileXferSync": False, "fileBatchAck": 10}
         ipAddrOrHostname = openParams.get("ipAddrOrHostname", "")
         ipPort = openParams.get("ipPort", 80)
         wsPath = openParams.get("wsPath", "/ws")

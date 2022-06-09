@@ -141,7 +141,7 @@ class WebSocket():
             return 0
         frame = WebSocketFrame.encode(self.wsFrameCodec.getPongData(),
                     False, WebSocketFrame.OPCODE_PONG, True)
-        # logger.debug(f"WebSocket pong {''.join('{:02x}'.format(x) for x in self.wsFrameCodec.getPongData())}")
+        # logger.debug(f"WebSocket pong {frame.hex()}")
         return self.sock.send(frame)
 
     def _clear(self) -> None:

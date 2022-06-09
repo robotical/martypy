@@ -36,7 +36,7 @@ class RICCommsSerial(RICCommsBase):
         self.overAscii = False
         self.serialLogLine = ""
         self.serialPortErrors = 0
-        self.baudRateAlternates = [2000000, 115200]
+        self.baudRateAlternates = [115200, 2000000]
         self.curBaudRate = 0
         self.baudRateCheckedOk = False
         self.msgRespTimeoutSecs = 1.5
@@ -89,9 +89,9 @@ class RICCommsSerial(RICCommsBase):
 
         # Get params
         self.commsParams.conn = openParams
-        self.commsParams.fileTransfer = {"fileBlockMax": 5000, "fileXferSync": False}
+        self.commsParams.fileTransfer = {"fileBlockMax": 5000, "fileXferSync": False, "fileBatchAck": 1}
         serialPort = openParams.get("serialPort", "")
-        serialBaud = openParams.get("serialBaud", 2000000)
+        serialBaud = openParams.get("serialBaud", 115200)
         self.overAscii = openParams.get("ifType", "plain") != "plain"
         if self.overAscii:
             self.protocolOverAscii = ProtocolOverAscii()
@@ -169,9 +169,10 @@ class RICCommsSerial(RICCommsBase):
             if self.overAscii:
                 encodedFrame = ProtocolOverAscii.encode(hdlcEncoded)
                 self._sendBytesToIF(encodedFrame)
-                # logger.debug(f"send {encodedFrame.hex()}")
+                # logger.warn(f"RICCommsSerial send {encodedFrame.hex()}")
             else:
                 self._sendBytesToIF(hdlcEncoded)
+                # logger.debug(f"RICCommsSerial sendRaw {encodedFrame.hex()}")
         except Exception as excp:
             raise MartyConnectException("Serial send problem") from excp
 

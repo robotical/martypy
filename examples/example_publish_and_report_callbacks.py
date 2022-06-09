@@ -2,12 +2,14 @@
 
 # Import Marty from the martypy library and other libraries
 from martypy import Marty
-import logging
 import time
 
-# Setup Logging
-# logging.basicConfig(level=logging.DEBUG)
-# logger = logging.getLogger(__name__)
+# Arguments
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('connMethod', type=str, help='Connection method (wifi or usb)')
+parser.add_argument('locator', type=str, help = 'IP Address for Wifi or Serial Port for USB', nargs='?')
+args = parser.parse_args()
 
 # Callback function for when a publish message is received
 # Example is new servo positions, accelerometer data, etc.
@@ -32,7 +34,8 @@ def report_callback(report_info):
 # via the callbacks.
 # We also set the subscribe rate to 1Hz (normally its 10Hz) to reduce the
 # number of callbacks we get with published information
-my_marty = Marty("wifi", "192.168.0.42", blocking=True, subscribeRateHz=1)
+# Connect to a Marty and use the variable my_marty to refer to that Marty
+my_marty = Marty(args.connMethod, args.locator, blocking=True, subscribeRateHz=1)
 
 # Register callbacks
 my_marty.register_publish_callback(publish_callback)
