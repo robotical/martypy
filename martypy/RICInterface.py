@@ -431,8 +431,10 @@ class RICInterface:
                         batchRetryCount = 0
                         # Update stats
                         if self._fileSendOkTo > batchStartPos:
-                            batchBytesPerSec = (self._fileSendOkTo - batchStartPos) / (time.time() - batchStartTime)
-                            self.uploadBytesPerSec.add(batchBytesPerSec)
+                            elapsedTime = time.time() - batchStartTime
+                            if elapsedTime > 0:
+                                batchBytesPerSec = (self._fileSendOkTo - batchStartPos) / elapsedTime
+                                self.uploadBytesPerSec.add(batchBytesPerSec)
                         break
 
                     # Wait
@@ -619,7 +621,7 @@ class RICInterface:
                     if self._fileSendOkTo < okto:
                         self._fileSendOkTo = okto
                     self._fileSendNewOkTo = True
-                    # logger.debug(f"OKTO MESSAGE {reptObj['okto']}")
+                    # logger.warn(f"OKTO MESSAGE {reptObj['okto']}")
                 if "sokto" in reptObj:
                     sokto = reptObj.get("sokto", -1)
                     if self._streamSendOkTo < sokto:
