@@ -70,6 +70,13 @@ class ClientMV2(ClientGeneric):
         self._numHwStatusRetries = 10
         self._sendFileProgressCB = None
         self._playMP3ProgressCB = None
+        # Debug
+        self.DEBUG_RECEIVE_PUBLISHED_MSG = False
+        self.DEBUG_RECEIVE_RICREST_MSGS = False
+        self.DEBUG_GET_RIC_VERSION = False
+        self.DEBUG_GET_HW_ELEMS_INFO = False
+        self.DEBUG_SUBSCRIBE_TO_PUB_MSGS = False
+        self.DEBUG_CONNECTION_PROCESS = True
 
         # Check if we are given a RICInterface
         if ricInterface is None:
@@ -104,10 +111,19 @@ class ClientMV2(ClientGeneric):
             }
             self.ricIF = ricInterface
 
+        # Debug
+        ricConnStartTime = time.time()
+        if self.DEBUG_CONNECTION_PROCESS:
+            logger.debug("Starting to connect to RIC")
+
         # Open comms
         openOk = self.ricIF.open(rifConfig)
         if not openOk:
             raise MartyConnectException("Failed to open connection")
+
+        # Debug
+        if self.DEBUG_CONNECTION_PROCESS:
+            logger.debug(f"RIC interface connection took {time.time() - ricConnStartTime} seconds")
 
         # Callbacks
         self.ricIF.setDecodedMsgCB(self._rxDecodedMsg)
@@ -115,18 +131,51 @@ class ClientMV2(ClientGeneric):
         self.ricIF.setLogLineCB(self._logDebugMsg)
 
     def start(self):
+        # Debug
+        debugRICOverallStart = time.time()
+        debugStartTime = time.time()
+        if self.DEBUG_CONNECTION_PROCESS:
+            logger.debug("Starting to communicate with RIC")
+
+        # Get the version of RIC
         self._getRICVersion()
+
+        # Debug
+        if self.DEBUG_CONNECTION_PROCESS:
+            logger.debug(f"Got RIC version in {time.time() - debugStartTime} seconds")
+        debugStartTime = time.time()
+
+        # Get HWElems
         self._updateHwElemsInfo()
+
+        # Debug
+        if self.DEBUG_CONNECTION_PROCESS:
+            logger.debug(f"Got HWElems in {time.time() - debugStartTime} seconds")
+
+        # Now completed init
         self._initComplete = True
+
+        # Debug
+        self._updateHwElemsInfo()
+
         # Wait for connection to be ready
         waitStartTime = time.time()
         while not self.is_conn_ready():
             if time.time() - waitStartTime > self.maxWaitForConnReadySecs:
                 raise MartyConnectException("Connection to Marty not ready")
             time.sleep(0.1)
+
+        # Debug
+        if self.DEBUG_CONNECTION_PROCESS:
+            logger.debug(f"Marty wait for ready time {time.time() - debugStartTime} seconds")
+
         # A flag is set on the first subscribed message - wait a little longer
         # to ensure that one of each subscribed message type has been received
         time.sleep(0.5)
+
+        # Debug
+        if self.DEBUG_CONNECTION_PROCESS:
+            logger.debug(f"Marty overall start time {time.time() - debugRICOverallStart} seconds")
 
     def close(self):
         if self.isClosing:
@@ -524,7 +573,7 @@ class ClientMV2(ClientGeneric):
     def is_conn_ready(self) -> bool:
         if not self.ricIF.isOpen():
             return False
-        return self._initComplete and (self.lastRICSerialMsgTime is not None)
+        return self._initComplete and ((self.lastRICSerialMsgTime is not None) or (self.subscribeRateHz == 0))
 
     def _is_valid_disco_addon(self, add_on: str) -> bool:
         disco_whoamis = {"LEDfoot", "LEDarm", "LEDeye"}
@@ -678,16 +727,18 @@ class ClientMV2(ClientGeneric):
     def preException(self, isFatal: bool) -> None:
         if isFatal:
             self.ricIF.close()
-        logger.debug(f"Pre-exception isFatal {isFatal}")
+        logger.warning(f"Pre-exception isFatal {isFatal}")
 
     def _rxDecodedMsg(self, decodedMsg: DecodedMsg, interface: RICInterface):
         if decodedMsg.protocolID == RICProtocols.PROTOCOL_ROSSERIAL:
-            # logger.debug(f"ROSSERIAL message received {len(decodedMsg.payload)}")
+            if self.DEBUG_RECEIVE_PUBLISHED_MSG:
+                logger.debug(f"ROSSERIAL message received {len(decodedMsg.payload)}")
             self.lastRICSerialMsgTime = time.time()
             if decodedMsg.payload:
                 RICROSSerial.decode(decodedMsg.payload, 0, self._rxPublishedMsg)
         elif decodedMsg.protocolID == RICProtocols.PROTOCOL_RICREST:
-            # logger.debug(f"RIC REST message received {decodedMsg.payload}")
+            if self.DEBUG_RECEIVE_RICREST_MSGS:
+                logger.debug(f"RICREST message received {decodedMsg.payload}")
             # Callback for REPORT messages
             if (self.reportMsgCallback is not None) and (decodedMsg.msgTypeCode == RICProtocols.MSG_TYPE_REPORT):
                 try:
@@ -695,7 +746,7 @@ class ClientMV2(ClientGeneric):
                 except:
                     logger.exception("Report callback failed:")
         else:
-            logger.debug(f"RIC UNKNOWN message received {decodedMsg.payload}")
+            logger.info(f"RIC UNKNOWN message received {decodedMsg.payload}")
             pass
 
     def _rxPublishedMsg(self, topicID: int, payload: bytes):
@@ -727,7 +778,8 @@ class ClientMV2(ClientGeneric):
             self.ricSystemInfo = self.ricIF.cmdRICRESTURLSync("v")
             if self.ricSystemInfo.get("rslt", "") == "ok":
                 break
-        logger.debug(f"_getRICVersion rslt {self.ricSystemInfo.get('rslt', '')}")
+        if self.DEBUG_GET_RIC_VERSION:
+            logger.debug(f"_getRICVersion rslt {self.ricSystemInfo.get('rslt', '')} self.ricSystemInfo {self.ricSystemInfo}")
         return self.ricSystemInfo.get("rslt", "") == "ok"
 
     def _updateHwElemsInfo(self):
@@ -738,6 +790,8 @@ class ClientMV2(ClientGeneric):
             for el in self.ricHwElemsList:
                 if "IDNo" in el:
                     self.ricHwElemsInfoByIDNo[el["IDNo"]] = el
+            if self.DEBUG_GET_HW_ELEMS_INFO:
+                logger.debug(f"_updateHwElemsInfo found {len(self.ricHwElemsList)} elems")
 
     def get_test_output(self) -> dict:
         return self.ricIF.getTestOutput()
@@ -754,7 +808,8 @@ class ClientMV2(ClientGeneric):
         resubscrReqd = self.lastSubscrReqMsgTime is None or time.time() > self.lastSubscrReqMsgTime + self.minTimeBetweenSubReqs
         if versOk and self._initComplete and self.subscribeRateHz != 0 and (forceResubscribe or (timeForSubscr and resubscrReqd)):
             # Subscribe for publication messages
-            logger.debug(f"Subscribe to published messages")
+            if self.DEBUG_SUBSCRIBE_TO_PUB_MSGS:
+                logger.debug(f"Subscribe to published messages")
             self.ricIF.sendRICRESTCmdFrame('{"cmdName":"subscription","action":"update",' + \
                             '"pubRecs":[' + \
                                 '{' + f'"name":"MultiStatus","rateHz":{self.subscribeRateHz},' + '}' + \
@@ -801,11 +856,11 @@ class ClientMV2(ClientGeneric):
         return self.ricIF.streamSoundFile(filename, "streamaudio", self._playMP3ProgressAdapter)
 
     def get_file_list(self) -> List[str]:
-        result = self.ricIF.cmdRICRESTURLSync("filelist")
+        result = self.ricIF.cmdRICRESTURLSync("filelist", timeOutSecs=5)
         if result.get("rslt", "") == "ok":
             return result.get("files", [])
         return []
 
     def delete_file(self, filename: str) -> bool:
-        result = self.ricIF.cmdRICRESTURLSync(f"filedelete/local/{filename}")
+        result = self.ricIF.cmdRICRESTURLSync(f"filedelete/local/{filename}", timeOutSecs=5)
         return result.get("rslt", "") == "ok"

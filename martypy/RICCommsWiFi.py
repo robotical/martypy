@@ -30,6 +30,8 @@ class RICCommsWiFi(RICCommsBase):
         self._hdlc = LikeHDLC(self._onHDLCFrame, self._onHDLCError)
         self.socketErrors = 0
         self._onReconnect = onReconnect
+        # Debug
+        self.DEBUG_WEBSOCKET_CONNECT = True
 
     def __del__(self) -> None:
         '''
@@ -82,6 +84,7 @@ class RICCommsWiFi(RICCommsBase):
 
         # Open websocket
         try:
+            debugStartTime = time.time()
             self.webSocket = WebSocket(self._onWSBinaryFrame, 
                         self._onWSTextFrame, 
                         self._onWSError, 
@@ -89,6 +92,8 @@ class RICCommsWiFi(RICCommsBase):
                         ipAddrOrHostname, ipPort, wsPath,
                         autoReconnect=autoReconnect)
             self.webSocket.open()
+            if self.DEBUG_WEBSOCKET_CONNECT:
+                logger.debug(f"WebSocket open took {time.time() - debugStartTime}")
         except Exception as excp:
             raise MartyConnectException("Websocket problem") from excp
 

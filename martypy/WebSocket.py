@@ -37,19 +37,30 @@ class WebSocket():
         self.onError = onError
         self.onReconnect = onReconnect
         self._clear()
+        # Debug
+        self.DEBUG_WEBSOCKET_OPEN = True
 
     def __del__(self) -> None:
         self.close()
 
     def open(self) -> bool:
+        # Debug
+        debugStartTime = time.time()
         # Clear
         self._clear()
         # Open socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(self.timeout)
         self.sock.connect((self.ipAddr, self.ipPort))
+        # Debug
+        if self.DEBUG_WEBSOCKET_OPEN:
+            logger.debug(f"WebSocket open {self.ipAddr}:{self.ipPort} took {time.time() - debugStartTime}")
         # Initiate upgrade
+        debugStartTime = time.time()
         self._sendUpgradeReq()
+        # Debug
+        if self.DEBUG_WEBSOCKET_OPEN:
+            logger.debug(f"WebSocket upgrade {self.ipAddr}:{self.ipPort} took {time.time() - debugStartTime}")
 
     def writeBinary(self, inFrame: bytes) -> int:
         if not self.sock:

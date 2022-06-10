@@ -42,6 +42,8 @@ class RICCommsSerial(RICCommsBase):
         self.msgRespTimeoutSecs = 1.5
         self.numMsgsTimedOutSinceRateChange = 0
         self.numMsgsTimedOutBeforeRateChange = 1
+        self.DEBUG_HDLC_RX = False
+        self.DEBUG_HDLC_TX = False
 
     def __del__(self) -> None:
         '''
@@ -163,16 +165,19 @@ class RICCommsSerial(RICCommsBase):
         Throws:
             MartyConnectException: if the connection has an error
         '''
-        # logger.debug(f"Sending to IF len {len(bytesToSend)} {str(bytesToSend)}")
+        if self.DEBUG_HDLC_TX:
+            logger.debug(f"Sending to IF len {len(bytes)} {bytes.hex()}")
         hdlcEncoded = self._hdlc.encode(data)
         try:
             if self.overAscii:
                 encodedFrame = ProtocolOverAscii.encode(hdlcEncoded)
+                if self.DEBUG_HDLC_TX:
+                    logger.info(f"RICCommsSerial send encoded length {len(encodedFrame)} unencoded {data.hex() if len(data) < 20 else data.hex()[:20] + '...'}")
                 self._sendBytesToIF(encodedFrame)
-                # logger.warn(f"RICCommsSerial send {encodedFrame.hex()}")
             else:
+                if self.DEBUG_HDLC_TX:
+                    logger.debug(f"RICCommsSerial sendRaw {encodedFrame.hex()}")
                 self._sendBytesToIF(hdlcEncoded)
-                # logger.debug(f"RICCommsSerial sendRaw {encodedFrame.hex()}")
         except Exception as excp:
             raise MartyConnectException("Serial send problem") from excp
 
@@ -207,6 +212,8 @@ class RICCommsSerial(RICCommsBase):
 
     def _onHDLCFrame(self, frame: bytes) -> None:
         if self.rxFrameCB is not None:
+            if self.DEBUG_HDLC_RX:
+                logger.debug(f"RICCommsSerial rx {len(frame)} {frame.hex()}")
             self.rxFrameCB(frame)
 
     def _onHDLCError(self) -> None:
@@ -260,4 +267,4 @@ class RICCommsSerial(RICCommsBase):
         else:
             self.curBaudRate = self.baudRateAlternates[0]
         self.serialDevice.baudrate = self.curBaudRate
-        logger.debug(f"_skipToNextBaudRate comms failing - changing baud-rate to {self.curBaudRate}")
+        logger.info(f"_skipToNextBaudRate comms failing - changing baud-rate to {self.curBaudRate}")
