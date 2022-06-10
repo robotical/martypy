@@ -31,7 +31,7 @@ class RICCommsWiFi(RICCommsBase):
         self.socketErrors = 0
         self._onReconnect = onReconnect
         # Debug
-        self.DEBUG_WEBSOCKET_CONNECT = True
+        self.DEBUG_WEBSOCKET_CONNECT = False
 
     def __del__(self) -> None:
         '''

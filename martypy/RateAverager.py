@@ -19,8 +19,8 @@ class RateAverager:
             self.lastCalcSecs = time.time()
             self.sampleCount = 0
             self.prevVal = rsltVal
-            return rsltVal
-        return self.prevVal
+            return round(rsltVal,2)
+        return round(self.prevVal,2)
 
     def getTotal(self):
         return self.totalCount

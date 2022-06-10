@@ -83,8 +83,6 @@ for file in fileList:
 # Check if file was sent successfully
 if not fileSendOk:
     logging.warning(f"File {fileName} was not sent successfully")
-else:
-    logging.info(f"File {fileName} was sent successfully")
 
 # Disconnect from Marty
 my_marty.close()

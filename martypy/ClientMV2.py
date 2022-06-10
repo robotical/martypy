@@ -76,7 +76,7 @@ class ClientMV2(ClientGeneric):
         self.DEBUG_GET_RIC_VERSION = False
         self.DEBUG_GET_HW_ELEMS_INFO = False
         self.DEBUG_SUBSCRIBE_TO_PUB_MSGS = False
-        self.DEBUG_CONNECTION_PROCESS = True
+        self.DEBUG_CONNECTION_PROCESS = False
 
         # Check if we are given a RICInterface
         if ricInterface is None:
