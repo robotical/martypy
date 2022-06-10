@@ -573,7 +573,7 @@ class ClientMV2(ClientGeneric):
     def is_conn_ready(self) -> bool:
         if not self.ricIF.isOpen():
             return False
-        return self._initComplete and ((self.lastRICSerialMsgTime is not None) or (self.subscribeRateHz == 0))
+        return self._initComplete and ((self.lastRICSerialMsgTime is not None) or (self.subscribeRateHz == 0) or (len(self.ricHwElemsList) < 10))
 
     def _is_valid_disco_addon(self, add_on: str) -> bool:
         disco_whoamis = {"LEDfoot", "LEDarm", "LEDeye"}
