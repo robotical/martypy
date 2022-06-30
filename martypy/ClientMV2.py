@@ -359,13 +359,27 @@ class ClientMV2(ClientGeneric):
                     return obstacle_and_ground_data
                 else:
                     sensor_data[side].append(obstacle_and_ground_data)
-        if len(sensor_data[add_on_or_side.lower()]) == 1:
-            return sensor_data[add_on_or_side.lower()][0]
-        elif add_on_or_side.lower() == 'left' or add_on_or_side.lower() == 'right':
-            raise MartyCommandException(
-                f"Marty could not find a {add_on_or_side} sensor. "
-                "Please make sure your add ons are plugged in and named correctly"
-            )
+        
+        sensor_possible_sides = sensor_possible_names.keys()
+        sensorSide = ""
+
+        for side in sensor_possible_sides:
+            if side in add_on_or_side.lower():
+                sensorSide = side
+
+        if len(sensorSide) > 0:
+            if len(sensor_data[sensorSide]) == 1:
+                return sensor_data[sensorSide][0]
+            elif add_on_or_side.lower() == 'left' or add_on_or_side.lower() == 'right':
+                raise MartyCommandException(
+                    f"Marty could not find a {add_on_or_side} sensor. "
+                    "Please make sure your add ons are plugged in and named correctly"
+                )
+            else:
+                raise MartyCommandException(
+                    f"The add on '{add_on_or_side}' is not a valid add on for obstacle and ground sensing."
+                    "Please make sure to pass in the name of an IR sensor or Color sensor."
+                )
         else:
             raise MartyCommandException(
                 f"The add on '{add_on_or_side}' is not a valid add on for obstacle and ground sensing."

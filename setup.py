@@ -5,7 +5,7 @@ with open('README.md') as f:
 
 setup(
     name="martypy",
-    version="3.4.0",
+    version="3.4.3",
     description="Python library for Marty the Robot V1 and V2",
     long_description=readme,
     long_description_content_type="text/markdown",
@@ -18,7 +18,8 @@ setup(
     url='http://github.com/robotical/martypy',
     license='Apache 2.0',
     install_requires=[
-        'pyserial',
+        'pyserial>=3.4',
+        'packaging>=21.3'
     ],
     extras_require={
         "tests": [

@@ -1,3 +1,7 @@
+Version 3.4.3 :
+- Resolved issue with missing dependency (package)
+- Resolved issue with ground and obstacle detection not being able to use sensor Name (rather than sensor side)
+
 Version 3.4.0 :
 - Support for ground and obstacle detection using the IR/Colour foot sensors
 - User callbacks on data received from the robot in the background
