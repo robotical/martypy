@@ -156,7 +156,7 @@ class WebSocketFrame():
         output = io.BytesIO()
 
         # Prepare the header.
-        head1 = 0b10000000 if fin else 0 | opcode
+        head1 = (0b10000000 if fin else 0) | opcode
         head2 = 0b10000000 if useMask else 0
         length = len(inFrame)
         if length < 126:

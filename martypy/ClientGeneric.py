@@ -155,6 +155,14 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod
+    def set_volume(self, volume: int) -> bool:
+        pass
+
+    @abstractmethod
+    def get_volume(self) -> int:
+        return 0
+
+    @abstractmethod
     def play_sound(self, name_or_freq_start: Union[str,float], 
             freq_end: Optional[float] = None, 
             duration: Optional[int] = None) -> bool:
@@ -382,4 +390,23 @@ class ClientGeneric(ABC):
 
     @abstractmethod
     def is_conn_ready(self) -> bool:
+        return False
+
+    @abstractmethod
+    def send_file(self, filename: str, 
+                progress_callback: Callable[[int, int], bool] = None,
+                file_dest:str = "fs") -> bool:
+        return False
+
+    @abstractmethod
+    def play_mp3(self, filename: str,
+                progress_callback: Callable[[int, int], bool] = None) -> bool:
+        return False
+
+    @abstractmethod
+    def get_file_list(self) -> List[str]:
+        return []
+
+    @abstractmethod
+    def delete_file(self, filename: str) -> bool:
         return False

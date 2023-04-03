@@ -29,7 +29,7 @@ class RICCommsTest(RICCommsBase):
 
     def open(self, openParams: Dict) -> bool:
         self.commsParams.conn = openParams
-        self.commsParams.fileTransfer = {"fileBlockMax": 5000, "fileXferSync": False}
+        self.commsParams.fileTransfer = {"fileBlockMax": 5000, "fileXferSync": False, "fileBatchAck": 1}
         return True
 
     def close(self) -> None:

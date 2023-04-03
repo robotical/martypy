@@ -392,6 +392,26 @@ class Marty(object):
             self.client.wait_if_required(steps*move_time, blocking)
         return result
 
+    def set_volume(self, volume: int) -> bool:
+        '''
+        Set the volume of Marty's sound :two:
+        Args:
+            volume: Volume to set (0-100)
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.set_volume(volume)
+
+    def get_volume(self) -> int:
+        '''
+        Get the volume of Marty's sound :two:
+        Args:
+            None
+        Returns:
+            Volume of Marty's sound (0-100)
+        '''
+        return self.client.get_volume()
+
     def play_sound(self, name_or_freq_start: Union[str,int], 
             freq_end: Optional[int] = None, 
             duration: Optional[int] = None) -> bool:
@@ -1263,3 +1283,54 @@ class Marty(object):
         wifi, serial, etc :two:
         '''
         return self.client.get_test_output()
+
+    def send_file(self, filename: str, 
+                progress_callback: Callable[[int, int], bool] = None,
+                file_dest:str = "fs") -> bool:
+        '''
+        Send a file to Marty. :two:
+
+        Args:
+            filename: the name of the file to send
+            progress_callback: callback used to indicate how file send is progressing, callable takes three params
+                    which are bytesSent and totalBytes and
+                    returns a bool which should be True to continue the file upload or False to abort
+            file_dest: "fs" to upload to file system, "ricfw" for new RIC firmware
+        Returns:
+            True if the file was sent successfully
+        Throws:
+            OSError: operating system exceptions
+            May throw other exceptions so include a general exception handler
+        '''
+        return self.client.send_file(filename, progress_callback, file_dest)
+
+    def play_mp3(self, filename: str,
+                progress_callback: Callable[[int, int], bool] = None) -> bool:
+        '''
+        Play an mp3 file on the robot. :two:
+        Args:
+            filename: the name of the mp3 file to play
+        Returns:
+            True if the file was played successfully
+        '''
+        return self.client.play_mp3(filename, progress_callback)
+
+    def get_file_list(self) -> List[str]:
+        '''
+        Get a list of files on the robot. :two:
+        Args:
+            None
+        Returns:
+            A list of files on the robot
+        '''
+        return self.client.get_file_list()
+
+    def delete_file(self, filename: str) -> bool:
+        '''
+        Delete a file on the robot. :two:
+        Args:
+            filename: the name of the file to delete
+        Returns:
+            True if the file was deleted successfully
+        '''
+        return self.client.delete_file(filename)
