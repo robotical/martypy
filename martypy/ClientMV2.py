@@ -156,7 +156,7 @@ class ClientMV2(ClientGeneric):
         self._initComplete = True
 
         # Debug
-        self._updateHwElemsInfo()
+        # self._updateHwElemsInfo()
 
         # Wait for connection to be ready
         waitStartTime = time.time()
