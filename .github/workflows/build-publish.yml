@@ -21,7 +21,7 @@ jobs:
         python -m pip install --upgrade setuptools wheel twine
 
     - name: Create source and wheel distributions
-      run: python setup.py sdist
+      run: python setup.py sdist bdist_wheel
 
     - name: Upload to PyPI
       run: twine upload dist/* -u robotical -p ${{ secrets.PYPI_PASSWORD }}

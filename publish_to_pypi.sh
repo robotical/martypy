@@ -5,7 +5,7 @@ python -m pip install --upgrade setuptools wheel
 python -m pip install --upgrade twine
 
 # create source and wheel distributions (do we need a wheel distribution?)
-python setup.py sdist # bdist_wheel
+python setup.py sdist bdist_wheel
 
 # upload to Test PyPI
 twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u robotical -p <password>
