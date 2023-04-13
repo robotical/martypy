@@ -19,6 +19,7 @@ setup(
     license='Apache 2.0',
     install_requires=[
         'pyserial',
+        'packaging',
     ],
     extras_require={
         "tests": [
