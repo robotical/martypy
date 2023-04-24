@@ -7,6 +7,8 @@ Python library to communicate with Marty the Robot V1 and V2 by Robotical
 To regenerate documentation:
 - pip install -r dev-requirements.txt
 - pydoc-markdown --server --open
+OR, automatically:
+- run docgen.bat from Python environment (will put the contents of the formatted docs into clipboard)
 
 ## How to run example scripts
 
