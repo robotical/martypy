@@ -164,7 +164,6 @@ class Marty(object):
             * MartyConnectException if Marty couldn't be contacted
         '''
         # Merge in any extra clients that have been added and check valid
-        self.client: ClientGeneric = None
         self.CLIENT_TYPES = ClientGeneric.dict_merge(self.CLIENT_TYPES, extra_client_types)
 
         # Get and check connection parameters
@@ -579,13 +578,14 @@ class Marty(object):
         Raises:
             MartyCommandException if the joint_name_or_num is unknown            
         '''
-        jointIDNo = joint_name_or_num
         if type(joint_name_or_num) is str:
             if joint_name_or_num not in self.JOINT_IDS:
                 self.client.preException(True)
                 raise MartyCommandException("Joint must be one of {}, not '{}'"
                                             "".format(set(self.JOINT_IDS.keys()), joint_name_or_num))
             jointIDNo = self.JOINT_IDS.get(joint_name_or_num, 0)
+        else:
+            jointIDNo = int(joint_name_or_num)
         return self.client.get_joint_position(jointIDNo)
 
     def get_joint_current(self, joint_name_or_num: Union[int, str]) -> float:
@@ -949,8 +949,9 @@ class Marty(object):
         '''
         if type(add_on) is str:
             return self.client.disco_off(add_on)
-        else:
+        elif type(add_on) is object:
             return self.client.disco_group_operation(self.client.disco_off, add_on.value, {})
+        raise TypeError('add_on must be of type Disco or str')
 
     def disco_pattern(self, pattern: int, add_on: Union[Disco, str] = Disco.ALL) -> bool:
         '''
@@ -963,8 +964,9 @@ class Marty(object):
         '''
         if type(add_on) is str:
             return self.client.disco_pattern(pattern, add_on)
-        else:
+        elif type(add_on) is object:
             return self.client.disco_group_operation(self.client.disco_pattern, add_on.value, {'pattern':pattern})
+        raise TypeError('add_on must be of type Disco or str')
 
     def disco_color(self, color: Union[str, Tuple[int, int, int]] = 'white', 
                     add_on: Union[Disco, str] = Disco.ALL, 
@@ -981,8 +983,9 @@ class Marty(object):
         '''
         if type(add_on) is str:
             return self.client.disco_color(color, add_on, region)
-        else:
+        elif type(add_on) is object:
             return self.client.disco_group_operation(self.client.disco_color, add_on.value, {'color':color, 'region':region}) 
+        raise TypeError('add_on must be of type Disco or str')
 
     ''' 
     ============================================================
@@ -1285,7 +1288,7 @@ class Marty(object):
         return self.client.get_test_output()
 
     def send_file(self, filename: str, 
-                progress_callback: Callable[[int, int], bool] = None,
+                progress_callback: Callable[[int, int], bool] | None = None,
                 file_dest:str = "fs") -> bool:
         '''
         Send a file to Marty. :two:
@@ -1305,7 +1308,7 @@ class Marty(object):
         return self.client.send_file(filename, progress_callback, file_dest)
 
     def play_mp3(self, filename: str,
-                progress_callback: Callable[[int, int], bool] = None) -> bool:
+                progress_callback: Callable[[int, int], bool] | None = None) -> bool:
         '''
         Play an mp3 file on the robot. :two:
         Args:

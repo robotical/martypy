@@ -25,7 +25,7 @@ class ClientMV2(ClientGeneric):
     def __init__(self,
                 method: str,
                 locator: str,
-                serialBaud: int = None,
+                serialBaud: int | None = None,
                 port = 80,
                 wsPath = "/ws",
                 subscribeRateHz = 10.0,
@@ -238,13 +238,13 @@ class ClientMV2(ClientGeneric):
     def move_joint(self, joint_id: int, position: int, move_time: int) -> bool:
         return self.ricIF.cmdRICRESTRslt(f"traj/joint?jointID={joint_id}&angle={position}&moveTime={move_time}")
 
-    def get_joint_position(self, joint_id: Union[int, str]) -> float:
+    def get_joint_position(self, joint_id: int) -> float:
         return self.ricHardware.getServoPos(joint_id, self.ricHwElemsInfoByIDNo)
 
-    def get_joint_current(self, joint_id: Union[int, str]) -> float:
+    def get_joint_current(self, joint_id: int) -> float:
         return self.ricHardware.getServoCurrent(joint_id, self.ricHwElemsInfoByIDNo)
 
-    def get_joint_status(self, joint_id: Union[int, str]) -> int:
+    def get_joint_status(self, joint_id: int) -> int:
         return self.ricHardware.getServoFlags(joint_id, self.ricHwElemsInfoByIDNo)
 
     def lean(self, direction: str, amount: Optional[int], move_time: int) -> bool:
@@ -279,7 +279,7 @@ class ClientMV2(ClientGeneric):
                 raise MartyCommandException("pose must be one of {}, not '{}'"
                                             "".format(set(ClientGeneric.EYE_POSES.keys()), pose_or_angle))
             return self.ricIF.cmdRICRESTRslt(f"traj/{eyesTrajectory}")
-        return self.move_joint(joint_id, pose_or_angle, move_time)
+        return self.move_joint(joint_id, int(pose_or_angle), move_time)
 
     def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool:
         if side != 'right' and side != 'left':
@@ -331,8 +331,10 @@ class ClientMV2(ClientGeneric):
     def play_sound(self, name_or_freq_start: Union[str,float],
             freq_end: Optional[float] = None,
             duration: Optional[int] = None) -> bool:
+        if type(name_or_freq_start) is not str:
+            raise MartyCommandException("name_or_freq_start must be a string")
         if name_or_freq_start.lower().endswith(".mp3"):
-            return self.ricIF.play_mp3(name_or_freq_start)
+            return self.play_mp3(str(name_or_freq_start), self.ricIF)
         if not name_or_freq_start.lower().endswith(".raw"):
             name_or_freq_start += ".raw"
         return self.ricIF.cmdRICRESTRslt(f"filerun/{name_or_freq_start}")
@@ -367,7 +369,7 @@ class ClientMV2(ClientGeneric):
                 return distance
         return 0
 
-    def _index_data_color_ir(self, attached_add_on: str) -> Tuple[Tuple[int, int, int], str]:
+    def _index_data_color_ir(self, attached_add_on: Dict[str, str]) -> list:
         '''
         Parses data of passed-in color or IR sensor :two:
         Args:
@@ -386,6 +388,7 @@ class ClientMV2(ClientGeneric):
             obstacle_data_raw = int.from_bytes(attached_add_on['data'][8:10], 'big')
             ground_data_raw = attached_add_on['data'][2]
             return (detection_flags, obstacle_data_raw, ground_data_raw), 'left'
+        return []
 
     def _get_obstacle_and_ground_raw_data(self, add_on_or_side: str) -> list:
         '''
@@ -407,11 +410,14 @@ class ClientMV2(ClientGeneric):
 
         # There may be a situation just after connecting to RIC where publication messages from the addon
         # have not yet been received so we need to wait for them to be received before we can parse them
+        addon_statuses = {}.values()
         for retryLoop in range(10):
             addon_statuses = self.get_add_ons_status().values()
             if len(addon_statuses) != 0:
                 break
             time.sleep(0.1)
+        if len(addon_statuses) == 0:
+            raise MartyCommandException("No add-ons found")
 
         # Get the add-on values
         for attached_add_on in addon_statuses:
@@ -458,7 +464,7 @@ class ClientMV2(ClientGeneric):
             return raw_data[2]
         return 0
 
-    def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float:
+    def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float | Tuple[float,float,float]:
         if axis is None:
             return self.ricHardware.getIMUAll()
         return self.ricHardware.getIMUAxisValue(axisCode)
@@ -591,24 +597,28 @@ class ClientMV2(ClientGeneric):
         if self._is_valid_disco_addon(add_on):
             response = self.add_on_query(add_on, bytes.fromhex('01'), 0)
             return response.get("rslt", "") == "ok"
+        return False
 
     def disco_pattern(self, pattern: int, add_on: str) -> bool:
+        patternStr = ""
         if pattern == 1:
-            pattern = '10'
+            patternStr = '10'
         elif pattern == 2:
-            pattern = '11'
+            patternStr = '11'
         else:
             raise Exception("Pattern must be 1 or 2")
         if self._is_valid_disco_addon(add_on):
-            response = self.add_on_query(add_on, bytes.fromhex(pattern), 0)
+            response = self.add_on_query(add_on, bytes.fromhex(patternStr), 0)
             return response.get("rslt", "") == "ok"
+        return False
 
     def _region_to_bytes(self, region: Union[str, int]) -> bytes:
+        regionTuple = ()
         if region == 'all':
-            region = (2,)
+            regionTuple = (2,)
         else:
-            region = (4, region)
-        return bytes(region)
+            regionTuple = (4, int(region))
+        return bytes(regionTuple)
 
     def _downscale_color(self, color: Union[tuple, bytes]):
         return bytes(c//25 for c in color)
@@ -639,19 +649,21 @@ class ClientMV2(ClientGeneric):
             'orange' : '961900'
         }
         if type(color) is str:
-            color = default_colors.get(color.lower(), color)
-            color = self._parse_color_hex(color, region)
+            colorStr = default_colors.get(color.lower(), color)
+            colorTupleOrBytes = self._parse_color_hex(colorStr, region)
         elif type(color) is tuple:
             if len(color) != 3:
                 raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of: {color}. Please enter a valid color.')
+            colorTupleOrBytes = color
         else:
             raise MartyCommandException(f"Color must be of string or tuple form, not {type(color)}")
-        color = self._downscale_color(color)
-        region = self._region_to_bytes(region)
-        command = region + color
+        colorBytes = self._downscale_color(colorTupleOrBytes)
+        regionBytes = self._region_to_bytes(region)
+        command = regionBytes + colorBytes
         if self._is_valid_disco_addon(add_on):
             response = self.add_on_query(add_on, command, 0)
             return response.get("rslt", "") == "ok"
+        return False
 
     def disco_group_operation(self, disco_operation: Callable, whoamis: set, operation_kwargs: dict) -> bool:
         '''
@@ -732,7 +744,7 @@ class ClientMV2(ClientGeneric):
     def _rxDecodedMsg(self, decodedMsg: DecodedMsg, interface: RICInterface):
         if decodedMsg.protocolID == RICProtocols.PROTOCOL_ROSSERIAL:
             if self.DEBUG_RECEIVE_PUBLISHED_MSG:
-                logger.debug(f"ROSSERIAL message received {len(decodedMsg.payload)}")
+                logger.debug(f"ROSSERIAL message received {len(decodedMsg.payload) if decodedMsg.payload else 0}")
             self.lastRICSerialMsgTime = time.time()
             if decodedMsg.payload:
                 RICROSSerial.decode(decodedMsg.payload, 0, self._rxPublishedMsg)
@@ -740,9 +752,9 @@ class ClientMV2(ClientGeneric):
             if self.DEBUG_RECEIVE_RICREST_MSGS:
                 logger.debug(f"RICREST message received {decodedMsg.payload}")
             # Callback for REPORT messages
-            if (self.reportMsgCallback is not None) and (decodedMsg.msgTypeCode == RICProtocols.MSG_TYPE_REPORT):
+            if (self.reportMsgCallback is not None) and (decodedMsg.msgTypeCode == RICProtocols.MSG_TYPE_REPORT) and (decodedMsg.payload is not None):
                 try:
-                    self.reportMsgCallback(decodedMsg.payload)
+                    self.reportMsgCallback(decodedMsg.payload.decode("utf-8"))
                 except:
                     logger.exception("Report callback failed:")
         else:
@@ -832,26 +844,24 @@ class ClientMV2(ClientGeneric):
     def _onReconnect(self):
         self._subscribeToPubMessages(True)
 
-    def _sendFileProgressAdapter(self, fileSize: int, bytesSent: int,
-                progress_callback: Callable[[int, int, 'RICInterface'], bool] = None):
+    def _sendFileProgressAdapter(self, fileSize: int, bytesSent: int, ricInterface: RICInterface) -> bool:
         if self._sendFileProgressCB:
             return self._sendFileProgressCB(fileSize, bytesSent)
         return True
 
     def send_file(self, filename: str,  
-                progress_callback: Callable[[int, int], bool] = None,
+                progress_callback: Callable[[int, int], bool] | None = None,
                 file_dest:str = "fs") -> bool:
         self._sendFileProgressCB = progress_callback
         return self.ricIF.sendFile(filename, self._sendFileProgressAdapter, file_dest)
 
-    def _playMP3ProgressAdapter(self, fileSize: int, bytesSent: int,
-                progress_callback: Callable[[int, int, 'RICInterface'], bool] = None):
+    def _playMP3ProgressAdapter(self, fileSize: int, bytesSent: int, ricInterface: RICInterface) -> bool:
         if self._playMP3ProgressCB:
             return self._playMP3ProgressCB(fileSize, bytesSent)
         return True
 
-    def play_mp3(self, filename: str, 
-                progress_callback: Callable[[int, int], bool] = None) -> bool:
+    def play_mp3(self, filename: str, ricInterface: RICInterface,
+                progress_callback: Callable[[int, int], bool] | None = None) -> bool:
         self._playMP3ProgressCB = progress_callback
         return self.ricIF.streamSoundFile(filename, "streamaudio", self._playMP3ProgressAdapter)
 

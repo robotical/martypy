@@ -33,7 +33,7 @@ class ClientMV1(ClientGeneric):
     }
 
     def __init__(self, method: str, locator: str,
-                port:str = None, timeout:float = 5.0,
+                port:str | None = None, timeout:float = 5.0,
                 debug:bool = False,
                 default_lifelike: bool = True,
                 *args, **kwargs):
@@ -165,7 +165,7 @@ class ClientMV1(ClientGeneric):
                 raise MartyCommandException("pose must be one of {}, not '{}'"
                                             "".format(set(self.EYE_POSES.keys()), pose_or_angle))
         else:
-            angle = pose_or_angle
+            angle = int(pose_or_angle)
         return self.move_joint(joint_id, angle, move_time)
 
     def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool:
@@ -218,10 +218,10 @@ class ClientMV1(ClientGeneric):
                                    self._pack_int8(step_length))
 
     def set_volume(self, volume: int) -> bool:
-        return MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def get_volume(self) -> int:
-        return MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
+        raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def play_sound(self, freq_start: Union[float, str],
             freq_end: float,

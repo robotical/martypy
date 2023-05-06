@@ -2,6 +2,8 @@
 RICStreamHandler
 '''
 from typing import Callable
+
+from martypy import RICInterface
 from .Exceptions import MartyTransferException
 import logging
 import os
@@ -11,13 +13,13 @@ logger = logging.getLogger(__name__)
 
 class RICStreamHandler:
 
-    def __init__(self, ricInterface: 'RICInterface'):
+    def __init__(self, ricInterface: 'RICInterface.RICInterface'):
         # Stream vars
         self._ricInterface = ricInterface
-        self._streamId: int = None
+        self._streamId: int | None = None
 
     def streamSoundFile(self, fileName: str, targetEndpoint: str,
-                progressCB: Callable[[int, int, 'RICInterface'], bool] = None) -> bool:
+                progressCB: Callable[[int, int, 'RICInterface.RICInterface'], bool] | None = None) -> bool:
         '''
         Stream sound from the file system
         Args:
@@ -149,13 +151,13 @@ class RICStreamHandler:
                 return False
         return True
 
-    def _sendStreamProgressCheckAbort(self, progressCB: Callable[[int, int, 'RICInterface'], bool], 
+    def _sendStreamProgressCheckAbort(self, progressCB: Callable[[int, int, 'RICInterface.RICInterface'], bool] | None, 
                     currentPos: int, fileSize: int) -> bool:
         if not progressCB:
             return False
         if not self._ricInterface.isOpen():
             return True
-        if not progressCB(currentPos, fileSize, self):
+        if not progressCB(currentPos, fileSize, self._ricInterface):
             self._ricInterface.sendRICRESTCmdFrameSync('{' + f'"cmdName":"ufCancel", "streamId":"{self._streamId}"' + '}')
             return True
         return False

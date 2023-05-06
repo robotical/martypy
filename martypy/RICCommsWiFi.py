@@ -24,8 +24,8 @@ class RICCommsWiFi(RICCommsBase):
         '''
         super().__init__()
         self._isOpen = False
-        self.webSocketThread: Thread = None
-        self.webSocket: WebSocket = None
+        self.webSocketThread: Thread | None = None
+        self.webSocket: WebSocket | None = None
         self.webSocketThreadEnabled = False
         self._hdlc = LikeHDLC(self._onHDLCFrame, self._onHDLCError)
         self.socketErrors = 0
@@ -143,9 +143,10 @@ class RICCommsWiFi(RICCommsBase):
         except Exception as excp:
             raise MartyConnectException("Connection send problem") from excp
 
-    def _onHDLCFrame(self, frame: bytes) -> None:
-        if self.rxFrameCB is not None:
-            self.rxFrameCB(frame)
+    def _onHDLCFrame(self, frame: bytes | str) -> None:
+        if type(frame) is bytes:
+            if self.rxFrameCB is not None:
+                self.rxFrameCB(frame)
         
     def _onHDLCError(self) -> None:
         pass
@@ -170,7 +171,8 @@ class RICCommsWiFi(RICCommsBase):
         '''
         while self.webSocketThreadEnabled:
             try:
-                self.webSocket.service()
+                if self.webSocket is not None:
+                    self.webSocket.service()
             except OSError as excp:
                 logger.debug(f"webSocket problem {excp}")
                 self.webSocketThreadEnabled = False

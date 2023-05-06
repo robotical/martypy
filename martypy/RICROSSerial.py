@@ -152,7 +152,7 @@ class RICROSSerial:
     @classmethod
     def extractAccel(cls, buf: bytes) -> Tuple[float, float, float]:
         xyzTimes1024 = struct.unpack(">fffBB", buf[0:cls.ROS_ACCEL_BYTES])
-        return [round(val/1024,2) for val in xyzTimes1024[0:3]]
+        return (round(xyzTimes1024[0]/1024.0,2), round(xyzTimes1024[1]/1024.0,2), round(xyzTimes1024[2]/1024.0,2))
 
     @classmethod
     def extractPowerStatus(cls, buf: bytes) -> Dict:
@@ -224,7 +224,7 @@ class RICROSSerial:
             }
 
     @classmethod
-    def extractAddOnStatus(cls, buf: bytes) -> List:
+    def extractAddOnStatus(cls, buf: bytes) -> dict:
         #  Each group of attributes for an add-on is a fixed size
         numGroups = math.floor(len(buf) / cls.ROS_ADDON_GROUP_BYTES)
         addOns = {}

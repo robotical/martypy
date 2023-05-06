@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 class RICHwSmartServos:
     def __init__(self) -> None:
-        self.latestMsg: bytes = None
-        self.latestMsgTime: float = None
+        self.latestMsg: bytes | None = None
+        self.latestMsgTime: float | None = None
         self.validForSecs = 3
 
     def update(self, msgPayload: bytes) -> None:
@@ -22,7 +22,7 @@ class RICHwSmartServos:
         self.latestMsgTime = time.time()
 
     def status(self, dictOfHwElemsByIdNo: Dict) -> Dict:
-        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs or self.latestMsg is None:
             return {}
         servosStatus = RICROSSerial.extractSmartServos(self.latestMsg)
         fieldsToCopy = ["name"]
@@ -40,8 +40,8 @@ class RICHwSmartServos:
 
 class RICHwIMU:
     def __init__(self) -> None:
-        self.latestMsg: bytes = None
-        self.latestMsgTime: float = None
+        self.latestMsg: bytes | None = None
+        self.latestMsgTime: float | None = None
         self.validForSecs = 3
 
     def update(self, msgPayload: bytes) -> None:
@@ -52,20 +52,20 @@ class RICHwIMU:
         # logger.debug(f"IMU update len {len(msgPayload)}")
 
     def xyz(self) -> Tuple[float, float, float]:
-        if self.latestMsgTime is None:
+        if self.latestMsgTime is None or self.latestMsg is None:
             return (0,0,0)
         return RICROSSerial.extractAccel(self.latestMsg)
 
     def axisVal(self, axisCode: int) -> float:
-        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs or self.latestMsg is None:
             return 0
         xyzTuple = RICROSSerial.extractAccel(self.latestMsg)
         return xyzTuple[axisCode]
 
 class RICHwPowerStatus:
     def __init__(self) -> None:
-        self.latestMsg: bytes = None
-        self.latestMsgTime: float = None
+        self.latestMsg: bytes | None = None
+        self.latestMsgTime: float | None = None
         self.validForSecs = 5
 
     def update(self, msgPayload: bytes) -> None:
@@ -75,7 +75,7 @@ class RICHwPowerStatus:
         self.latestMsgTime = time.time()
 
     def powerStatus(self) -> Dict:
-        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs or self.latestMsg is None:
             return {}
         curPowerStatus = RICROSSerial.extractPowerStatus(self.latestMsg)
         curPowerStatus["updateTime"] = self.latestMsgTime
@@ -83,8 +83,8 @@ class RICHwPowerStatus:
 
 class RICHwAddOnStatus:
     def __init__(self):
-        self.latestMsg: bytes = None
-        self.latestMsgTime: float = None
+        self.latestMsg: bytes | None = None
+        self.latestMsgTime: float | None = None
         self.addOnNameToIdMap = {}
         self.validForSecs = 3
 
@@ -93,7 +93,7 @@ class RICHwAddOnStatus:
         self.latestMsgTime = time.time()
 
     def status(self, dictOfHwElemsByIdNo: Dict) -> Dict:
-        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs or self.latestMsg is None:
             return {}
         addOnStatus = RICROSSerial.extractAddOnStatus(self.latestMsg)
         addOnStatus["updateTime"] = self.latestMsgTime
@@ -117,8 +117,8 @@ class RICHwAddOnStatus:
 
 class RICHwRobotStatus:
     def __init__(self):
-        self.latestMsg: bytes = None
-        self.latestMsgTime: float = None
+        self.latestMsg: bytes | None = None
+        self.latestMsgTime: float | None = None
         self.validForSecs = 3
 
     def update(self, msgPayload: bytes) -> None:
@@ -128,7 +128,7 @@ class RICHwRobotStatus:
         self.latestMsgTime = time.time()
 
     def status(self) -> Dict:
-        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs or self.latestMsg is None:
             return {}
         curRobotStatus = RICROSSerial.extractRobotStatus(self.latestMsg)
         curRobotStatus["updateTime"] = self.latestMsgTime
@@ -228,7 +228,7 @@ class RICHWElems:
     def getIsPaused(self) -> bool:
         return self._robotStatus.status().get("isPaused", False)
 
-    def getAddOns(self, dictOfHwElemsByIdNo: Dict) -> List:
+    def getAddOns(self, dictOfHwElemsByIdNo: Dict) -> Dict:
         return self._addOnsStatus.status(dictOfHwElemsByIdNo)
 
     def getAddOn(self, addOnNameOrId: Union[int, str], dictOfHwElemsByIdNo: Dict) -> Dict:

@@ -107,7 +107,7 @@ class RICInterface:
         '''
         self.commsHandler.close()
 
-    def isOpen(self) -> None:
+    def isOpen(self) -> bool:
         return self.commsHandler.isOpen()
 
     def setDecodedMsgCB(self, onDecodedMsg: Callable[[DecodedMsg, 'RICInterface'], None]) -> None:
@@ -214,7 +214,7 @@ class RICInterface:
         return True
 
     def sendRICRESTCmdFrameSync(self, msg: Union[str,bytes], 
-                    payload: Union[bytes, str] = None,
+                    payload: Union[bytes, str] | None = None,
                     timeOutSecs: Optional[float] = None) -> Dict:
         '''
         Send RICREST command frame message and wait for response
@@ -238,7 +238,7 @@ class RICInterface:
         # Wait for result
         return self.waitForSyncResult(msgNum, msgSendTime, timeOutSecs)
 
-    def waitForSyncResult(self, msgNum: int, msgSendTime: float, timeOutSecs: int):
+    def waitForSyncResult(self, msgNum: int, msgSendTime: float, timeOutSecs: float):
         while time.time() < msgSendTime + timeOutSecs:
             with self._msgsOutstandingLock:
                 # Should be an outstanding message - if not there's a problem
@@ -305,7 +305,7 @@ class RICInterface:
             self.commsHandler.send(dataBlock)
             self.msgTxRate.addSample()
 
-    def _sendFileProgressCheckAbort(self, progressCB: Callable[[int, int, 'RICInterface'], bool], 
+    def _sendFileProgressCheckAbort(self, progressCB: Callable[[int, int, 'RICInterface'], bool] | None, 
                     currentPos: int, fileSize: int) -> bool:
         if self._fileOTAStartFailed or self._fileNotStarted or self._fileUserCancel or self._fileFailedInFirmware or self._fileFailedWrite:
             return True
@@ -317,7 +317,7 @@ class RICInterface:
         return False
 
     def sendFile(self, filename: str, 
-                progressCB: Callable[[int, int, 'RICInterface'], bool] = None,
+                progressCB: Callable[[int, int, 'RICInterface'], bool] | None = None,
                 fileDest: str = "fs", reqStr: str = '') -> bool:
         '''
         Send a file (from the file system)
@@ -481,7 +481,7 @@ class RICInterface:
             return True
 
     def streamSoundFile(self, fileName: str, targetEndpoint: str,
-                progressCB: Callable[[int, int, 'RICInterface'], bool] = None) -> bool:
+                progressCB: Callable[[int, int, 'RICInterface'], bool] | None = None) -> bool:
         '''
         Stream sound from the file system
         Args:
@@ -598,7 +598,7 @@ class RICInterface:
             if isUnmatched:
                 logger.warning(f"_onRxFrameCB Unmatched msgNum {decodedMsg.msgNum}")
             doRxCallback = isUnmatched
-        else:
+        elif decodedMsg.payload is not None:
             if self.DEBUG_RIC_RECEIVE_MSG:
                 logger.debug(f"_onRxFrameCB unnumbered restType {decodedMsg.restType} msgType {decodedMsg.msgTypeCode}")
             if decodedMsg.msgTypeCode == RICProtocols.MSG_TYPE_REPORT:
@@ -606,7 +606,7 @@ class RICInterface:
                 # logger.debug(f"_onRxFrameCB REPORT {decodedMsg.payload}")
                 reptObj = {}
                 try:
-                    reptObj = json.loads(decodedMsg.payload.rstrip('\0'))
+                    reptObj = json.loads(decodedMsg.payload.rstrip(b'\0'))
                 except Exception as excp:
                     logger.warning(f"_onRxFrameCB REPORT is not JSON {excp}")
                 msgKey = reptObj.get("msgKey", '')
@@ -636,7 +636,7 @@ class RICInterface:
                 # Check for okto message
                 reptObj = {}
                 try:
-                    reptObj = json.loads(decodedMsg.payload.rstrip('\0'))
+                    reptObj = json.loads(decodedMsg.payload.rstrip(b'\0'))
                 except Exception as excp:
                     logger.warning(f"_onRxFrameCB RESPONSE is not JSON {excp}")
                 if "okto" in reptObj:
@@ -655,6 +655,7 @@ class RICInterface:
                         logger.debug(f"SOKTO MESSAGE {reptObj['sokto']}")
                 elif "cmdName" in reptObj:
                     cmdName = reptObj.get("cmdName","")
+                    reason = "Unknown"
                     if cmdName == "ufBlock" or cmdName == "ufStatus" or cmdName == "ufCancel":
                         reason = reptObj.get("reason","")
                         if reason == "OTAStartFailed":

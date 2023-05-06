@@ -394,13 +394,13 @@ class ClientGeneric(ABC):
 
     @abstractmethod
     def send_file(self, filename: str, 
-                progress_callback: Callable[[int, int], bool] = None,
+                progress_callback: Callable[[int, int], bool] | None = None,
                 file_dest:str = "fs") -> bool:
         return False
 
     @abstractmethod
     def play_mp3(self, filename: str,
-                progress_callback: Callable[[int, int], bool] = None) -> bool:
+                progress_callback: Callable[[int, int], bool] | None = None) -> bool:
         return False
 
     @abstractmethod

@@ -38,7 +38,7 @@ class RICCommsBase:
         '''
         return False
 
-    def setRxFrameCB(self, onFrame: Callable[[Union[bytes, str]], None]) -> None:
+    def setRxFrameCB(self, onFrame: Callable[[bytes], None]) -> None:
         '''
         Set callback on frame received
         Args:

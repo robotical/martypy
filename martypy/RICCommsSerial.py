@@ -29,8 +29,8 @@ class RICCommsSerial(RICCommsBase):
         '''
         super().__init__()
         self._isOpen = False
-        self.serialReaderThread: Thread = None
-        self.serialDevice: serial.Serial = None
+        self.serialReaderThread: Thread | None = None
+        self.serialDevice: serial.Serial | None = None
         self.serialThreadEnabled = False
         self._hdlc = LikeHDLC(self._onHDLCFrame, self._onHDLCError)
         self.overAscii = False
@@ -117,12 +117,12 @@ class RICCommsSerial(RICCommsBase):
             self.curBaudRate = serialBaud
             self.serialDevice = serial.Serial(port=None, baudrate=serialBaud)
             self.serialDevice.port = serialPort
-            self.serialDevice.rts = 0
-            self.serialDevice.dtr = 0
+            self.serialDevice.rts = False
+            self.serialDevice.dtr = False
             self.serialDevice.dsrdtr = False
             self.serialDevice.open()
         except Exception as excp:
-            error_message = f"Serial port problem on {self.serialDevice.port}. Try "\
+            error_message = f"Serial port problem on {serialPort}. Try "\
                             f"connecting to one of the following ports instead: {rics}"
             raise MartyConnectException(error_message) from excp
 
@@ -166,7 +166,7 @@ class RICCommsSerial(RICCommsBase):
             MartyConnectException: if the connection has an error
         '''
         if self.DEBUG_HDLC_TX:
-            logger.debug(f"Sending to IF len {len(bytes)} {bytes.hex()}")
+            logger.debug(f"Sending to IF len {len(data)} {data.hex()}")
         hdlcEncoded = self._hdlc.encode(data)
         try:
             if self.overAscii:
@@ -176,7 +176,7 @@ class RICCommsSerial(RICCommsBase):
                 self._sendBytesToIF(encodedFrame)
             else:
                 if self.DEBUG_HDLC_TX:
-                    logger.debug(f"RICCommsSerial sendRaw {encodedFrame.hex()}")
+                    logger.debug(f"RICCommsSerial sendRaw {hdlcEncoded.hex()}")
                 self._sendBytesToIF(hdlcEncoded)
         except Exception as excp:
             raise MartyConnectException("Serial send problem") from excp
@@ -186,6 +186,9 @@ class RICCommsSerial(RICCommsBase):
         Thread function used to process serial port data
         '''
         while self.serialThreadEnabled:
+            if self.serialDevice is None:
+                time.sleep(0.05)
+                continue
             i = self.serialDevice.in_waiting
             if i < 1:
                 time.sleep(0.001)
@@ -210,11 +213,12 @@ class RICCommsSerial(RICCommsBase):
             # logger.debug(f"CommsSerial rx {byt.hex()}")
         # logger.debug("Exiting serialRxLoop")
 
-    def _onHDLCFrame(self, frame: bytes) -> None:
-        if self.rxFrameCB is not None:
-            if self.DEBUG_HDLC_RX:
-                logger.debug(f"RICCommsSerial rx {len(frame)} {frame.hex()}")
-            self.rxFrameCB(frame)
+    def _onHDLCFrame(self, frame: bytes | str) -> None:
+        if type(frame) is bytes:
+            if self.rxFrameCB is not None:
+                if self.DEBUG_HDLC_RX:
+                    logger.debug(f"RICCommsSerial rx {len(frame)} {frame.hex()}")
+                self.rxFrameCB(frame)
 
     def _onHDLCError(self) -> None:
         pass
@@ -261,6 +265,8 @@ class RICCommsSerial(RICCommsBase):
         '''
         Skip to the next baud rate in the list
         '''
+        if self.serialDevice is None:
+            return
         if self.curBaudRate in self.baudRateAlternates:
             curBaudIdx = self.baudRateAlternates.index(self.curBaudRate)
             self.curBaudRate = self.baudRateAlternates[(curBaudIdx + 1) % len(self.baudRateAlternates)]
