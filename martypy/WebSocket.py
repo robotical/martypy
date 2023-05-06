@@ -61,6 +61,7 @@ class WebSocket():
         # Debug
         if self.DEBUG_WEBSOCKET_OPEN:
             logger.debug(f"WebSocket upgrade {self.ipAddr}:{self.ipPort} took {time.time() - debugStartTime}")
+        return True
 
     def writeBinary(self, inFrame: bytes) -> int:
         if not self.sock:
@@ -89,6 +90,9 @@ class WebSocket():
     def service(self) -> None:
         # Get any data
         reconnectRequired = False
+        rxData = None
+        if self.sock is None:
+            return
         try:
             rxData = self.sock.recv(self.maxSocketBytes)
         except Exception as excp:
@@ -111,7 +115,7 @@ class WebSocket():
             else:
                 time.sleep(0.01)
             return
-        if self.sock is None:
+        if self.sock is None or rxData is None:
             return
         # Check state of socket connection
         if self.socketState == self.SOCKET_AWAITING_UPGRADE:
@@ -148,12 +152,12 @@ class WebSocket():
                     self.onTextFrame(textFrame)
 
     def _sendPong(self) -> None:
-        if not self.sock:
-            return 0
+        if self.sock is None:
+            return
         frame = WebSocketFrame.encode(self.wsFrameCodec.getPongData(),
                     False, WebSocketFrame.OPCODE_PONG, True)
         # logger.debug(f"WebSocket pong {frame.hex()}")
-        return self.sock.send(frame)
+        self.sock.send(frame)
 
     def _clear(self) -> None:
         self.sock = None

@@ -178,5 +178,5 @@ class WebSocketFrame():
     @classmethod
     def applyMask(cls, data: bytes, mask: bytes) -> bytes:
         if len(mask) != 4:
-            return
+            return data
         return bytes(b ^ m for b, m in zip(data, itertools.cycle(mask)))
