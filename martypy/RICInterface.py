@@ -283,9 +283,6 @@ class RICInterface:
         # Encode frame
         ricRestMsg, _ = self.ricProtocols.encodeRICRESTResp(msgNum, msg)
         self.commsHandler.send(ricRestMsg)
-
-        # TODO remove
-        logger.info(f"sendRICRESTResp msgNum {msgNum} len {len(ricRestMsg)} msg {ricRestMsg.hex()}")
         self.msgTxRate.addSample()
         return True
     

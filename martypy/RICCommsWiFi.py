@@ -178,7 +178,7 @@ class RICCommsWiFi(RICCommsBase):
             except Exception as excp:
                 logger.debug(f"WebSocket exception {excp}")
             time.sleep(0.001)
-        logger.debug("Exiting WebSocket thread")
+        # logger.debug("Exiting WebSocket thread")
         self._isOpen = False
 
     def _onWSBinaryFrame(self, rxFrame: bytes) -> None:

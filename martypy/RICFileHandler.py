@@ -34,9 +34,10 @@ class RICFileHandler:
         self.BLOCK_ACK_TIMEOUT = 15
         self.BATCH_RETRY_MAX = 3
         # Debug
-        self.DEBUG_RIC_SEND_FILE_BLOCK = False
-        self.DEBUG_RIC_SEND_FILE = False
-        self.DEBUG_RIC_RECEIVE_FILE_BLOCK = False
+        self.DEBUG_SEND_FILE_BLOCK = False
+        self.DEBUG_SEND_FILE = False
+        self.DEBUG_RECEIVE_FILE_BLOCK = False
+        self.DEBUG_RECEIVE_FILE = False
         # Stats
         self.uploadBytesPerSec = ValueAverager()
 
@@ -57,7 +58,7 @@ class RICFileHandler:
             file_length = file_stat.st_size
 
             # Debug
-            if self.DEBUG_RIC_SEND_FILE:
+            if self.DEBUG_SEND_FILE:
                 logger.debug(f"File {file_name} is {file_length} bytes long")
 
             # Check if we're uploading firmware
@@ -74,7 +75,7 @@ class RICFileHandler:
             batch_ack_size = self._ricInterface.commsHandler.commsParams.fileTransfer.get("fileBatchAck", 1)
 
             # Debug
-            if self.DEBUG_RIC_SEND_FILE:
+            if self.DEBUG_SEND_FILE:
                 logger.debug(f"ricIF sendFile ideal blockMaxSize {block_max_size} batchAckSize {batch_ack_size}")
 
             # Frames follow the approach used in the web interface start, block..., end
@@ -91,7 +92,7 @@ class RICFileHandler:
             self._file_send_ok_to = 0
 
             # Debug
-            if self.DEBUG_RIC_SEND_FILE:
+            if self.DEBUG_SEND_FILE:
                 logger.debug(f"ricIF sendFile negotiated blockMaxSize {block_max_size} batchAckSize {batch_ack_size} resp {resp}")
 
             # Progress and check for abort
@@ -110,7 +111,7 @@ class RICFileHandler:
                         break
 
             # Debug
-            if self.DEBUG_RIC_SEND_FILE:
+            if self.DEBUG_SEND_FILE:
                 logger.debug(f"ricIF sendFile starting to send file data ...")
 
             # Send file blocks
@@ -135,7 +136,7 @@ class RICFileHandler:
                     
                     # Send block
                     self._ricInterface.sendRICRESTFileBlock(send_from_pos.to_bytes(4, 'big') + block_to_send)
-                    if self.DEBUG_RIC_SEND_FILE_BLOCK:
+                    if self.DEBUG_SEND_FILE_BLOCK:
                         logger.debug(f"sendRICRESTFileBlock data len {len(block_to_send)}")
                     send_from_pos += block_max_size
                     batch_block_idx += 1
@@ -145,7 +146,7 @@ class RICFileHandler:
                         break
 
                 # Debug
-                if self.DEBUG_RIC_SEND_FILE:
+                if self.DEBUG_SEND_FILE:
                     logger.debug(f"ricIF sendFile sent batch - start at {batch_start_pos} end at {send_from_pos} len {send_from_pos-batch_start_pos} okto {self._file_send_ok_to}")
 
                 # Wait for response (there is a timeout at the ESP end to ensure a response is always returned
@@ -158,7 +159,7 @@ class RICFileHandler:
                         return False
 
                     # Debug
-                    if self.DEBUG_RIC_SEND_FILE:
+                    if self.DEBUG_SEND_FILE:
                         logger.debug(f"ricIF sendFile checking for OKTO {self._file_send_ok_to} batchStartPos {batch_start_pos}")
 
                     # Check for okto
@@ -185,7 +186,7 @@ class RICFileHandler:
                 num_blocks += 1
 
             # Debug
-            if self.DEBUG_RIC_SEND_FILE:
+            if self.DEBUG_SEND_FILE:
                 logger.debug(f"ricIF sendFile sending END")
 
             # End frame
@@ -265,7 +266,8 @@ class RICFileHandler:
             with self._file_recv_lock:
                 if self._file_recv_last_block is not None and len(self._file_recv_last_block) > 0:
 
-                    logger.info(f"getFileContents received blockPos {self._file_recv_last_pos} expectedPos {block_pos} length {len(self._file_recv_last_block)}")
+                    if self.DEBUG_RECEIVE_FILE_BLOCK:
+                        logger.info(f"getFileContents received blockPos {self._file_recv_last_pos} expectedPos {block_pos} length {len(self._file_recv_last_block)}")
 
                     if self._file_recv_last_pos == block_pos:
 
@@ -281,7 +283,8 @@ class RICFileHandler:
                         if batch_count_since_ack_sent >= batch_ack_size or block_pos >= file_length:
                             # Send okto
                             self._ricInterface.sendRICRESTCmdFrameNoResp("{" + f'"cmdName":"dfAck","okto":{block_pos},"streamID":{stream_id},"rslt":"ok"' + "}")
-                            logger.info(f"getFileContents sentOKTO block {block_pos} length {len(file_contents)}")
+                            if self.DEBUG_RECEIVE_FILE:
+                                logger.info(f"getFileContents sentOKTO block {block_pos} length {len(file_contents)}")
                             batch_count_since_ack_sent = 0 
 
                     self._file_recv_last_block.clear()
@@ -294,23 +297,16 @@ class RICFileHandler:
                     progressCB(file_length, file_length, self._ricInterface)
 
                 # Send end
-                self._ricInterface.sendRICRESTCmdFrameNoResp("{" + f'"cmdName":"dfEnd","okto":{block_pos},"streamID":{stream_id},"rslt":"ok"' + "}")
-
-                # TODO remove
-                logger.info('getFileContents: file received')
+                self._ricInterface.sendRICRESTCmdFrame("{" + f'"cmdName":"dfEnd","okto":{block_pos},"streamID":{stream_id},"rslt":"ok"' + "}")
                 break
 
             # Progress update
             if progressCB is not None and block_pos != last_progress_block_pos:
                 last_progress_block_pos = block_pos
-                # TODO remove
-                logger.info(f'getFileContents: progress {block_pos}/{file_length}')
                 if not progressCB(block_pos, file_length, self._ricInterface):
                     self._ricInterface.sendRICRESTCmdFrameNoResp('{"cmdName":"dfCancel","streamID":{stream_id},}')
                     return None
 
-        # TODO remove
-        logger.info(f"getFileContents: file received {len(file_contents)} bytes RETURNING")
         return file_contents
     
     def onCmd(self, reptObj: dict) -> str:
@@ -328,16 +324,16 @@ class RICFileHandler:
         if self._file_send_ok_to < okto:
             self._file_send_ok_to = okto
         self._file_send_new_ok_to_received = True
-        if self.DEBUG_RIC_SEND_FILE:
+        if self.DEBUG_SEND_FILE:
             logger.info(f"RICFileHandler OKTO msg {reptObj['okto']}")
 
     def onFail(self, reptObj: dict):
-        if self.DEBUG_RIC_SEND_FILE:
+        if self.DEBUG_SEND_FILE:
             logger.info(f"RICFileHandler FAIL msg {reptObj}")
         self._streamClosed = True
 
     def onDataBlock(self, decodedMsg: DecodedMsg):
-        if self.DEBUG_RIC_RECEIVE_FILE_BLOCK:
+        if self.DEBUG_RECEIVE_FILE_BLOCK:
             logger.info(f"RICFileHandler DATA filePos {decodedMsg.getFilePos()} len {len(decodedMsg.getBlockContents())}")
         if decodedMsg.payload is not None:
             with self._file_recv_lock:
