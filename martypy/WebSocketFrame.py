@@ -47,12 +47,12 @@ class WebSocketFrame():
     def getCloseRequired(self) -> bool:
         return self.closeRequired
 
-    def getTextMsg(self) -> str:
+    def getTextMsg(self) -> str | None:
         if len(self.textMsgs) > 0:
             return self.textMsgs.popleft()
         return None
 
-    def getBinaryMsg(self) -> bytes:
+    def getBinaryMsg(self) -> bytes | None:
         if len(self.binaryMsgs) > 0:
             binaryMsg = self.binaryMsgs.popleft()
             return binaryMsg

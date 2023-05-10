@@ -213,12 +213,11 @@ class RICCommsSerial(RICCommsBase):
             # logger.debug(f"CommsSerial rx {byt.hex()}")
         # logger.debug("Exiting serialRxLoop")
 
-    def _onHDLCFrame(self, frame: bytes | str) -> None:
-        if type(frame) is bytes:
-            if self.rxFrameCB is not None:
-                if self.DEBUG_HDLC_RX:
-                    logger.debug(f"RICCommsSerial rx {len(frame)} {frame.hex()}")
-                self.rxFrameCB(frame)
+    def _onHDLCFrame(self, frame: bytearray) -> None:
+        if self.rxFrameCB is not None:
+            if self.DEBUG_HDLC_RX:
+                logger.debug(f"RICCommsSerial rx {len(frame)} {frame.hex()}")
+            self.rxFrameCB(frame)
 
     def _onHDLCError(self) -> None:
         pass

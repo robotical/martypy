@@ -3,6 +3,7 @@ RICProtocols
 '''
 import json
 import logging
+import struct
 from typing import Dict, Tuple, Union
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,6 @@ class DecodedMsg:
         self.errMsg = ""
         self.msgNum = None
         self.protocolID = None
-        self.isText = None
         self.payload : bytes | None = None
         self.restType = None
         self.msgTypeCode = None
@@ -36,13 +36,27 @@ class DecodedMsg:
     def setRESTElemCode(self, restType: int) -> None:
         self.restType = restType
 
-    def setPayload(self, isText: bool, payload: bytes) -> None:
-        self.isText = isText
+    def setPayload(self, payload: bytes) -> None:
         self.payload = payload
+
+    def getFilePos(self) -> int:
+        if self.restType == RICProtocols.RICREST_ELEM_CODE_FILE_BLOCK:
+            filePosStart = RICProtocols.RICREST_FILEBLOCK_FILEPOS_POS
+            filePosEnd = filePosStart + RICProtocols.RICREST_FILEBLOCK_FILEPOS_POS_BYTES
+            if self.payload is not None and len(self.payload) >= filePosEnd:
+                filePos = struct.unpack(">I", self.payload[filePosStart:filePosEnd])
+                return filePos[0]
+        return 0
+    
+    def getBlockContents(self) -> bytes:
+        if self.restType == RICProtocols.RICREST_ELEM_CODE_FILE_BLOCK:
+            if self.payload is not None and len(self.payload) >= RICProtocols.RICREST_FILEBLOCK_PAYLOAD_POS:
+                return self.payload[RICProtocols.RICREST_FILEBLOCK_PAYLOAD_POS:]
+        return b""
 
     def getJSONDict(self) -> Dict:
         msgContent = {}
-        if self.isText and self.payload is not None:
+        if self.payload is not None:
             try:
                 payloadStr = self.payload.decode("utf-8")
                 termPos = payloadStr.find("\0") if self.payload is not None else -1
@@ -88,11 +102,8 @@ class DecodedMsg:
             else:
                 msgStr += f"OTHER {self.restType}"
             msgStr += " "
-        if self.isText is not None:
-            if self.isText:
-                msgStr += "Payload:" + str(self.payload)
-            elif self.payload is not None:
-                msgStr += f"PayloadLen: {len(self.payload)} "
+        if self.payload is not None:
+            msgStr += f"PayloadLen: {len(self.payload)}"
         return msgStr
 
 class RICProtocols:
@@ -101,12 +112,11 @@ class RICProtocols:
     Implements protocols used by RIC including RICSerial and RICREST
     '''
     # Robotical RIC Protocol definitions
-    MSG_TYPE_COMMAND = 0x00
     PROTOCOL_ROSSERIAL = 0x00
     PROTOCOL_M1SC = 0x01
     PROTOCOL_RICREST = 0x02
     RICREST_ELEM_CODE_URL = 0x00
-    RICREST_ELEM_CODE_JSON = 0x01
+    RICREST_ELEM_CODE_CMDRESPJSON = 0x01
     RICREST_ELEM_CODE_BODY = 0x02
     RICREST_ELEM_CODE_CMD_FRAME = 0x03
     RICREST_ELEM_CODE_FILE_BLOCK = 0x04
@@ -116,6 +126,17 @@ class RICProtocols:
     MSG_TYPE_PUBLISH = 0x02
     MSG_TYPE_REPORT = 0x03
     MSG_TYPE_STRS = ["cmd", "resp", "publish", "report"]
+    MSG_TYPE_BIT_POS = 6
+    COMMSMSG_MSG_NUM_POS = 0
+    COMMSMSG_PROTOCOL_POS = 1
+    COMMSMSG_PAYLOAD_POS = 2
+    RICREST_ELEM_CODE_POS = 0
+    RICREST_PAYLOAD_POS = 1
+    ROSSERIAL_PAYLOAD_POS = 0
+    RICREST_FILEBLOCK_CHANNEL_POS = 0
+    RICREST_FILEBLOCK_FILEPOS_POS = 0
+    RICREST_FILEBLOCK_FILEPOS_POS_BYTES = 4
+    RICREST_FILEBLOCK_PAYLOAD_POS = 4
 
     def __init__(self) -> None:
         self.ricSerialMsgNum = 1
@@ -124,7 +145,7 @@ class RICProtocols:
     def encodeRICRESTURL(self, cmdStr: str) -> Tuple[bytes, int]:
         # RICSerial URL
         msgNum = self.ricSerialMsgNum
-        cmdFrame = bytearray([msgNum, self.MSG_TYPE_COMMAND + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_URL])
+        cmdFrame = bytearray([msgNum, (self.MSG_TYPE_COMMAND << self.MSG_TYPE_BIT_POS) + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_URL])
         cmdFrame += cmdStr.encode() + b"\0"
         self.ricSerialMsgNum += 1
         if self.ricSerialMsgNum > 255:
@@ -134,7 +155,7 @@ class RICProtocols:
     def encodeRICRESTCmdFrame(self, cmdStr: Union[str,bytes], payload: Union[bytes, str] | None = None) -> Tuple[bytes, int]:
         # RICSerial command frame
         msgNum = self.ricSerialMsgNum
-        cmdFrame = bytearray([msgNum, self.MSG_TYPE_COMMAND + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_CMD_FRAME])
+        cmdFrame = bytearray([msgNum, (self.MSG_TYPE_COMMAND << self.MSG_TYPE_BIT_POS) + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_CMD_FRAME])
         if type(cmdStr) is str:
             cmdFrame += cmdStr.encode()
         elif type(cmdStr) is bytes:
@@ -150,10 +171,16 @@ class RICProtocols:
         if self.ricSerialMsgNum > 255:
             self.ricSerialMsgNum = 1
         return cmdFrame, msgNum
+    
+    def encodeRICRESTResp(self, msgNum: int, respStr: str) -> Tuple[bytes, int]:
+        # RICSerial response
+        cmdFrame = bytearray([msgNum, (self.MSG_TYPE_RESPONSE << self.MSG_TYPE_BIT_POS) + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_CMDRESPJSON])
+        cmdFrame += respStr.encode() + b"\0"
+        return cmdFrame, msgNum
 
     def encodeRICRESTFileBlock(self, cmdBuf: bytes) -> Tuple[bytes, int]:
         # RICSerial file block - not numbered
-        cmdFrame = bytearray([0, self.MSG_TYPE_COMMAND + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_FILE_BLOCK])
+        cmdFrame = bytearray([0, (self.MSG_TYPE_COMMAND << self.MSG_TYPE_BIT_POS) + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_FILE_BLOCK])
         cmdFrame += cmdBuf
         return cmdFrame, 0
 
@@ -163,23 +190,22 @@ class RICProtocols:
             msg.setError(f"Frame too short {len(fr)} bytes")
         else:
             # Decode header
-            msgNum = fr[0]
+            msgNum = fr[self.COMMSMSG_MSG_NUM_POS]
             msg.setMsgNum(msgNum)
-            protocol = fr[1] & 0x3f
+            protocol = fr[self.COMMSMSG_PROTOCOL_POS] & 0x3f
             msg.setProtocol(protocol)
-            msgTypeCode = fr[1] >> 6
+            msgTypeCode = fr[self.COMMSMSG_PROTOCOL_POS] >> self.MSG_TYPE_BIT_POS
             msg.setMsgTypeCode(msgTypeCode)
             if protocol == self.PROTOCOL_RICREST:
-                restElemCode = fr[2]
+                restElemCode = fr[self.COMMSMSG_PAYLOAD_POS + self.RICREST_ELEM_CODE_POS]
                 msg.setRESTElemCode(restElemCode)
-                if restElemCode == self.RICREST_ELEM_CODE_URL or restElemCode == self.RICREST_ELEM_CODE_JSON:
-                    payload = fr[3:].rstrip(b'\x00')
-                    msg.setPayload(True, payload)
+                if restElemCode == self.RICREST_ELEM_CODE_URL or restElemCode == self.RICREST_ELEM_CODE_CMDRESPJSON:
+                    msg.setPayload(fr[self.COMMSMSG_PAYLOAD_POS + self.RICREST_PAYLOAD_POS:].rstrip(b'\x00'))
                 else:
-                    msg.setPayload(False, fr[3:])
+                    msg.setPayload(fr[self.COMMSMSG_PAYLOAD_POS + self.RICREST_PAYLOAD_POS:])
                 # logging.debug(f"RICREST {RICProtocols.MSG_TYPE_STRS[msgTypeCode]} msgNum {msgNum} {fr.hex()}")
             elif protocol == self.PROTOCOL_ROSSERIAL:
-                msg.setPayload(False, fr[2:])
+                msg.setPayload(fr[self.COMMSMSG_PAYLOAD_POS + self.ROSSERIAL_PAYLOAD_POS:])
             else:
                 logging.debug(f"RICProtocols Unknown frame received {fr}")
         return msg

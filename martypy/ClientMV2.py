@@ -69,6 +69,7 @@ class ClientMV2(ClientGeneric):
         self._interfaceMethod = method
         self._numHwStatusRetries = 10
         self._sendFileProgressCB = None
+        self._recvFileProgressCB = None
         self._playMP3ProgressCB = None
         # Debug
         self.DEBUG_RECEIVE_PUBLISHED_MSG = False
@@ -855,6 +856,17 @@ class ClientMV2(ClientGeneric):
         self._sendFileProgressCB = progress_callback
         return self.ricIF.sendFile(filename, self._sendFileProgressAdapter, file_dest)
 
+    def _recvFileProgressAdapter(self, fileSize: int, bytesSent: int, ricInterface: RICInterface) -> bool:
+        if self._recvFileProgressCB:
+            return self._recvFileProgressCB(fileSize, bytesSent)
+        return True
+    
+    def get_file_contents(self, filename: str,
+                progress_callback: Callable[[int, int], bool] | None = None,
+                file_src: str = 'fs') -> bytes | None:
+        self._recvFileProgressCB = progress_callback
+        return self.ricIF.getFileContents(filename, self._recvFileProgressAdapter, file_src)
+    
     def _playMP3ProgressAdapter(self, fileSize: int, bytesSent: int, ricInterface: RICInterface) -> bool:
         if self._playMP3ProgressCB:
             return self._playMP3ProgressCB(fileSize, bytesSent)

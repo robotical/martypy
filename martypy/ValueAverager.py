@@ -10,6 +10,6 @@ class ValueAverager:
 
     def getAvg(self):
         if len(self.valList) > 0:
-            return round(sum(self.valList)/len(self.valList),2)
+            return round(sum(self.valList, 0)/len(self.valList),2)
         return 0
 

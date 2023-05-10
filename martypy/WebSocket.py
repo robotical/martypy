@@ -25,7 +25,7 @@ class WebSocket():
             wsPath: str = "/ws",
             timeout: float = 5.0,
             autoReconnect: bool = True,
-            reconnectRepeatSecs: int = 5.0) -> None:
+            reconnectRepeatSecs: float = 5.0) -> None:
         self.ipAddr = socket.gethostbyname(ipAddrOrHostname)
         self.wsPath = wsPath
         self.ipPort = ipPort

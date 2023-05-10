@@ -1295,7 +1295,7 @@ class Marty(object):
 
         Args:
             filename: the name of the file to send
-            progress_callback: callback used to indicate how file send is progressing, callable takes three params
+            progress_callback: callback used to indicate how file send is progressing, callable takes two params
                     which are bytesSent and totalBytes and
                     returns a bool which should be True to continue the file upload or False to abort
             file_dest: "fs" to upload to file system, "ricfw" for new RIC firmware
@@ -1307,6 +1307,26 @@ class Marty(object):
         '''
         return self.client.send_file(filename, progress_callback, file_dest)
 
+    def get_file_contents(self, filename: str,
+            progress_callback: Callable[[int, int], bool] | None = None,
+            file_src: str = 'fs') -> bytes | None:
+        '''
+        Get the contents of a file from Marty. :two:
+
+        Args:
+            filename: the name of the file to get
+            progress_callback: callback used to indicate how file send is progressing, callable takes two params
+                    which are bytesSent and totalBytes and
+                    returns a bool which should be True to continue the file upload or False to abort
+            file_src: "fs" to get from file system
+        Returns:
+            The contents of the file as a bytes object or None if an error occurred
+        Throws:
+            OSError: operating system exceptions
+            May throw other exceptions so include a general exception handler
+        '''
+        return self.client.get_file_contents(filename, progress_callback, file_src)
+        
     def play_mp3(self, filename: str,
                 progress_callback: Callable[[int, int], bool] | None = None) -> bool:
         '''

@@ -143,10 +143,9 @@ class RICCommsWiFi(RICCommsBase):
         except Exception as excp:
             raise MartyConnectException("Connection send problem") from excp
 
-    def _onHDLCFrame(self, frame: bytes | str) -> None:
-        if type(frame) is bytes:
-            if self.rxFrameCB is not None:
-                self.rxFrameCB(frame)
+    def _onHDLCFrame(self, frame: bytearray) -> None:
+        if self.rxFrameCB is not None:
+            self.rxFrameCB(frame)
         
     def _onHDLCError(self) -> None:
         pass

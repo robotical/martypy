@@ -157,21 +157,18 @@ class LikeHDLC:
     - encoding and decoding only
     '''
     def __init__(self, 
-            onFrame: Callable[[Union[bytes, str]], None],
+            onFrame: Callable[[bytearray], None],
             onError: Callable[[], None],
-            asciiEscapes: bool = False,
-            payloadsAreStrings: bool = False) -> None:
+            asciiEscapes: bool = False) -> None:
         '''
         Initialise LikeHDLC
         Args:
             onFrame: callback function (takes 1 parameter which is a received frame)
             onError: callback function (0 parameters) when an error occurs
             asciiEscapes: bool - use the standard HDLC escape codes (which are ASCII values)
-            payloadsAreStrings: bool - received frames are returned as strings (as opposed to bytes)
         Returns:
             None
         '''
-        self.payloadsAreStrings = payloadsAreStrings
         self.onFrame = onFrame
         self.onError = onError
         self.asciiEscapes = asciiEscapes
@@ -247,10 +244,7 @@ class LikeHDLC:
             self.currentFrame = None
             if not rxFrame.error:
                 # Success
-                if self.payloadsAreStrings:
-                    self.onFrame(rxFrame.toString())
-                else:
-                    self.onFrame(rxFrame.data)
+                self.onFrame(rxFrame.data)
                 self.stats.framesRxOk += 1
             elif rxFrame.finished:
                 # Error

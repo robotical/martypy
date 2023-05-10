@@ -399,6 +399,12 @@ class ClientGeneric(ABC):
         return False
 
     @abstractmethod
+    def get_file_contents(self, filename: str,
+                progress_callback: Callable[[int, int], bool] | None = None,
+                file_src: str = 'fs') -> bytes | None:
+        return None
+    
+    @abstractmethod
     def play_mp3(self, filename: str,
                 progress_callback: Callable[[int, int], bool] | None = None) -> bool:
         return False
