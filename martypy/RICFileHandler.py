@@ -29,6 +29,7 @@ class RICFileHandler:
         self._file_recv_last_block = bytearray()
         self._file_recv_last_pos = 0
         self._file_recv_lock = threading.Lock()
+        self._file_recv_bridgeID = None
         # File transfer settings
         self.OVERALL_FILE_TRANSFER_TIMEOUT = 600
         self.BLOCK_ACK_TIMEOUT = 15
@@ -219,13 +220,28 @@ class RICFileHandler:
         block_max_size = self._ricInterface.commsHandler.commsParams.fileTransfer.get("fileBlockMax", 5000)
         batch_ack_size = self._ricInterface.commsHandler.commsParams.fileTransfer.get("fileBatchAck", 1)
         
+        # Check if bridge protocol is required - martycam files are always transferred using bridge protocol
+        self._file_recv_bridgeID = None
+        if file_src == "martycam":
+
+            # Establish a bridge connection
+            martycam_serial_port_name = "Serial1"
+            result = self._ricInterface.cmdRICRESTURLSync(f"commandserial/bridge/setup?port={martycam_serial_port_name}&name=MartyCam")
+            if result.get("rslt", "") != "ok":
+                raise MartyTransferException("MartyCam bridge setup failed")
+            
+            # Commands need to be sent using the bridge protocol
+            self._file_recv_bridgeID = int(result.get("bridgeID", 0))
+            logger.debug(f"getFileContents from martycam bridgeID {self._file_recv_bridgeID}")
+
         # Request file transfer
         # Frames follow the approach used in the web interface start, block..., end
         recv_file_req = '{' + f'"cmdName":"dfStart","reqStr":"{req_str}","fileType":"{file_src}",' + \
                         f'"batchMsgSize":{block_max_size},"batchAckSize":{batch_ack_size},' + \
                         f'"fileName":"{filename}"' + '}'
-        resp = self._ricInterface.sendRICRESTCmdFrameSync(recv_file_req, timeOutSecs = 10)
+        resp = self._ricInterface.sendRICRESTCmdFrameSync(recv_file_req, bridgeID=self._file_recv_bridgeID, timeOutSecs = 10)
         if resp.get("rslt","") != "ok":
+            self._removeBridge()
             raise MartyTransferException("File transfer start not acknowledged")
         
         # Extract file length and CRC info
@@ -250,16 +266,20 @@ class RICFileHandler:
 
             # Check for timeout
             if time.time() - start_time > self.OVERALL_FILE_TRANSFER_TIMEOUT:
+                self._removeBridge()
                 raise MartyTransferException("File transfer timeout")
             
             # Check for timeout on last block
             if time.time() - last_block_time > self.BLOCK_ACK_TIMEOUT:
                 block_ack_retry_count += 1
                 if block_ack_retry_count > self.BATCH_RETRY_MAX:
+                    self._removeBridge()
                     raise MartyTransferException("File transfer block timeout")
 
                 # Send okto
-                self._ricInterface.sendRICRESTCmdFrameNoResp("{" + f'"cmdName":"dfAck","okto":{block_pos},"streamID":{stream_id},"rslt":"ok"' + "}")
+                self._ricInterface.sendRICRESTCmdFrameNoResp(
+                        "{" + f'"cmdName":"dfAck","okto":{block_pos},"streamID":{stream_id},"rslt":"ok"' + "}",
+                        bridgeID=self._file_recv_bridgeID)
                 continue
             
             # Check for new data received
@@ -282,7 +302,9 @@ class RICFileHandler:
                         batch_count_since_ack_sent += 1
                         if batch_count_since_ack_sent >= batch_ack_size or block_pos >= file_length:
                             # Send okto
-                            self._ricInterface.sendRICRESTCmdFrameNoResp("{" + f'"cmdName":"dfAck","okto":{block_pos},"streamID":{stream_id},"rslt":"ok"' + "}")
+                            self._ricInterface.sendRICRESTCmdFrameNoResp(
+                                "{" + f'"cmdName":"dfAck","okto":{block_pos},"streamID":{stream_id},"rslt":"ok"' + "}",
+                                bridgeID=self._file_recv_bridgeID)
                             if self.DEBUG_RECEIVE_FILE:
                                 logger.info(f"getFileContents sentOKTO block {block_pos} length {len(file_contents)}")
                             batch_count_since_ack_sent = 0 
@@ -297,16 +319,23 @@ class RICFileHandler:
                     progressCB(file_length, file_length, self._ricInterface)
 
                 # Send end
-                self._ricInterface.sendRICRESTCmdFrame("{" + f'"cmdName":"dfEnd","okto":{block_pos},"streamID":{stream_id},"rslt":"ok"' + "}")
+                self._ricInterface.sendRICRESTCmdFrame(
+                        "{" + f'"cmdName":"dfEnd","okto":{block_pos},"streamID":{stream_id},"rslt":"ok"' + "}",
+                        bridgeID=self._file_recv_bridgeID)
                 break
 
             # Progress update
             if progressCB is not None and block_pos != last_progress_block_pos:
                 last_progress_block_pos = block_pos
                 if not progressCB(block_pos, file_length, self._ricInterface):
-                    self._ricInterface.sendRICRESTCmdFrameNoResp('{"cmdName":"dfCancel","streamID":{stream_id},}')
+                    self._ricInterface.sendRICRESTCmdFrameNoResp(
+                        "{" + f'"cmdName":"dfCancel","streamID":{stream_id}' + "}",
+                        bridgeID=self._file_recv_bridgeID)
+                    self._removeBridge()
                     return None
 
+        # Remove bridge if used
+        self._removeBridge()
         return file_contents
     
     def onCmd(self, reptObj: dict) -> str:
@@ -343,3 +372,7 @@ class RICFileHandler:
     def getUploadBytesPS(self) -> float:
         return self.uploadBytesPerSec.getAvg()
     
+    def _removeBridge(self) -> None:
+        if self._file_recv_bridgeID is not None:
+            self._ricInterface.cmdRICRESTURLSync(f"commandserial/bridge/remove?bridgeID={self._file_recv_bridgeID}")
+            self._file_recv_bridgeID = None

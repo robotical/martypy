@@ -231,7 +231,6 @@ class LikeHDLC:
                 # End
                 self.currentFrame.finish()
                 self.currentFrame.checkCRC()
-                # logger.debug(f"END time {time.time()}")
         else:
             if self.currentFrame is not None:
                 if not self.currentFrame.finished:
