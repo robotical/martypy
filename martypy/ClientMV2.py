@@ -405,6 +405,9 @@ class ClientMV2(ClientGeneric):
         }
         addon_names = sensor_possible_names.get(add_on_or_side, [])
 
+        if addon_names == []:
+            addon_names = add_on_or_side
+
         # There may be a situation just after connecting to RIC where publication messages from the addon
         # have not yet been received so we need to wait for them to be received before we can parse them
         for retryLoop in range(10):
