@@ -4,6 +4,9 @@ A program to play an MP3 sound file on Marty
 
 # See README.md for instructions on how to run this
 
+import pathlib
+cur_path = pathlib.Path(__file__).parent.resolve()
+
 # Arguments
 import argparse
 parser = argparse.ArgumentParser()

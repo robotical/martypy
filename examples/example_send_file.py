@@ -4,6 +4,9 @@ A program to send a file to marty's file system
 
 # See README.md for instructions on how to run this
 
+import pathlib
+cur_path = pathlib.Path(__file__).parent.resolve()
+
 USE_LOCAL_MARTYPY_CODE = False
 import sys
 if USE_LOCAL_MARTYPY_CODE:
