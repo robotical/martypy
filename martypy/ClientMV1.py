@@ -873,12 +873,12 @@ class ClientMV1(ClientGeneric):
         return ""
 
     def send_file(self, filename: str,
-                progress_callback: Callable[[int, int], bool] = None,
+                progress_callback: Callable[[int, int], bool] | None = None,
                 file_dest:str = "fs") -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def play_mp3(self, filename: str,
-                progress_callback: Callable[[int, int], bool] = None) -> bool:
+                progress_callback: Callable[[int, int], bool] | None = None) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
         
     def get_file_list(self) -> List[str]:

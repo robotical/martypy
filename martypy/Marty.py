@@ -163,7 +163,6 @@ class Marty(object):
             * MartyConfigException if the parameters are invalid
             * MartyConnectException if Marty couldn't be contacted
         '''
-        self.client = None
         # Merge in any extra clients that have been added and check valid
         self.CLIENT_TYPES = ClientGeneric.dict_merge(self.CLIENT_TYPES, extra_client_types)
 
