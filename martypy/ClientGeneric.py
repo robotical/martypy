@@ -341,11 +341,11 @@ class ClientGeneric(ABC):
         return []
 
     @abstractmethod
-    def send_ric_rest_cmd(self, ricRestCmd: str) -> None:
+    def send_ric_rest_cmd(self, ricRestCmd: str, msgDebugStr: str | None = None) -> None:
         pass
 
     @abstractmethod
-    def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
+    def send_ric_rest_cmd_sync(self, ricRestCmd: str, msgDebugStr: str | None = None) -> Dict:
         return {}
 
     @abstractmethod

@@ -91,11 +91,13 @@ class RICCommsWiFi(RICCommsBase):
                         self._onWSReconnect,
                         ipAddrOrHostname, ipPort, wsPath,
                         autoReconnect=autoReconnect)
-            self.webSocket.open()
+            if not self.webSocket.open():
+                return False
             if self.DEBUG_WEBSOCKET_CONNECT:
                 logger.debug(f"WebSocket open took {time.time() - debugStartTime}")
         except Exception as excp:
             raise MartyConnectException("Websocket problem") from excp
+            return False
 
         # Configure HDLC
         self._hdlc.setAsciiEscapes(hdlcAsciiEscapes)
@@ -176,7 +178,7 @@ class RICCommsWiFi(RICCommsBase):
                 logger.debug(f"webSocket problem {excp}")
                 self.webSocketThreadEnabled = False
             except Exception as excp:
-                logger.debug(f"WebSocket exception {excp}")
+                logger.debug(f"WebSocket _webSocketThreadFn exception {excp}")
             time.sleep(0.001)
         # logger.debug("Exiting WebSocket thread")
         self._isOpen = False

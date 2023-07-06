@@ -41,6 +41,18 @@
             ],
         },
         {
+            "name": "Python: Camera Stream Test",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/martypy/tests/testCamStream.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "WiFi",
+                "192.168.1.14"
+            ],
+        },        
+        {
             "name": "Python: current file",
             "type": "python",
             "request": "launch",

@@ -207,13 +207,13 @@ class ClientMV2(ClientGeneric):
                                    f"is {self.max_blocking_wait_time} s)")
 
     def hello(self) -> bool:
-        return self.ricIF.cmdRICRESTRslt("traj/getReady")
+        return self.ricIF.cmdRICRESTRslt("traj/getReady", msgDebugStr="Hello")
 
     def get_ready(self) -> bool:
-        return self.ricIF.cmdRICRESTRslt("traj/getReady")
+        return self.ricIF.cmdRICRESTRslt("traj/getReady", msgDebugStr="GetReady")
 
     def stand_straight(self, move_time: int = 2000) -> bool:
-        return self.ricIF.cmdRICRESTRslt(f"traj/standStraight?moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/standStraight?moveTime={move_time}", msgDebugStr="StandStraight")
 
     def discover(self) -> List[str]:
         return []
@@ -225,19 +225,20 @@ class ClientMV2(ClientGeneric):
         elif stopCode == 2: robotRestCmd = "panic"
         elif stopCode == 3: trajCmd = "getReady"
         elif stopCode == 4 or stopCode == 5: robotRestCmd = "pause"
-        isOk = self.ricIF.cmdRICRESTRslt("robot/" + robotRestCmd)
+        isOk = self.ricIF.cmdRICRESTRslt("robot/" + robotRestCmd, msgDebugStr=f"Robot:{robotRestCmd}")
         if len(trajCmd) > 0:
-            self.ricIF.cmdRICRESTRslt("traj/" + trajCmd)
+            self.ricIF.cmdRICRESTRslt("traj/" + trajCmd, msgDebugStr=f"Traj:{trajCmd}")
         return isOk
 
     def resume(self) -> bool:
-        return self.ricIF.cmdRICRESTRslt("robot/resume")
+        return self.ricIF.cmdRICRESTRslt("robot/resume", msgDebugStr="RobotResume")
 
     def hold_position(self, hold_time: int) -> bool:
-        return self.ricIF.cmdRICRESTRslt(f"traj/hold?moveTime={hold_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/hold?moveTime={hold_time}", msgDebugStr="Traj:Hold")
 
     def move_joint(self, joint_id: int, position: int, move_time: int) -> bool:
-        return self.ricIF.cmdRICRESTRslt(f"traj/joint?jointID={joint_id}&angle={position}&moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/joint?jointID={joint_id}&angle={position}&moveTime={move_time}", 
+                                            msgDebugStr="TrajMoveJoint")
 
     def get_joint_position(self, joint_id: int) -> float:
         return self.ricHardware.getServoPos(joint_id, self.ricHwElemsInfoByIDNo)
@@ -257,7 +258,8 @@ class ClientMV2(ClientGeneric):
             self.preException(True)
             raise MartyCommandException("Direction must be one of {}, not '{}'"
                                         "".format(set(ClientGeneric.SIDE_CODES.keys()), direction))
-        return self.ricIF.cmdRICRESTRslt(f"traj/lean?side={directionNum}&leanAngle={amount}&moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/lean?side={directionNum}&leanAngle={amount}&moveTime={move_time}",
+                                            msgDebugStr="TrajLean")
 
     def walk(self, num_steps: int = 2, start_foot:str = 'auto', turn: int = 0,
                 step_length:int = 25, move_time: int = 1500) -> bool:
@@ -270,7 +272,8 @@ class ClientMV2(ClientGeneric):
                                             "".format(set(ClientGeneric.SIDE_CODES.keys()), start_foot))
             side_url_param = f'&side={sideNum}'
         return self.ricIF.cmdRICRESTRslt(f"traj/step/{num_steps}?stepLength={step_length}&turn={turn}"
-                                         f"&moveTime={move_time}" + side_url_param)
+                                         f"&moveTime={move_time}" + side_url_param,
+                                         msgDebugStr="TrajStep")
 
     def eyes(self, joint_id: int, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
         if type(pose_or_angle) is str:
@@ -279,14 +282,15 @@ class ClientMV2(ClientGeneric):
             except KeyError:
                 raise MartyCommandException("pose must be one of {}, not '{}'"
                                             "".format(set(ClientGeneric.EYE_POSES.keys()), pose_or_angle))
-            return self.ricIF.cmdRICRESTRslt(f"traj/{eyesTrajectory}")
+            return self.ricIF.cmdRICRESTRslt(f"traj/{eyesTrajectory}", msgDebugStr="TrajEyes")
         return self.move_joint(joint_id, int(pose_or_angle), move_time)
 
     def kick(self, side: str = 'right', twist: int = 0, move_time: int = 2500) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
-        return self.ricIF.cmdRICRESTRslt(f"traj/kick?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}&turn={twist}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/kick?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}&turn={twist}",
+                                         msgDebugStr="TrajKick")
 
     def arms(self, left_angle: int, right_angle: int, move_time: int) -> bool:
         self.move_joint(6, left_angle, move_time)
@@ -295,22 +299,25 @@ class ClientMV2(ClientGeneric):
     def celebrate(self, move_time: int = 4000) -> bool:
 
         # TODO - add celebrate trajectory to Marty V2
-        return self.ricIF.cmdRICRESTRslt(f"traj/wiggle?moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/wiggle?moveTime={move_time}", msgDebugStr="TrajCelebrate")
 
     def circle_dance(self, side: str = 'right', move_time: int = 2500) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
-        return self.ricIF.cmdRICRESTRslt(f"traj/circle?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/circle?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}",
+                                        msgDebugStr="TrajCircle")
 
     def dance(self, side: str = 'right', move_time: int = 3000) -> bool:
         if side != 'right' and side != 'left':
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
-        return self.ricIF.cmdRICRESTRslt(f"traj/dance?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/dance?side={ClientGeneric.SIDE_CODES[side]}&moveTime={move_time}",
+                                        msgDebugStr="TrajDance")
 
     def wiggle(self, move_time: int = 4000) -> bool:
-        return self.ricIF.cmdRICRESTRslt(f"traj/wiggle?moveTime={move_time}")
+        return self.ricIF.cmdRICRESTRslt(f"traj/wiggle?moveTime={move_time}",
+                                         msgDebugStr="TrajWiggle")
 
     def sidestep(self, side: str, steps: int = 1, step_length: int = 35,
             move_time: int = 1000) -> bool:
@@ -318,13 +325,14 @@ class ClientMV2(ClientGeneric):
             raise MartyCommandException("side must be one of 'right' or 'left', not '{}'"
                                         "".format(side))
         return self.ricIF.cmdRICRESTRslt(f"traj/sidestep/{steps}?side={ClientGeneric.SIDE_CODES[side]}"
-                                         f"&stepLength={step_length}&moveTime={move_time}")
+                                         f"&stepLength={step_length}&moveTime={move_time}",
+                                         msgDebugStr="TrajSidestep")
 
     def set_volume(self, volume: int) -> bool:
-        return self.ricIF.cmdRICRESTRslt(f"audio/vol/{volume}")
+        return self.ricIF.cmdRICRESTRslt(f"audio/vol/{volume}", msgDebugStr="SetAudioVol")
 
     def get_volume(self) -> int:
-        result = self.ricIF.cmdRICRESTURLSync("audio/vol")
+        result = self.ricIF.cmdRICRESTURLSync("audio/vol", msgDebugStr="GetAudioVolume")
         if result.get("rslt", "") == "ok":
             return result.get("volPC", 0)
         return 0
@@ -338,7 +346,7 @@ class ClientMV2(ClientGeneric):
             return self.play_mp3(str(name_or_freq_start), self.ricIF)
         if not name_or_freq_start.lower().endswith(".raw"):
             name_or_freq_start += ".raw"
-        return self.ricIF.cmdRICRESTRslt(f"filerun/{name_or_freq_start}")
+        return self.ricIF.cmdRICRESTRslt(f"filerun/{name_or_freq_start}", msgDebugStr="FileRun")
 
     def pinmode_gpio(self, gpio: int, mode: str) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
@@ -495,13 +503,13 @@ class ClientMV2(ClientGeneric):
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def save_calibration(self) -> bool:
-        return self.ricIF.cmdRICRESTRslt(f"calibrate/set")
+        return self.ricIF.cmdRICRESTRslt(f"calibrate/set", msgDebugStr="CalSet")
 
     def clear_calibration(self) -> bool:
-        return self.ricIF.cmdRICRESTRslt(f"calibrate/setFlag/0")
+        return self.ricIF.cmdRICRESTRslt(f"calibrate/setFlag/0", msgDebugStr="CalClear")
 
     def is_calibrated(self) -> bool:
-        result = self.ricIF.cmdRICRESTURLSync("calibrate")
+        result = self.ricIF.cmdRICRESTURLSync("calibrate", msgDebugStr="Calibrate")
         if result.get("rslt", "") == "ok":
             return result.get("calDone", 0) != 0
         return False
@@ -553,16 +561,16 @@ class ClientMV2(ClientGeneric):
 
     def set_marty_name(self, name: str) -> bool:
         escapedName = name.replace('"', '').replace('\n','')
-        return self.ricIF.cmdRICRESTRslt(f"friendlyname/{escapedName}")
+        return self.ricIF.cmdRICRESTRslt(f"friendlyname/{escapedName}", msgDebugStr="SetFriendlyName")
 
     def get_marty_name(self) -> str:
-        result = self.ricIF.cmdRICRESTURLSync("friendlyname")
+        result = self.ricIF.cmdRICRESTURLSync("friendlyname", msgDebugStr="GetFriendlyName")
         if result.get("rslt", "") == "ok":
             return result.get("friendlyName", "Marty")
         return "Marty"
 
     def is_marty_name_set(self) -> bool:
-        result = self.ricIF.cmdRICRESTURLSync("friendlyname")
+        result = self.ricIF.cmdRICRESTURLSync("friendlyname", msgDebugStr="SetFriendlyName")
         if result.get("rslt", "") == "ok":
             return result.get("friendlyNameIsSet", 0) != 0
         return False
@@ -571,11 +579,11 @@ class ClientMV2(ClientGeneric):
         self._updateHwElemsInfo()
         return self.ricHwElemsList
 
-    def send_ric_rest_cmd(self, ricRestCmd: str) -> None:
-        self.ricIF.sendRICRESTURL(ricRestCmd)
+    def send_ric_rest_cmd(self, ricRestCmd: str, msgDebugStr: str | None = None) -> None:
+        self.ricIF.sendRICRESTURL(ricRestCmd, msgDebugStr=msgDebugStr)
 
-    def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
-        return self.ricIF.cmdRICRESTURLSync(ricRestCmd)
+    def send_ric_rest_cmd_sync(self, ricRestCmd: str, msgDebugStr: str | None = None) -> Dict:
+        return self.ricIF.cmdRICRESTURLSync(ricRestCmd, msgDebugStr=msgDebugStr)
 
     def is_conn_ready(self) -> bool:
         if not self.ricIF.isOpen():
@@ -694,18 +702,20 @@ class ClientMV2(ClientGeneric):
         '''
         self.loggingCallback = loggingCallback
 
-    def register_publish_callback(self, messageCallback: Callable[[int],None]) -> None:
+    def register_publish_callback(self, messageCallback: Callable[[int, bytes],None]) -> None:
         '''
-        Register a callback function to be called on every message published by RIC.
+        Register a callback function to be called on every message published.
         RIC publishes information like the accelerometer and joint positions constantly.
         If registered, the callback is called after the message is fully decoded, so a common
         use-case is to check the topic (the int passed to the callback) to see if the information
         is of interest (for example topic == Marty.PUBLISH_TOPIC_ACCELEROMETER if new accelerometer
         data is available). Then get the changed information using the regular get_accelerometer method
-        (or get_joints, etc for other data).
+        (or get_joints, etc for other data). In addition, for data which is not decoded by martypy the
+        raw bytes of the published message can be accessed through the second argument.
         Args:
-            messageCallback: a callback function (with one argument - the topic code of the published
-                    message) that will be called on every message published by RIC.
+            messageCallback: a callback function (with two arguments - (1) the topic code of the published
+                    message, (2) the raw bytes of the mssage) 
+                    that will be called on every message published.
         Returns:
             None
         '''
@@ -768,7 +778,7 @@ class ClientMV2(ClientGeneric):
         # Callback on published messages
         if self.publishedMsgCallback is not None:
             try:
-                self.publishedMsgCallback(topicID)
+                self.publishedMsgCallback(topicID, payload)
             except:
                 logger.exception("Publish callback failed:")
 
@@ -788,7 +798,7 @@ class ClientMV2(ClientGeneric):
         # Retries here to allow for baud-rate changes, etc
         for retries in range(self._numHwStatusRetries):
             # logger.debug(f"_getRICVersion attempt {retries+1}")
-            self.ricSystemInfo = self.ricIF.cmdRICRESTURLSync("v")
+            self.ricSystemInfo = self.ricIF.cmdRICRESTURLSync("v", msgDebugStr="GetVersion")
             if self.ricSystemInfo.get("rslt", "") == "ok":
                 break
         if self.DEBUG_GET_RIC_VERSION:
@@ -796,7 +806,7 @@ class ClientMV2(ClientGeneric):
         return self.ricSystemInfo.get("rslt", "") == "ok"
 
     def _updateHwElemsInfo(self):
-        hwElemsInfo = self.ricIF.cmdRICRESTURLSync("hwstatus")
+        hwElemsInfo = self.ricIF.cmdRICRESTURLSync("hwstatus", msgDebugStr="GetHwStatus")
         if hwElemsInfo.get("rslt", "") == "ok":
             self.ricHwElemsList = hwElemsInfo.get("hw", [])
             self.ricHwElemsInfoByIDNo = {}
@@ -878,11 +888,11 @@ class ClientMV2(ClientGeneric):
         return self.ricIF.streamSoundFile(filename, "streamaudio", self._playMP3ProgressAdapter)
 
     def get_file_list(self) -> List[str]:
-        result = self.ricIF.cmdRICRESTURLSync("filelist", timeOutSecs=5)
+        result = self.ricIF.cmdRICRESTURLSync("filelist", timeOutSecs=5, msgDebugStr="GetFileList")
         if result.get("rslt", "") == "ok":
             return result.get("files", [])
         return []
 
     def delete_file(self, filename: str) -> bool:
-        result = self.ricIF.cmdRICRESTURLSync(f"filedelete/local/{filename}", timeOutSecs=5)
+        result = self.ricIF.cmdRICRESTURLSync(f"filedelete/local/{filename}", timeOutSecs=5, msgDebugStr="FileDelete")
         return result.get("rslt", "") == "ok"

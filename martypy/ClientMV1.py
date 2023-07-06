@@ -572,10 +572,10 @@ class ClientMV1(ClientGeneric):
     def get_hw_elems_list(self) -> List:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def send_ric_rest_cmd(self, ricRestCmd: str) -> None:
+    def send_ric_rest_cmd(self, ricRestCmd: str, msgDebugStr: str | None = None) -> None:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
-    def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
+    def send_ric_rest_cmd_sync(self, ricRestCmd: str, msgDebugStr: str | None = None) -> Dict:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def is_conn_ready(self) -> bool:

@@ -14,6 +14,8 @@ class WebSocket():
     MAX_RX_PREUPGRADE_LEN = 2000
     SOCKET_AWAITING_UPGRADE = 0
     SOCKET_UPGRADED = 1
+    CONN_TIMEOUT_IF_NON_BLOCKING_SECS = 5.0
+    SEND_TIMEOUT_IF_NON_BLOCKING_SECS = 0.5
 
     def __init__(self,
             onBinaryFrame: Callable[[bytes], None],
@@ -23,10 +25,15 @@ class WebSocket():
             ipAddrOrHostname: str,
             ipPort: int = 80,
             wsPath: str = "/ws",
-            timeout: float = 5.0,
+            timeout: float = 0.0,
             autoReconnect: bool = True,
             reconnectRepeatSecs: float = 5.0) -> None:
-        self.ipAddr = socket.gethostbyname(ipAddrOrHostname)
+        try:
+            self.ipAddr = socket.gethostbyname(ipAddrOrHostname)
+        except socket.error as e:
+            logger.error(f"WebSocket failed to get IP address {e}")
+            # Ignore the error at this point and fail later as failure in the
+            # constructor can be very confusing
         self.wsPath = wsPath
         self.ipPort = ipPort
         self.timeout = timeout
@@ -36,9 +43,13 @@ class WebSocket():
         self.onTextFrame = onTextFrame
         self.onError = onError
         self.onReconnect = onReconnect
-        self._clear()
+        self.sock = None
+        self.socketState = self.SOCKET_AWAITING_UPGRADE
+        self.reconnectLastTime = None
+        self.rxPreUpgrade = bytearray()
+        self.wsFrameCodec = WebSocketFrame()
         # Debug
-        self.DEBUG_WEBSOCKET_OPEN = False
+        self.DEBUG_WEBSOCKET_OPEN_CLOSE = False
 
     def __del__(self) -> None:
         self.close()
@@ -46,20 +57,50 @@ class WebSocket():
     def open(self) -> bool:
         # Debug
         debugStartTime = time.time()
-        # Clear
-        self._clear()
-        # Open socket
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(self.timeout)
-        self.sock.connect((self.ipAddr, self.ipPort))
+
+        # Reinit
+        self.socketState = self.SOCKET_AWAITING_UPGRADE
+        self.reconnectLastTime = None
+        self.rxPreUpgrade = bytearray()
+        self.wsFrameCodec = WebSocketFrame()
+
+        # Create socket
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        except socket.error as e: 
+            logger.error(f"WebSocket failed to create socket {e}")
+            return False
+
+        # Set timeout for connection
+        if self.timeout == 0:
+            self.sock.settimeout(self.CONN_TIMEOUT_IF_NON_BLOCKING_SECS)
+        else:
+            self.sock.settimeout(self.timeout)
+
+        # Connect socket
+        try:
+            self.sock.connect((self.ipAddr, self.ipPort))
+        except socket.error as e:
+            logger.error(f"WebSocket failed to connect to {self.ipAddr}:{self.ipPort} {e}")
+            return False
+
+        # Set timeout (0.0 sets non-blocking mode)
+        try:
+            self.sock.settimeout(self.timeout)
+            if self.DEBUG_WEBSOCKET_OPEN_CLOSE:
+                logger.debug(f"WebSocket timeout set to {self.timeout}{' == non-blocking' if self.timeout == 0 else ' === blocking'}")
+        except socket.error as e:
+            logger.warning(f"WebSocket failed to set timeout {e}")
+        
         # Debug
-        if self.DEBUG_WEBSOCKET_OPEN:
+        if self.DEBUG_WEBSOCKET_OPEN_CLOSE:
             logger.debug(f"WebSocket open {self.ipAddr}:{self.ipPort} took {time.time() - debugStartTime}")
+
         # Initiate upgrade
         debugStartTime = time.time()
-        self._sendUpgradeReq()
+        return self._sendUpgradeReq()
         # Debug
-        if self.DEBUG_WEBSOCKET_OPEN:
+        if self.DEBUG_WEBSOCKET_OPEN_CLOSE:
             logger.debug(f"WebSocket upgrade {self.ipAddr}:{self.ipPort} took {time.time() - debugStartTime}")
         return True
 
@@ -68,24 +109,31 @@ class WebSocket():
             return 0
         frame = WebSocketFrame.encode(inFrame, False, WebSocketFrame.OPCODE_BINARY, True)
         # logger.debug(f"WebSocket write {''.join('{:02x}'.format(x) for x in frame)}")
-        return self.sock.send(frame)
+        return self._sendToSocket(frame)
 
     def close(self) -> None:
         if self.sock:
             try:
                 self.sock.close()
+                if self.DEBUG_WEBSOCKET_OPEN_CLOSE:
+                    logger.debug(f"WebSocket closed socket")
             except Exception as excp:
-                logger.debug("WebSocket exception while closing", exc_info=True)
+                logger.warn("WebSocket exception while closing", exc_info=True)
         self.sock = None
 
-    def _sendUpgradeReq(self) -> None:
+    def _sendUpgradeReq(self) -> bool:
         if not self.sock:
-            return
+            return False
         headerStr = f"GET {self.wsPath} HTTP/1.1\r\n" + \
             "Connection: upgrade\r\n" + \
             "Upgrade: websocket\r\n" + \
             "\r\n"
-        self.sock.send(headerStr.encode())
+        try:
+            self._sendToSocket(headerStr.encode())
+        except socket.error as e:
+            logger.error(f"WebSocket failed to upgrade {e}")
+            return False
+        return True
 
     def service(self) -> None:
         # Get any data
@@ -95,16 +143,23 @@ class WebSocket():
             return
         try:
             rxData = self.sock.recv(self.maxSocketBytes)
+        except TimeoutError:
+            pass
+        except BlockingIOError:
+            pass
         except Exception as excp:
             logger.debug("WebSocket exception on recv:", exc_info=True)
             if not self.autoReconnect:
                 raise excp
             reconnectRequired = True
+            logger.debug("WebSocket reconnect required")
         # Check for reconnect
         if reconnectRequired:
             if self.reconnectLastTime is None or time.time() > self.reconnectLastTime + self.reconnectRepeatSecs:
+                logger.debug("WebSocket closing for reconnect attempt")
                 self.close()
                 try:
+                    logger.debug("WebSocket attempting to reopen")
                     self.open()
                     if self.onReconnect:
                         self.onReconnect()
@@ -115,7 +170,7 @@ class WebSocket():
             else:
                 time.sleep(0.01)
             return
-        if self.sock is None or rxData is None:
+        if self.sock is None or rxData is None or len(rxData) == 0:
             return
         # Check state of socket connection
         if self.socketState == self.SOCKET_AWAITING_UPGRADE:
@@ -148,6 +203,7 @@ class WebSocket():
                         self.onBinaryFrame(binaryFrame)
                 textFrame = self.wsFrameCodec.getTextMsg()
                 if textFrame and self.onTextFrame:
+                    # logger.debug(f"WebSocket proc binary len {len(textFrame)}")
                     checkForData = True
                     self.onTextFrame(textFrame)
 
@@ -157,11 +213,17 @@ class WebSocket():
         frame = WebSocketFrame.encode(self.wsFrameCodec.getPongData(),
                     False, WebSocketFrame.OPCODE_PONG, True)
         # logger.debug(f"WebSocket pong {frame.hex()}")
-        self.sock.send(frame)
+        self._sendToSocket(frame)
 
-    def _clear(self) -> None:
-        self.sock = None
-        self.socketState = self.SOCKET_AWAITING_UPGRADE
-        self.reconnectLastTime = None
-        self.rxPreUpgrade = bytearray()
-        self.wsFrameCodec = WebSocketFrame()
+    def _sendToSocket(self, frame: bytes) -> int:
+        if self.sock is None:
+            return 0
+        time_start = time.time()
+        while time.time() - time_start < self.SEND_TIMEOUT_IF_NON_BLOCKING_SECS:
+            try:
+                return self.sock.send(frame)
+            except BlockingIOError:
+                pass
+        return 0
+        
+

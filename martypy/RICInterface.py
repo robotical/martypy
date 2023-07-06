@@ -75,14 +75,15 @@ class RICInterface:
         self.commsHandler.setRxFrameCB(self._onRxFrameCB)
         self.commsHandler.setRxLogLineCB(self._onLogLineCB)
         openOk = self.commsHandler.open(openParams)
+        if openOk:
+            # Set default timeout based on interface
+            self.msgRespTimeoutSecs = self.commsHandler.getMsgRespTimeoutSecs(self.msgRespTimeoutSecs)
 
-        # Set default timeout based on interface
-        self.msgRespTimeoutSecs = self.commsHandler.getMsgRespTimeoutSecs(self.msgRespTimeoutSecs)
+            # Start timer to check message completion
+            self.msgTimeoutCheckTimer = threading.Timer(1.0, self._msgTimeoutCheck)
+            self.msgTimeoutCheckTimer.daemon = True
+            self.msgTimeoutCheckTimer.start()
 
-        # Start timer to check message completion
-        self.msgTimeoutCheckTimer = threading.Timer(1.0, self._msgTimeoutCheck)
-        self.msgTimeoutCheckTimer.daemon = True
-        self.msgTimeoutCheckTimer.start()
         return openOk
 
     def close(self) -> None:
@@ -128,7 +129,8 @@ class RICInterface:
         '''
         self.msgTimerCB = onMsgTimerCB
 
-    def sendRICRESTURL(self, msg: str, timeOutSecs: Optional[float] = None) -> bool:
+    def sendRICRESTURL(self, msg: str, timeOutSecs: Optional[float] = None, 
+                       msgDebugStr: str | None = None) -> bool:
         '''
         Send RICREST URL message
         Args:
@@ -140,14 +142,16 @@ class RICInterface:
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTURL(msg)
         timeOutSecs = timeOutSecs if timeOutSecs is not None else self.msgRespTimeoutSecs
         with self._msgsOutstandingLock:
-            self._msgsOutstanding[msgNum] = {"timeSent": time.time(), "timeOutSecs": timeOutSecs}
+            self._msgsOutstanding[msgNum] = {"timeSent": time.time(), 
+                                            "timeOutSecs": timeOutSecs, "msgDebugStr": msgDebugStr}
         if self.DEBUG_RIC_SEND_MSG:
-            logger.debug(f"sendRICRESTURL msgNum {msgNum} time {time.time()} msg {msg}")
+            logger.debug(f"sendRICRESTURL msgDebug {msgDebugStr} msgNum {msgNum} msg {msg}")
         self.commsHandler.send(ricRestMsg)
         self.msgTxRate.addSample()
         return True
 
-    def cmdRICRESTURLSync(self, msg: str, timeOutSecs: Optional[float] = None) -> Dict:
+    def cmdRICRESTURLSync(self, msg: str, timeOutSecs: Optional[float] = None, 
+                        msgDebugStr: str | None = None) -> Dict:
         '''
         Send RICREST URL message and wait for response
         Args:
@@ -160,15 +164,16 @@ class RICInterface:
         msgSendTime = time.time()
         timeOutSecs = timeOutSecs if timeOutSecs is not None else self.msgRespTimeoutSecs
         if self.DEBUG_RIC_SEND_MSG:
-            logger.debug(f"cmdRICRESTURLSync msgNum {msgNum} timeout {timeOutSecs} msg {msg}")
+            logger.debug(f"cmdRICRESTURLSync msgDebug {msgDebugStr} msgNum {msgNum} timeout {timeOutSecs} msg {msg}")
         with self._msgsOutstandingLock:
-            self._msgsOutstanding[msgNum] = {"timeSent": msgSendTime, "timeOutSecs": timeOutSecs, "awaited":True}
+            self._msgsOutstanding[msgNum] = {"timeSent": msgSendTime, "timeOutSecs": timeOutSecs, 
+                                             "awaited":True, "msgDebugStr": msgDebugStr}
         self.commsHandler.send(ricRestMsg)
         self.msgTxRate.addSample()
         # Wait for result
-        return self.waitForSyncResult(msgNum, msgSendTime, timeOutSecs)
+        return self.waitForSyncResult(msgNum, msgSendTime, timeOutSecs, msgDebugStr)
 
-    def cmdRICRESTRslt(self, msg: str, timeOutSecs: Optional[float] = None) -> bool:
+    def cmdRICRESTRslt(self, msg: str, timeOutSecs: Optional[float] = None, msgDebugStr: str | None = None) -> bool:
         '''
         Send RICREST URL message and wait for response
         Args:
@@ -177,11 +182,12 @@ class RICInterface:
         Returns:
             Response turned into a dictionary (from JSON)
         '''
-        response = self.cmdRICRESTURLSync(msg, timeOutSecs)
+        response = self.cmdRICRESTURLSync(msg, timeOutSecs, msgDebugStr)
         return response.get("rslt", "") == "ok"
 
     def sendRICRESTCmdFrameNoResp(self, msg: Union[str,bytes], 
-                    payload: Union[bytes, str, None] = None) -> bool:
+                    payload: Union[bytes, str, None] = None,
+                    msgDebugStr: str | None = None) -> bool:
         '''
         Send RICREST command frame message without expecting a response
         Args:
@@ -192,13 +198,15 @@ class RICInterface:
         '''
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTCmdFrame(msg, payload)
         if self.DEBUG_RIC_SEND_MSG:
-            logger.debug(f"sendRICRESTCmdFrameNoResp msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
+            logger.debug(f"sendRICRESTCmdFrameNoResp msgDebug {msgDebugStr} msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
         self.commsHandler.send(ricRestMsg)
         self.msgTxRate.addSample()
         return True
 
     def sendRICRESTCmdFrame(self, msg: Union[str,bytes], 
-                    payload: Union[bytes, str, None] = None, timeOutSecs: Optional[float] = None) -> bool:
+                    payload: Union[bytes, str, None] = None, 
+                    timeOutSecs: Optional[float] = None, 
+                    msgDebugStr: str | None = None) -> bool:
         '''
         Send RICREST command frame message
         Args:
@@ -210,17 +218,19 @@ class RICInterface:
         '''
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTCmdFrame(msg, payload)
         if self.DEBUG_RIC_SEND_MSG:
-            logger.debug(f"sendRICRESTCmdFrame msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
+            logger.debug(f"sendRICRESTCmdFrame msgDebug {msgDebugStr} msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
         timeOutSecs = timeOutSecs if timeOutSecs is not None else self.msgRespTimeoutSecs
         with self._msgsOutstandingLock:
-            self._msgsOutstanding[msgNum] = {"timeSent": time.time(), "timeOutSecs": timeOutSecs}
+            self._msgsOutstanding[msgNum] = {"timeSent": time.time(), "timeOutSecs": timeOutSecs, 
+                                             "msgDebugStr": msgDebugStr}
         self.commsHandler.send(ricRestMsg)
         self.msgTxRate.addSample()
         return True
 
     def sendRICRESTCmdFrameSync(self, msg: Union[str,bytes], 
                     payload: Union[bytes, str] | None = None,
-                    timeOutSecs: Optional[float] = None) -> Dict:
+                    timeOutSecs: Optional[float] = None, 
+                    msgDebugStr: str | None = None) -> Dict:
         '''
         Send RICREST command frame message and wait for response
         Args:
@@ -233,22 +243,24 @@ class RICInterface:
         # Encode frame
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTCmdFrame(msg, payload)
         if self.DEBUG_RIC_SEND_MSG:
-            logger.debug(f"sendRICRESTCmdFrameSync msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
+            logger.debug(f"sendRICRESTCmdFrameSync msgDebug {msgDebugStr} msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
         msgSendTime = time.time()
         timeOutSecs = timeOutSecs if timeOutSecs is not None else self.msgRespTimeoutSecs
         with self._msgsOutstandingLock:
-            self._msgsOutstanding[msgNum] = {"timeSent": msgSendTime, "timeOutSecs": timeOutSecs, "awaited":True}
+            self._msgsOutstanding[msgNum] = {"timeSent": msgSendTime, "timeOutSecs": timeOutSecs, "awaited":True, 
+                                             "msgDebugStr": msgDebugStr}
         self.commsHandler.send(ricRestMsg)
         self.msgTxRate.addSample()
         # Wait for result
-        return self.waitForSyncResult(msgNum, msgSendTime, timeOutSecs)
+        return self.waitForSyncResult(msgNum, msgSendTime, timeOutSecs, msgDebugStr)
 
-    def waitForSyncResult(self, msgNum: int, msgSendTime: float, timeOutSecs: float):
+    def waitForSyncResult(self, msgNum: int, msgSendTime: float, timeOutSecs: float, 
+                        msgDebugStr: str | None = None):
         while time.time() < msgSendTime + timeOutSecs:
             with self._msgsOutstandingLock:
                 # Should be an outstanding message - if not there's a problem
                 if msgNum not in self._msgsOutstanding:
-                    logger.warning(f"sendRICRESTURLSync msgNum {msgNum} not in _msgsOutstanding")
+                    logger.warning(f"sendRICRESTURLSync msgDebug {msgDebugStr} msgNum {msgNum} not in _msgsOutstanding")
                     return {"rslt":"failResponse"}
                 # Check if response received
                 if self._msgsOutstanding[msgNum].get("respValid", False):
@@ -263,10 +275,11 @@ class RICInterface:
                         # logger.debug(f"waitForSyncResult msgNum {msgNum} msg {msg} resp {json.dumps(respObj)} sendTime {msgSendTime} respTime {debugMsgRespTime}")
                         return respObj
                     except Exception as excp:
-                        logger.warning(f"sendRICRESTURLSync msgNum {msgNum} response is not JSON {respStr.payload}", exc_info=True)
+                        logger.warning(f"sendRICRESTURLSync msgDebug {msgDebugStr} msgNum {msgNum} response is not JSON {respStr.payload}", exc_info=True)
             time.sleep(0.01)
         # Debug - if we get here we timed out
-        logger.warning(f"waitForSyncResult failTimeout msgNum {msgNum} sendTime {msgSendTime} timeNow {time.time()} timeout {timeOutSecs}")
+        timeSinceSent = time.time()-msgSendTime
+        logger.warning(f"waitForSyncResult failTimeout msgDebug {msgDebugStr} msgNum {msgNum} sinceSent {timeSinceSent:.2f}s timeout {timeOutSecs}s")
         return {"rslt":"failTimeout"}
 
     # Send RICREST response
@@ -433,7 +446,7 @@ class RICInterface:
             self._rawQueryOutstanding[msgKey] = {"timeSent": time.time(), "timeOutSecs": timeOutSecs, "awaited":True}
 
         # Send message
-        resp = self.cmdRICRESTURLSync(ricRestCmd)
+        resp = self.cmdRICRESTURLSync(ricRestCmd, msgDebugStr="AddOnQueryRaw")
         resp["dataRead"] = b""
         if resp.get("rslt", "") != "ok":
             self._rawQueryOutstanding.pop(msgKey)
@@ -502,6 +515,10 @@ class RICInterface:
                         msgRec["resp"] = decodedMsg
                         msgRec["respValid"] = True
                         msgRec["respTime"] = time.time()
+
+                        # Debug
+                        if self.DEBUG_RIC_SEND_MSG:
+                            logging.debug(f"_onRxFrameCB matched message msgDebugStr {msgRec.get('msgDebugStr', 'UNKNOWN')} msgNum {decodedMsg.msgNum}")
 
                     # Update stats
                     self.statsMatched += 1
@@ -655,7 +672,9 @@ class RICInterface:
 
         # Debug
         for msgIdx in msgIdxsTimedOut:
-            logger.warning(f"Message {msgIdx} timed out timeSent {self._msgsOutstanding[msgIdx].get('timeSent',0)} timeNow {time.time()}")
+            msgRec = self._msgsOutstanding[msgIdx]
+            timeSinceSent = time.time()-msgRec.get('timeSent',0)
+            logger.warning(f"Message {msgIdx} msgDebugStr {msgRec.get('msgDebugStr', 'UNKNOWN')} timed out sinceSent {timeSinceSent:.2f}s")
 
         # Remove timed-out messages
         for msgIdx in msgIdxsToRemove:

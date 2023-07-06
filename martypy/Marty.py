@@ -163,6 +163,7 @@ class Marty(object):
             * MartyConfigException if the parameters are invalid
             * MartyConnectException if Marty couldn't be contacted
         '''
+        self.client = None
         # Merge in any extra clients that have been added and check valid
         self.CLIENT_TYPES = ClientGeneric.dict_merge(self.CLIENT_TYPES, extra_client_types)
 
@@ -892,7 +893,7 @@ class Marty(object):
         '''
         return self.client.get_hw_elems_list()
 
-    def send_ric_rest_cmd(self, ricRestCmd: str) -> None:
+    def send_ric_rest_cmd(self, ricRestCmd: str, msgDebugStr: str | None = None) -> None:
         '''
         Send a command in RIC REST format to Marty :two:  
 
@@ -900,12 +901,14 @@ class Marty(object):
         control of Marty
         Args:
             ricRestCmd: string containing the command to send to Marty
+            msgDebugStr: a user-specified string which can be used to track message flows
+               for debugging
         Returns:
             None
         '''
-        self.client.send_ric_rest_cmd(ricRestCmd)
+        self.client.send_ric_rest_cmd(ricRestCmd, msgDebugStr=msgDebugStr)
 
-    def send_ric_rest_cmd_sync(self, ricRestCmd: str) -> Dict:
+    def send_ric_rest_cmd_sync(self, ricRestCmd: str, msgDebugStr: str | None = None) -> Dict:
         '''
         Send a command in RIC REST format to Marty and wait for reply :two:  
 
@@ -913,10 +916,12 @@ class Marty(object):
         control of Marty
         Args:
             ricRestCmd: string containing the command to send to Marty
+            msgDebugStr: a user-specified string which can be used to track message flows
+               for debugging
         Returns:
             Dictionary containing the response received from Marty
         '''
-        return self.client.send_ric_rest_cmd_sync(ricRestCmd)
+        return self.client.send_ric_rest_cmd_sync(ricRestCmd, msgDebugStr=msgDebugStr)
 
     def get_motor_current(self, motor_id: int) -> float:
         '''
@@ -1216,19 +1221,20 @@ class Marty(object):
         if self.client:
             self.client.register_logging_callback(loggingCallback)
 
-    def register_publish_callback(self, messageCallback: Callable[[int],None]) -> None:
+    def register_publish_callback(self, messageCallback: Callable[[int, bytes],None]) -> None:
         '''
-        Register a callback function to be called on every message published by RIC. :two:
-
+        Register a callback function to be called on every message published.
         RIC publishes information like the accelerometer and joint positions constantly.
         If registered, the callback is called after the message is fully decoded, so a common
         use-case is to check the topic (the int passed to the callback) to see if the information
-        is of interest (for example topic == Marty.PUBLISH_TOPIC_ACCELEROMETER if new accelerometer 
+        is of interest (for example topic == Marty.PUBLISH_TOPIC_ACCELEROMETER if new accelerometer
         data is available). Then get the changed information using the regular get_accelerometer method
-        (or get_joints, etc for other data).
+        (or get_joints, etc for other data). In addition, for data which is not decoded by martypy the
+        raw bytes of the published message can be accessed through the second argument.
         Args:
-            messageCallback: a callback function (with one argument - the topic code of the published 
-                    message) that will be called on every message published by RIC.
+            messageCallback: a callback function (with two arguments - (1) the topic code of the published
+                    message, (2) the raw bytes of the mssage) 
+                    that will be called on every message published.
         Returns:
             None
         '''
