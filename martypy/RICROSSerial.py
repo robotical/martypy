@@ -26,7 +26,7 @@ class RICROSSerial:
     RS_MSG_PAYLOAD_POS = 7
 
     # Max payload length
-    MAX_VALID_PAYLOAD_LEN = 1000
+    MAX_VALID_PAYLOAD_LEN = 100000
 
     # V2 ROSTOPIC SMART_SERVOS message layout
     ROS_SMART_SERVOS_MAX_NUM_SERVOS = 15
@@ -88,6 +88,9 @@ class RICROSSerial:
     ROS_ADDON_STATUS_POS = 2
     ROS_ADDON_STATUS_BYTES = 10
 
+    # Debug
+    DEBUG_ROS_DECODE = False
+
     @classmethod
     def decode(cls, rosSerialMsg: bytes, startPos: int, elemDecodeCB: Callable[[int,bytes],None]) -> None:
 
@@ -120,6 +123,8 @@ class RICROSSerial:
             # Extract payload
             payload = rosSerialMsg[msgPos + cls.RS_MSG_PAYLOAD_POS : msgPos + cls.RS_MSG_PAYLOAD_POS + payloadLength]
             # logger.debug('ROSSerial {}'.format(''.join('{:02x}'.format(x) for x in payload)))
+            if cls.DEBUG_ROS_DECODE:
+                logger.debug(f"ROSSerial topicID {topicID} payloadLen {payloadLength} elemDecode {elemDecodeCB is not None}")
 
             # Callback with payload
             if elemDecodeCB:

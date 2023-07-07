@@ -85,9 +85,9 @@ class Frame(object):
         self.state = HDLCState.STATE_READ
         self.data = bytearray()
         self.crc = bytearray()
-        self.reader = None
         self.delimiterCode = delimiterCode
         self.escapeCode = escapeCode
+        self.currentFrame: Frame | None = None
 
     def __len__(self) -> int:
         return len(self.data)
@@ -199,7 +199,7 @@ class LikeHDLC:
         Returns:
             None
         '''
-        self.currentFrame = None
+        self.currentFrame: Frame | None = None
 
     def clearStats(self) -> None:
         '''
@@ -227,11 +227,13 @@ class LikeHDLC:
                 # Start
                 self.currentFrame = Frame(self.delimiterCode, self.escapeCode)
                 # logger.debug(f"START time {time.time()}")
+                # self.startTime = time.time()
             else:
                 # End
                 self.currentFrame.finish()
                 self.currentFrame.checkCRC()
                 # logger.debug(f"END time {time.time()}")
+                # logger.debug("frame time %f", time.time() - self.startTime)
         else:
             if self.currentFrame is not None:
                 if not self.currentFrame.finished:
@@ -246,10 +248,12 @@ class LikeHDLC:
                 # Success
                 self.onFrame(rxFrame.data)
                 self.stats.framesRxOk += 1
+                # logger.debug(f"FRAME time {time.time()}")
             elif rxFrame.finished:
                 # Error
                 self.stats.crcErrors += 1
                 self.onError()
+                logger.debug(f"ERROR time {time.time()}")
 
     def getStats(self) -> HDLCStats:
         '''

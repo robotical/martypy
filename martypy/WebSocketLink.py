@@ -1,5 +1,5 @@
 '''
-WebSocketFrame
+WebSocketLink
 '''
 import io
 import struct
@@ -12,9 +12,9 @@ from typing import Deque
 
 logger = logging.getLogger(__name__)
 
-class WebSocketFrame():
+class WebSocketLink():
 
-    max_size = 20000
+    max_size = 200000
     OPCODE_CONT = 0x00
     OPCODE_TEXT = 0x01
     OPCODE_BINARY = 0x02
@@ -24,8 +24,6 @@ class WebSocketFrame():
 
     def __init__(self) -> None:
         self.curInputData: bytearray = bytearray()
-        self.rxFrameData: bytearray = bytearray()
-        self.rxFrameIsText = False
         self.pongRequired = False
         self.pongData = bytearray()
         self.closeRequired = False
@@ -35,6 +33,8 @@ class WebSocketFrame():
         self.statsPongs = 0
         self.statsText = 0
         self.statsBinary = 0
+        self.currentBinaryFrame = bytearray()
+        self.currentTextFrame = str()
 
     def getPongRequired(self) -> bool:
         tmpPongReq = self.pongRequired
@@ -102,6 +102,8 @@ class WebSocketFrame():
             self.mask_bytes = self.curInputData[curPos:curPos+4]
             curPos += 4
 
+        # logger.debug(f"WebSocketLink _extractFrames fin {fin} opcode {opcode} mask {mask} frameLen {frameLen} curPos {curPos} len {len(self.curInputData)}")
+                     
         # Check data is present
         if len(self.curInputData) < curPos + frameLen:
             return False
@@ -112,7 +114,7 @@ class WebSocketFrame():
         # Remove data consumed
         self.curInputData = self.curInputData[curPos + frameLen:]
 
-        # Check for pings
+        # Check opcode
         if opcode == self.OPCODE_PING:
             self.pongRequired = True
             self.pongData = rxDataBlock
@@ -129,28 +131,26 @@ class WebSocketFrame():
             return True
         elif opcode == self.OPCODE_BINARY:
             # logger.debug(f"wsFrame BINARY PART {''.join('{:02x}'.format(x) for x in rxDataBlock)}")
-            self.rxFrameIsText = False
+            self.currentBinaryFrame += rxDataBlock
         elif opcode == self.OPCODE_TEXT:
             # logger.debug(f"wsFrame TEXT PART {''.join('{:02x}'.format(x) for x in rxDataBlock)}")
-            self.rxFrameIsText = True
-
-        # Add data to received frame
-        self.rxFrameData += rxDataBlock
+            self.currentTextFrame += rxDataBlock.decode('ascii')
 
         # Add completed frame to queue
         if fin:
-            if self.rxFrameIsText:
-                self.textMsgs.append(self.rxFrameData.decode('utf-8'))
+            if opcode == self.OPCODE_TEXT:
+                self.textMsgs.append(self.currentTextFrame)
                 self.statsText += 1
             else:
                 # logger.debug(f"wsFrame BINARY DONE {''.join('{:02x}'.format(x) for x in self.rxFrameData)}")
-                self.binaryMsgs.append(self.rxFrameData[:])
+                self.binaryMsgs.append(self.currentBinaryFrame)
                 self.statsBinary += 1
-            self.rxFrameData.clear()
+            self.currentTextFrame = str()
+            self.currentBinaryFrame = bytearray()
         return True
 
     @classmethod
-    def encode(self, inFrame: bytes, useMask: bool,
+    def encode(cls, inFrame: bytes, useMask: bool,
                 opcode: int, fin: bool) -> bytes:
 
         output = io.BytesIO()
@@ -169,7 +169,7 @@ class WebSocketFrame():
         if useMask:
             mask_bytes = secrets.token_bytes(4)
             output.write(mask_bytes)
-            data = self.applyMask(inFrame, mask_bytes)
+            data = cls.applyMask(inFrame, mask_bytes)
         else:
             data = inFrame
         output.write(data)

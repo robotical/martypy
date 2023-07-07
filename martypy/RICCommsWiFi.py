@@ -32,6 +32,7 @@ class RICCommsWiFi(RICCommsBase):
         self._onReconnect = onReconnect
         # Debug
         self.DEBUG_WEBSOCKET_CONNECT = False
+        self.DEBUG_HDLC_FRAME_RX = False
 
     def __del__(self) -> None:
         '''
@@ -146,10 +147,13 @@ class RICCommsWiFi(RICCommsBase):
             raise MartyConnectException("Connection send problem") from excp
 
     def _onHDLCFrame(self, frame: bytearray) -> None:
+        if self.DEBUG_HDLC_FRAME_RX:
+            logger.debug(f"WiFi _onHDLCFrame len {len(frame)} frameRxCB {self.rxFrameCB is not None}")
         if self.rxFrameCB is not None:
             self.rxFrameCB(frame)
         
     def _onHDLCError(self) -> None:
+        logger.debug(f"WiFi _onHDLCError")
         pass
         
     def _sendBytesToIF(self, bytesToSend: bytes) -> None:
@@ -177,14 +181,15 @@ class RICCommsWiFi(RICCommsBase):
             except OSError as excp:
                 logger.debug(f"webSocket problem {excp}")
                 self.webSocketThreadEnabled = False
-            except Exception as excp:
-                logger.debug(f"WebSocket _webSocketThreadFn exception {excp}")
+            # except Exception as excp:
+            #     logger.debug(f"WebSocket _webSocketThreadFn exception {excp}")
             time.sleep(0.001)
         # logger.debug("Exiting WebSocket thread")
         self._isOpen = False
 
     def _onWSBinaryFrame(self, rxFrame: bytes) -> None:
         # logger.debug(f"webSocketRx {rxFrame.hex()}")
+        # logger.debug(f"webSocketRx {len(rxFrame)}")
         for rxByte in rxFrame:
             self._hdlc.decodeData(rxByte)
 

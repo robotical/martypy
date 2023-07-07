@@ -482,6 +482,7 @@ class RICInterface:
         decodedMsg = self.ricProtocols.decodeRICFrame(frame)
 
         # Debugging
+        # logger.debug(f"_onRxFrameCB len {len(frame)} decodedProtocol {decodedMsg.protocolID} msgTypeCode {decodedMsg.msgTypeCode} msgNum {decodedMsg.msgNum}")
         if self.DEBUG_RIC_RECEIVE_MSG and \
             ((decodedMsg.protocolID != RICProtocols.PROTOCOL_ROSSERIAL) or self.DEBUG_RIC_RECEIVE_MSG_ROSSERIAL):
             # logger.debug(f"_onRxFrameCB {decodedMsg.toString()} data {frame.hex()}")
