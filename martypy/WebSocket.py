@@ -17,6 +17,10 @@ class WebSocket():
     CONN_TIMEOUT_IF_NON_BLOCKING_SECS = 5.0
     SEND_TIMEOUT_IF_NON_BLOCKING_SECS = 0.5
 
+    # Debug
+    DEBUG_WEBSOCKET_OPEN_CLOSE = False
+    DEBUG_RECEIVE_ERRORS = False
+
     def __init__(self,
             onBinaryFrame: Callable[[bytes], None],
             onTextFrame: Callable[[str], None],
@@ -48,8 +52,6 @@ class WebSocket():
         self.reconnectLastTime = None
         self.rxPreUpgrade = bytearray()
         self.webSocketLink = WebSocketLink()
-        # Debug
-        self.DEBUG_WEBSOCKET_OPEN_CLOSE = False
 
     def __del__(self) -> None:
         self.close()
@@ -147,8 +149,13 @@ class WebSocket():
             pass
         except BlockingIOError:
             pass
+        except ConnectionResetError as excp:
+            if not self.autoReconnect:
+                raise excp
+            reconnectRequired = True
         except Exception as excp:
-            logger.debug("WebSocket exception on recv:", exc_info=True)
+            if self.DEBUG_RECEIVE_ERRORS:
+                logger.debug("WebSocket exception on recv:", exc_info=True)
             if not self.autoReconnect:
                 raise excp
             reconnectRequired = True
