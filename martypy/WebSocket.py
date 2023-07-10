@@ -20,6 +20,7 @@ class WebSocket():
     # Debug
     DEBUG_WEBSOCKET_OPEN_CLOSE = False
     DEBUG_RECEIVE_ERRORS = False
+    DEBUG_WEBSOCKET_DETAIL = False
 
     def __init__(self,
             onBinaryFrame: Callable[[bytes], None],
@@ -101,16 +102,12 @@ class WebSocket():
         # Initiate upgrade
         debugStartTime = time.time()
         return self._sendUpgradeReq()
-        # Debug
-        if self.DEBUG_WEBSOCKET_OPEN_CLOSE:
-            logger.debug(f"WebSocket upgrade {self.ipAddr}:{self.ipPort} took {time.time() - debugStartTime}")
-        return True
 
     def writeBinary(self, inFrame: bytes) -> int:
         if not self.sock:
             return 0
         frame = WebSocketLink.encode(inFrame, False, WebSocketLink.OPCODE_BINARY, True)
-        # logger.debug(f"WebSocket write {''.join('{:02x}'.format(x) for x in frame)}")
+        # logger.debug(f"WebSocket write {frame.hex()}")
         return self._sendToSocket(frame)
 
     def close(self) -> None:
@@ -145,11 +142,15 @@ class WebSocket():
             return
         try:
             rxData = self.sock.recv(self.maxSocketBytes)
+            if self.DEBUG_WEBSOCKET_DETAIL and len(rxData) > 0:
+                logger.debug(f"WebSocket recv {len(rxData)} bytes {rxData.hex()}")
         except TimeoutError:
             pass
         except BlockingIOError:
             pass
         except ConnectionResetError as excp:
+            if self.DEBUG_WEBSOCKET_DETAIL:
+                logger.debug(f"WebSocket recv connection reset ------------------------------")
             if not self.autoReconnect:
                 raise excp
             reconnectRequired = True
@@ -188,13 +189,14 @@ class WebSocket():
                 # Check upgrade ok
                 if b"Sec-WebSocket-Accept" in self.rxPreUpgrade:
                     self.socketState = self.SOCKET_UPGRADED
-                    self.webSocketLink.addDataToDecode(self.rxPreUpgrade[headerEndPos+4:])
+                    self.webSocketLink.add_data_to_decode(self.rxPreUpgrade[headerEndPos+4:])
                     # logger.debug("WebSocket upgraded")
             elif len(self.rxPreUpgrade) > self.MAX_RX_PREUPGRADE_LEN:
                 self.rxPreUpgrade.clear()
         else:
-            # logger.debug(f"WebSocket processing data len {len(rxData)}")
-            self.webSocketLink.addDataToDecode(rxData)
+            if self.DEBUG_WEBSOCKET_DETAIL:
+                logger.debug(f"WebSocket processing data len {len(rxData)}")
+            self.webSocketLink.add_data_to_decode(rxData)
             checkForData = True
             while checkForData:
                 checkForData = False
@@ -206,24 +208,30 @@ class WebSocket():
                 binaryFrame = self.webSocketLink.getBinaryMsg()
                 if binaryFrame:
                     checkForData = True
-                    # logger.debug(f"WebSocket proc binary len {len(binaryFrame)}")
+                    if self.DEBUG_WEBSOCKET_DETAIL:
+                        logger.debug(f"WebSocket proc binary len {len(binaryFrame)}")
                     if self.onBinaryFrame:
                         self.onBinaryFrame(binaryFrame)
                 textFrame = self.webSocketLink.getTextMsg()
-                if textFrame and self.onTextFrame:
-                    logger.debug(f"WebSocket proc text len {len(textFrame)}")
+                if textFrame:
                     checkForData = True
-                    self.onTextFrame(textFrame)
+                    if self.DEBUG_WEBSOCKET_DETAIL:
+                        logger.debug(f"WebSocket proc text len {len(textFrame)}")
+                    if self.onTextFrame:
+                        self.onTextFrame(textFrame)
 
     def _sendPong(self) -> None:
         if self.sock is None:
             return
         frame = WebSocketLink.encode(self.webSocketLink.getPongData(),
                     False, WebSocketLink.OPCODE_PONG, True)
-        # logger.debug(f"WebSocket pong {frame.hex()}")
+        if self.DEBUG_WEBSOCKET_DETAIL:
+            logger.debug(f"WebSocket pong {frame.hex()}")
         self._sendToSocket(frame)
 
     def _sendToSocket(self, frame: bytes) -> int:
+        if self.DEBUG_WEBSOCKET_DETAIL:
+            logger.debug(f"WebSocket send {len(frame)} bytes {frame.hex()}")
         if self.sock is None:
             return 0
         time_start = time.time()
@@ -233,5 +241,3 @@ class WebSocket():
             except BlockingIOError:
                 pass
         return 0
-        
-

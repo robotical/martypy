@@ -8,7 +8,7 @@ import itertools
 import collections
 import logging
 import time
-from typing import Deque
+from typing import Deque, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,11 @@ class WebSocketLink():
     OPCODE_CLOSE = 0x08
     OPCODE_PING = 0x09
     OPCODE_PONG = 0x0a
+
+    # DEBUG
+    DEBUG_WEBSOCKET_LINK_DETAIL = False
+    DEBUG_WEBSOCKET_LINK_FRAME_PROC = False
+    DEBUG_WSL_DETAIL = False
 
     def __init__(self) -> None:
         self.curInputData: bytearray = bytearray()
@@ -57,8 +62,13 @@ class WebSocketLink():
             binaryMsg = self.binaryMsgs.popleft()
             return binaryMsg
         return None
+    
+    def clear_decode_data(self) -> None:
+        self.curInputData.clear()
+        self.currentBinaryFrame = bytearray()
+        self.currentTextFrame = str()
 
-    def addDataToDecode(self, data: bytes) -> None:
+    def add_data_to_decode(self, data: bytes) -> None:
         '''
         Add data to be decoded
         Args:
@@ -68,33 +78,25 @@ class WebSocketLink():
         '''
         # Add data
         self.curInputData += data
-        # logger.debug(f"{''.join('{:02x}'.format(x) for x in data)}")
+        if self.DEBUG_WEBSOCKET_LINK_DETAIL:
+            logger.debug(f"Added len {len(data)}")
         while self._extractFrames():
             pass
 
     def _extractFrames(self) -> bool:
-        if len(self.curInputData) < 2:
-            return False
-        head1, head2 = struct.unpack("!BB", self.curInputData[:2])
-
+        # Debug
+        # if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+        #     logger.debug(f"false len {len(self.curInputData)}\n{self.curInputData.hex()}")
+        
         # Extract header info
-        fin = (head1 & 0b10000000) != 0
-        opcode = head1 & 0b00001111
-        mask = (head2 & 0b10000000) != 0
-        frameLen = head2 & 0b01111111
-        curPos = 2
-        if frameLen == 126:
-            if len(self.curInputData) < 4:
-                return False
-            (frameLen,) = struct.unpack("!H", self.curInputData[2:4])
-            curPos = 4
-        elif frameLen == 127:
-            if len(self.curInputData) < 10:
-                return False
-            (frameLen,) = struct.unpack("!Q", self.curInputData[2:10])
-            curPos = 10
+        headerValid, fin, opcode, mask, frameLen, curPos = self.extract_header_info()
+        if not headerValid:
+            return False
+
         if frameLen > self.max_size:
             self.curInputData.clear()
+            if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+                logger.debug(f"CLEAR frameLen {frameLen} > max_size {self.max_size}")
             return False
         if mask and len(self.curInputData) < curPos + 4:
             return False
@@ -106,6 +108,8 @@ class WebSocketLink():
                      
         # Check data is present
         if len(self.curInputData) < curPos + frameLen:
+            if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+                logger.debug(f"false len {len(self.curInputData)} < {curPos + frameLen}")
             return False
         rxDataBlock = self.curInputData[curPos : curPos + frameLen]
         if mask:
@@ -113,28 +117,37 @@ class WebSocketLink():
         
         # Remove data consumed
         self.curInputData = self.curInputData[curPos + frameLen:]
+        if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+            logger.debug(f"GOT DATA BLOCK len {len(rxDataBlock)}")
+            logger.debug(f"REMOVE DATA CONSUMED new len {len(self.curInputData)}")
 
         # Check opcode
         if opcode == self.OPCODE_PING:
             self.pongRequired = True
             self.pongData = rxDataBlock
             self.statsPings += 1
-            # logger.debug(f"wsFrame PING {''.join('{:02x}'.format(x) for x in rxDataBlock)}")
+            if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+                logger.debug(f"PING {rxDataBlock.hex()}")
             return True
         elif opcode == self.OPCODE_PONG:
             self.statsPongs += 1
-            # logger.debug(f"wsFrame PONG {''.join('{:02x}'.format(x) for x in rxDataBlock)}")
+            if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+                logger.debug(f"PONG {rxDataBlock.hex()}")
             return True
         elif opcode == self.OPCODE_CLOSE:
             # logger.debug(f"wsFrame CLOSE")
             self.closeRequired = True
+            if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+                logger.debug(f"CLOSE {rxDataBlock.hex()}")
             return True
         elif opcode == self.OPCODE_BINARY:
-            # logger.debug(f"wsFrame BINARY PART {''.join('{:02x}'.format(x) for x in rxDataBlock)}")
             self.currentBinaryFrame += rxDataBlock
+            if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+                logger.debug(f"BINARY PART {self.currentBinaryFrame.hex() if self.DEBUG_WSL_DETAIL else ''}")
         elif opcode == self.OPCODE_TEXT:
-            # logger.debug(f"wsFrame TEXT PART {''.join('{:02x}'.format(x) for x in rxDataBlock)}")
-            self.currentTextFrame += rxDataBlock.decode('ascii')
+            self.currentTextFrame += rxDataBlock.decode('latin-1', errors='ignore')
+            if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+                logger.debug(f"TEXT PART {rxDataBlock.hex()}")
 
         # Add completed frame to queue
         if fin:
@@ -142,12 +155,44 @@ class WebSocketLink():
                 self.textMsgs.append(self.currentTextFrame)
                 self.statsText += 1
             else:
-                # logger.debug(f"wsFrame BINARY DONE {''.join('{:02x}'.format(x) for x in self.rxFrameData)}")
+                # logger.debug(f"wsFrame BINARY DONE {self.rxFrameData.hex()}")
                 self.binaryMsgs.append(self.currentBinaryFrame)
                 self.statsBinary += 1
             self.currentTextFrame = str()
             self.currentBinaryFrame = bytearray()
         return True
+    
+    def extract_header_info(self) -> Tuple[bool, bool, int, bool, int, int]:
+        # Check at least 2 bytes are present
+        if len(self.curInputData) < 2:
+            if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+                logger.debug(f"false len {len(self.curInputData)} < 2")
+            return False, False, 0, False, 0, 0
+        
+        # Unpack header
+        head1, head2 = struct.unpack("!BB", self.curInputData[:2])
+
+        # Extract header info
+        fin = (head1 & 0b10000000) != 0
+        opcode = head1 & 0b00001111
+        mask = (head2 & 0b10000000) != 0
+        frameLen = head2 & 0b01111111
+        curPos = 2
+        if frameLen == 126:
+            if len(self.curInputData) < 4:
+                if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+                    logger.debug(f"false len {len(self.curInputData)} < 4")
+                return False, False, 0, False, 0, 0
+            (frameLen,) = struct.unpack("!H", self.curInputData[2:4])
+            curPos = 4
+        elif frameLen == 127:
+            if len(self.curInputData) < 10:
+                if self.DEBUG_WEBSOCKET_LINK_FRAME_PROC:
+                    logger.debug(f"false len {len(self.curInputData)} < 10")
+                return False, False, 0, False, 0, 0
+            (frameLen,) = struct.unpack("!Q", self.curInputData[2:10])
+            curPos = 10
+        return True, fin, opcode, mask, frameLen, curPos
 
     @classmethod
     def encode(cls, inFrame: bytes, useMask: bool,
