@@ -37,10 +37,14 @@ logging.basicConfig(level=logging.DEBUG,
 
 def extractTimeStamp(msgBuf: bytes) -> Tuple[bytes, datetime, int]:
     # Extract the timestamp from the msgBuf
-    esp32Time = datetime.utcfromtimestamp(int.from_bytes(msgBuf[0:8], byteorder="little"))
-    esp32Millis = int.from_bytes(msgBuf[8:12], byteorder="little")
-    msgBuf = msgBuf[12:]
-    print(f"esp32Time {esp32Time} esp32Millis {esp32Millis}")
+    esp32Time = datetime.utcfromtimestamp(int.from_bytes(msgBuf[0:8], byteorder="big"))
+    esp32Millis = int.from_bytes(msgBuf[8:12], byteorder="big")
+    image_width = int.from_bytes(msgBuf[12:14], byteorder="big")
+    image_height = int.from_bytes(msgBuf[14:16], byteorder="big")
+    image_format = int.from_bytes(msgBuf[16:17], byteorder="big")
+    image_quality = int.from_bytes(msgBuf[17:18], byteorder="big")
+    msgBuf = msgBuf[18:]
+    print(f"esp32Time {esp32Time} esp32Millis {esp32Millis} image_width {image_width} image_height {image_height} image_format {image_format} image_quality {image_quality}")
     return msgBuf, esp32Time, esp32Millis
 
 def pubMsgCB(msgId: int, msgBuf: bytes) -> None:
