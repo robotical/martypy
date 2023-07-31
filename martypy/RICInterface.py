@@ -187,7 +187,7 @@ class RICInterface:
         return response.get("rslt", "") == "ok"
 
     def sendRICRESTCmdFrameNoResp(self, msg: Union[str,bytes], 
-                    payload: Optional[bytes, str] = None,
+                    payload: Optional[Union[bytes, str]] = None,
                     bridgeID: Optional[int] = None) -> bool:
         '''
         Send RICREST command frame message without expecting a response
@@ -208,7 +208,7 @@ class RICInterface:
         return True
 
     def sendRICRESTCmdFrame(self, msg: Union[str,bytes], 
-                    payload: Optional[bytes, str] = None, 
+                    payload: Optional[Union[bytes, str]] = None, 
                     bridgeID: Optional[int] = None,
                     timeOutSecs: Optional[float] = None) -> bool:
         '''

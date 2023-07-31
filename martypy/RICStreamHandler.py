@@ -1,7 +1,7 @@
 '''
 RICStreamHandler
 '''
-from typing import Callable, Union
+from typing import Callable, Union, Optional
 from martypy import RICInterface
 from .Exceptions import MartyTransferException
 import logging
@@ -154,7 +154,7 @@ class RICStreamHandler:
                 return False
         return True
 
-    def _sendStreamProgressCheckAbort(self, progressCB: Callable[[int, int, 'RICInterface.RICInterface'], bool] | None, 
+    def _sendStreamProgressCheckAbort(self, progressCB: Optional[Callable[[int, int, 'RICInterface.RICInterface'], bool]], 
                     currentPos: int, fileSize: int) -> bool:
         if not progressCB:
             return False

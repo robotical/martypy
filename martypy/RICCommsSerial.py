@@ -7,7 +7,7 @@ from serial.serialutil import SerialException
 import serial.tools.list_ports
 from threading import Thread
 import time
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 from warnings import warn
 from .RICCommsBase import RICCommsBase
 from .LikeHDLC import LikeHDLC
