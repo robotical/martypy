@@ -2,7 +2,7 @@
 RICFileHandler
 '''
 import threading
-from typing import Callable, Union
+from typing import Callable, Union, Optional
 from martypy import RICInterface
 from .RICProtocols import DecodedMsg
 from .Exceptions import MartyTransferException
@@ -42,7 +42,7 @@ class RICFileHandler:
         self.uploadBytesPerSec = ValueAverager()
 
     def sendFile(self, file_name: str, 
-                progressCB: Union[Callable[[int, int, 'RICInterface.RICInterface'], bool], None] = None,
+                progressCB: Optional[Callable[[int, int, 'RICInterface.RICInterface'], bool]] = None,
                 fileDest: str = "fs", req_str: str = '') -> bool:
         
         # Check validity
@@ -198,7 +198,7 @@ class RICFileHandler:
                 return False
             return True
         
-    def _sendFileProgressCheckAbort(self, progressCB: Callable[[int, int, 'RICInterface.RICInterface'], bool] | None, 
+    def _sendFileProgressCheckAbort(self, progressCB: Optional[Callable[[int, int, 'RICInterface.RICInterface'], bool]], 
                     currentPos: int, fileSize: int) -> bool:
         if self._send_file_failed:
             return True
@@ -210,10 +210,10 @@ class RICFileHandler:
         return False
 
     def getFileContents(self, filename: str, 
-                progressCB: Callable[[int, int, 'RICInterface.RICInterface'], bool] | None,
+                progressCB: Optional[Callable[[int, int, 'RICInterface.RICInterface'], bool]],
                 file_src: str,
                 req_str: str
-                ) -> bytearray | None:
+                ) -> Union[bytearray, None]:
         
         # Block and batch sizes
         block_max_size = self._ricInterface.commsHandler.commsParams.fileTransfer.get("fileBlockMax", 5000)
@@ -245,7 +245,7 @@ class RICFileHandler:
         
         # Extract file length and CRC info
         file_length = int(resp.get("fileLen", 0))
-        file_crc: Union[int, None] = None
+        file_crc: Optional[int] = None
         file_crc_str = resp.get("crc16", None)
         if file_crc_str is not None:
             file_crc = int(file_crc_str, 16)

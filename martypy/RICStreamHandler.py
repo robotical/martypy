@@ -15,14 +15,14 @@ class RICStreamHandler:
     def __init__(self, ricInterface: 'RICInterface.RICInterface'):
         # Stream vars
         self._ricInterface = ricInterface
-        self._stream_id: Union[int, None] = None
+        self._stream_id: Optional[int] = None
         self._stream_cur_sokto = 0
         self._stream_closed = False
         self._stream_new_sokto_flag = False
         self.DEBUG_RIC_STREAM = False
 
     def streamSoundFile(self, file_name: str, targetEndpoint: str,
-                progressCB: Union[Callable[[int, int, 'RICInterface.RICInterface'], bool], None] = None) -> bool:
+                progressCB: Optional[Callable[[int, int, 'RICInterface.RICInterface'], bool]] = None) -> bool:
         '''
         Stream sound from the file system
         Args:

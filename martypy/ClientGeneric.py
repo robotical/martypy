@@ -22,7 +22,7 @@ class ClientGeneric(ABC):
 
     NOT_IMPLEMENTED = "Unfortunately this Marty doesn't do that"
 
-    def __init__(self, blocking: Union[bool, None], *args, **kwargs):
+    def __init__(self, blocking: Optional[bool], *args, **kwargs):
         super().__init__()
         if len(args) > 0:
             warn(f"Ignoring unexpected constructor argument(s): {args}", stacklevel=4)
@@ -65,7 +65,7 @@ class ClientGeneric(ABC):
         self._is_blocking = blocking
 
     @abstractmethod
-    def wait_if_required(self, expected_wait_ms: int, blocking_override: Union[bool, None]):
+    def wait_if_required(self, expected_wait_ms: int, blocking_override: Optional[bool]):
         raise NotImplementedError()
 
     @abstractmethod
@@ -394,19 +394,19 @@ class ClientGeneric(ABC):
 
     @abstractmethod
     def send_file(self, filename: str, 
-                progress_callback: Union[Callable[[int, int], bool], None] = None,
+                progress_callback: Optional[Callable[[int, int], bool]] = None,
                 file_dest:str = "fs") -> bool:
         return False
 
     @abstractmethod
     def get_file_contents(self, filename: str,
-                progress_callback: Union[Callable[[int, int], bool], None] = None,
+                progress_callback: Optional[Callable[[int, int], bool]] = None,
                 file_src: str = 'fs') -> Union[bytes, None]:
         return None
     
     @abstractmethod
     def play_mp3(self, filename: str,
-                progress_callback: Union[Callable[[int, int], bool], None] = None) -> bool:
+                progress_callback: Optional[Callable[[int, int], bool]] = None) -> bool:
         return False
 
     @abstractmethod

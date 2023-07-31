@@ -28,8 +28,8 @@ class RICCommsSerial(RICCommsBase):
         '''
         super().__init__()
         self._isOpen = False
-        self.serialReaderThread: Union[Thread, None] = None
-        self.serialDevice: Union[serial.Serial, None] = None
+        self.serialReaderThread: Optional[Thread] = None
+        self.serialDevice: Optional[serial.Serial] = None
         self.serialThreadEnabled = False
         self._hdlc = LikeHDLC(self._onHDLCFrame, self._onHDLCError)
         self.overAscii = False

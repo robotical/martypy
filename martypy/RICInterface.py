@@ -127,7 +127,7 @@ class RICInterface:
         '''
         self.msgTimerCB = onMsgTimerCB
 
-    def sendRICRESTURL(self, msg: str, bridgeID: int | None = None, timeOutSecs: Optional[float] = None) -> bool:
+    def sendRICRESTURL(self, msg: str, bridgeID: Optional[int] = None, timeOutSecs: Optional[float] = None) -> bool:
         '''
         Send RICREST URL message
         Args:
@@ -149,7 +149,7 @@ class RICInterface:
         self.msgTxRate.addSample()
         return True
 
-    def cmdRICRESTURLSync(self, msg: str, bridgeID: int | None = None, timeOutSecs: Optional[float] = None) -> Dict:
+    def cmdRICRESTURLSync(self, msg: str, bridgeID: Optional[int] = None, timeOutSecs: Optional[float] = None) -> Dict:
         '''
         Send RICREST URL message and wait for response
         Args:
@@ -173,7 +173,7 @@ class RICInterface:
         # Wait for result
         return self.waitForSyncResult(msgNum, msgSendTime, timeOutSecs)
 
-    def cmdRICRESTRslt(self, msg: str, bridgeID: int | None = None, timeOutSecs: Optional[float] = None) -> bool:
+    def cmdRICRESTRslt(self, msg: str, bridgeID: Optional[int] = None, timeOutSecs: Optional[float] = None) -> bool:
         '''
         Send RICREST URL message and wait for response
         Args:
@@ -187,8 +187,8 @@ class RICInterface:
         return response.get("rslt", "") == "ok"
 
     def sendRICRESTCmdFrameNoResp(self, msg: Union[str,bytes], 
-                    payload: Union[bytes, str, None] = None,
-                    bridgeID: int | None = None) -> bool:
+                    payload: Optional[bytes, str] = None,
+                    bridgeID: Optional[int] = None) -> bool:
         '''
         Send RICREST command frame message without expecting a response
         Args:
@@ -208,8 +208,8 @@ class RICInterface:
         return True
 
     def sendRICRESTCmdFrame(self, msg: Union[str,bytes], 
-                    payload: Union[bytes, str, None] = None, 
-                    bridgeID: int | None = None,
+                    payload: Optional[bytes, str] = None, 
+                    bridgeID: Optional[int] = None,
                     timeOutSecs: Optional[float] = None) -> bool:
         '''
         Send RICREST command frame message
@@ -234,8 +234,8 @@ class RICInterface:
         return True
 
     def sendRICRESTCmdFrameSync(self, msg: Union[str,bytes], 
-                    payload: Union[Union[bytes, str], None] = None,
-                    bridgeID: int | None = None,
+                    payload: Optional[Union[bytes, str]] = None,
+                    bridgeID: Optional[int] = None,
                     timeOutSecs: Optional[float] = None) -> Dict:
         '''
         Send RICREST command frame message and wait for response
@@ -347,7 +347,7 @@ class RICInterface:
             self.msgTxRate.addSample()
 
     def sendFile(self, filename: str, 
-                progressCB: Union[Callable[[int, int, 'RICInterface'], bool], None] = None,
+                progressCB: Optional[Callable[[int, int, 'RICInterface'], bool]] = None,
                 fileDest: str = "fs", reqStr: str = '') -> bool:
         '''
         Send a file (from the file system)
@@ -368,7 +368,7 @@ class RICInterface:
         return self._ricFileHandler.sendFile(filename, progressCB, fileDest, reqStr)
     
     def getFileContents(self, filename: str,
-                progressCB: Union[Callable[[int, int, 'RICInterface'], bool], None] = None,
+                progressCB: Optional[Callable[[int, int, 'RICInterface'], bool]] = None,
                 file_src: str = 'fs',
                 req_str: str = '') -> bytearray | None:
         '''
@@ -389,7 +389,7 @@ class RICInterface:
         return self._ricFileHandler.getFileContents(filename, progressCB, file_src, req_str)
 
     def streamSoundFile(self, fileName: str, targetEndpoint: str,
-                progressCB: Union[Callable[[int, int, 'RICInterface'], bool], None] = None) -> bool:
+                progressCB: Optional[Callable[[int, int, 'RICInterface'], bool]] = None) -> bool:
         '''
         Stream sound from the file system
         Args:

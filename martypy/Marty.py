@@ -114,7 +114,7 @@ class Marty(object):
                 method: str,
                 locator: str = "",
                 extra_client_types: dict = dict(),
-                blocking: Union[bool, None] = None,
+                blocking: Optional[bool] = None,
                 *args, **kwargs) -> None:
         '''
         Start a connection to Marty :one: :two:
@@ -1288,7 +1288,7 @@ class Marty(object):
         return self.client.get_test_output()
 
     def send_file(self, filename: str, 
-                progress_callback: Union[Callable[[int, int], bool], None] = None,
+                progress_callback: Optional[Callable[[int, int], bool]] = None,
                 file_dest:str = "fs") -> bool:
         '''
         Send a file to Marty. :two:
@@ -1308,8 +1308,8 @@ class Marty(object):
         return self.client.send_file(filename, progress_callback, file_dest)
 
     def get_file_contents(self, filename: str,
-            progress_callback: Union[Callable[[int, int], bool], None] = None,
-            file_src: str = 'fs') -> bytes | None:
+            progress_callback: Optional[Callable[[int, int], bool]] = None,
+            file_src: str = 'fs') -> Union[bytes, None]:
         '''
         Get the contents of a file from Marty. :two:
 
@@ -1328,7 +1328,7 @@ class Marty(object):
         return self.client.get_file_contents(filename, progress_callback, file_src)
         
     def play_mp3(self, filename: str,
-                progress_callback: Union[Callable[[int, int], bool], None] = None) -> bool:
+                progress_callback: Optional[Callable[[int, int], bool]] = None) -> bool:
         '''
         Play an mp3 file on the robot. :two:
         Args:

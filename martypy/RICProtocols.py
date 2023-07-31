@@ -4,7 +4,7 @@ RICProtocols
 import json
 import logging
 import struct
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple, Union, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class DecodedMsg:
         self.errMsg = ""
         self.msgNum = None
         self.protocolID = None
-        self.payload : Union[bytes, None] = None
+        self.payload : Optional[bytes] = None
         self.restType = None
         self.msgTypeCode = None
 
@@ -159,7 +159,7 @@ class RICProtocols:
             self.ricSerialMsgNum = 1
         return cmdFrame, msgNum
 
-    def encodeRICRESTCmdFrame(self, cmdStr: Union[str,bytes], payload: Union[Union[bytes, str], None] = None) -> Tuple[bytes, int]:
+    def encodeRICRESTCmdFrame(self, cmdStr: Union[str,bytes], payload: Optional[Union[bytes, str]] = None) -> Tuple[bytes, int]:
         # RICSerial command frame
         msgNum = self.ricSerialMsgNum
         cmdFrame = bytearray(

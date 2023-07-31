@@ -6,15 +6,15 @@ Class supporting the hardware on RIC
 import logging
 import time
 from .RICROSSerial import RICROSSerial
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Optional
 from .ValueAverager import ValueAverager
 
 logger = logging.getLogger(__name__)
 
 class RICHwSmartServos:
     def __init__(self) -> None:
-        self.latestMsg: Union[bytes, None] = None
-        self.latestMsgTime: Union[float, None] = None
+        self.latestMsg: Optional[bytes] = None
+        self.latestMsgTime: Optional[float] = None
         self.validForSecs = 3
 
     def update(self, msgPayload: bytes) -> None:
@@ -40,8 +40,8 @@ class RICHwSmartServos:
 
 class RICHwIMU:
     def __init__(self) -> None:
-        self.latestMsg: Union[bytes, None] = None
-        self.latestMsgTime: Union[float, None] = None
+        self.latestMsg: Optional[bytes] = None
+        self.latestMsgTime: Optional[float] = None
         self.validForSecs = 3
 
     def update(self, msgPayload: bytes) -> None:
@@ -64,8 +64,8 @@ class RICHwIMU:
 
 class RICHwPowerStatus:
     def __init__(self) -> None:
-        self.latestMsg: Union[bytes, None] = None
-        self.latestMsgTime: Union[float, None] = None
+        self.latestMsg: Optional[bytes] = None
+        self.latestMsgTime: Optional[float] = None
         self.validForSecs = 5
 
     def update(self, msgPayload: bytes) -> None:
@@ -83,8 +83,8 @@ class RICHwPowerStatus:
 
 class RICHwAddOnStatus:
     def __init__(self):
-        self.latestMsg: Union[bytes, None] = None
-        self.latestMsgTime: Union[float, None] = None
+        self.latestMsg: Optional[bytes] = None
+        self.latestMsgTime: Optional[float] = None
         self.addOnNameToIdMap = {}
         self.validForSecs = 3
 
@@ -117,8 +117,8 @@ class RICHwAddOnStatus:
 
 class RICHwRobotStatus:
     def __init__(self):
-        self.latestMsg: Union[bytes, None] = None
-        self.latestMsgTime: Union[float, None] = None
+        self.latestMsg: Optional[bytes] = None
+        self.latestMsgTime: Optional[float] = None
         self.validForSecs = 3
 
     def update(self, msgPayload: bytes) -> None:

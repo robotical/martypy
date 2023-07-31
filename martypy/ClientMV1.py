@@ -33,7 +33,8 @@ class ClientMV1(ClientGeneric):
     }
 
     def __init__(self, method: str, locator: str,
-                port:str | None = None, timeout:float = 5.0,
+                port:Optional[str] = None, 
+                timeout:float = 5.0,
                 debug:bool = False,
                 default_lifelike: bool = True,
                 *args, **kwargs):
@@ -82,7 +83,8 @@ class ClientMV1(ClientGeneric):
             self.sock.close()
         self.sock = None
 
-    def wait_if_required(self, expected_wait_ms: int, blocking_override: Union[bool, None]):
+    def wait_if_required(self, expected_wait_ms: int, 
+                         blocking_override: Optional[bool]):
         if not self.is_blocking(blocking_override):
             return
         time.sleep(expected_wait_ms/1000)

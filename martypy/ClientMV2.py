@@ -24,7 +24,7 @@ class ClientMV2(ClientGeneric):
     def __init__(self,
                 method: str,
                 locator: str,
-                serialBaud: Union[int, None] = None,
+                serialBaud: Optional[int] = None,
                 port = 80,
                 wsPath = "/ws",
                 subscribeRateHz = 10.0,
@@ -187,7 +187,7 @@ class ClientMV2(ClientGeneric):
         # Close the RIC interface
         self.ricIF.close()
 
-    def wait_if_required(self, expected_wait_ms: int, blocking_override: Union[bool, None]):
+    def wait_if_required(self, expected_wait_ms: int, blocking_override: Optional[bool]):
         if not self.is_blocking(blocking_override):
             return
         if self.subscribeRateHz <= 0:
@@ -465,7 +465,7 @@ class ClientMV2(ClientGeneric):
             return raw_data[2]
         return 0
 
-    def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float | Tuple[float,float,float]:
+    def get_accelerometer(self, axis: Optional[str] = None, axisCode: int = 0) -> Union[float, Tuple[float,float,float]]:
         if axis is None:
             return self.ricHardware.getIMUAll()
         return self.ricHardware.getIMUAxisValue(axisCode)
@@ -854,7 +854,7 @@ class ClientMV2(ClientGeneric):
         return True
 
     def send_file(self, filename: str,  
-                progress_callback: Union[Callable[[int, int], bool], None] = None,
+                progress_callback: Optional[Callable[[int, int], bool]] = None,
                 file_dest:str = "fs") -> bool:
         self._sendFileProgressCB = progress_callback
         return self.ricIF.sendFile(filename, self._sendFileProgressAdapter, file_dest)
@@ -865,8 +865,8 @@ class ClientMV2(ClientGeneric):
         return True
     
     def get_file_contents(self, filename: str,
-                progress_callback: Union[Callable[[int, int], bool], None] = None,
-                file_src: str = 'fs') -> bytes | None:
+                progress_callback: Optional[Callable[[int, int], bool]] = None,
+                file_src: str = 'fs') -> Union[bytes, None]:
         self._recvFileProgressCB = progress_callback
         return self.ricIF.getFileContents(filename, self._recvFileProgressAdapter, file_src)
     
@@ -876,7 +876,7 @@ class ClientMV2(ClientGeneric):
         return True
 
     def play_mp3(self, filename: str, ricInterface: RICInterface,
-                progress_callback: Union[Callable[[int, int], bool], None] = None) -> bool:
+                progress_callback: Optional[Callable[[int, int], bool]] = None) -> bool:
         self._playMP3ProgressCB = progress_callback
         return self.ricIF.streamSoundFile(filename, "streamaudio", self._playMP3ProgressAdapter)
 
