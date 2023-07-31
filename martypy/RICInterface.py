@@ -127,16 +127,19 @@ class RICInterface:
         '''
         self.msgTimerCB = onMsgTimerCB
 
-    def sendRICRESTURL(self, msg: str, timeOutSecs: Optional[float] = None) -> bool:
+    def sendRICRESTURL(self, msg: str, bridgeID: int | None = None, timeOutSecs: Optional[float] = None) -> bool:
         '''
         Send RICREST URL message
         Args:
             msg: string containing command URL
+            bridgeID: bridge ID to send message to (or None for unbridged)
             timeOutSecs: message time-out override in seconds (or None to use default)
         Returns:
             True if message sent
         '''
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTURL(msg)
+        if bridgeID is not None:
+            ricRestMsg = self.ricProtocols.encodeBridgeMsg(ricRestMsg, bridgeID)
         timeOutSecs = timeOutSecs if timeOutSecs is not None else self.msgRespTimeoutSecs
         with self._msgsOutstandingLock:
             self._msgsOutstanding[msgNum] = {"timeSent": time.time(), "timeOutSecs": timeOutSecs}
@@ -146,16 +149,19 @@ class RICInterface:
         self.msgTxRate.addSample()
         return True
 
-    def cmdRICRESTURLSync(self, msg: str, timeOutSecs: Optional[float] = None) -> Dict:
+    def cmdRICRESTURLSync(self, msg: str, bridgeID: int | None = None, timeOutSecs: Optional[float] = None) -> Dict:
         '''
         Send RICREST URL message and wait for response
         Args:
             msg: string containing command URL
+            bridgeID: bridge ID to send message to (or None for unbridged)
             timeOutSecs: message time-out override in seconds (or None to use default)
         Returns:
             Response turned into a dictionary (from JSON)
         '''
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTURL(msg)
+        if bridgeID is not None:
+            ricRestMsg = self.ricProtocols.encodeBridgeMsg(ricRestMsg, bridgeID)
         msgSendTime = time.time()
         timeOutSecs = timeOutSecs if timeOutSecs is not None else self.msgRespTimeoutSecs
         if self.DEBUG_RIC_SEND_MSG:
@@ -167,29 +173,34 @@ class RICInterface:
         # Wait for result
         return self.waitForSyncResult(msgNum, msgSendTime, timeOutSecs)
 
-    def cmdRICRESTRslt(self, msg: str, timeOutSecs: Optional[float] = None) -> bool:
+    def cmdRICRESTRslt(self, msg: str, bridgeID: int | None = None, timeOutSecs: Optional[float] = None) -> bool:
         '''
         Send RICREST URL message and wait for response
         Args:
             msg: string containing command URL
+            bridgeID: bridge ID to send message to (or None for unbridged)
             timeOutSecs: message time-out override in seconds (or None to use default)
         Returns:
             Response turned into a dictionary (from JSON)
         '''
-        response = self.cmdRICRESTURLSync(msg, timeOutSecs)
+        response = self.cmdRICRESTURLSync(msg, bridgeID, timeOutSecs)
         return response.get("rslt", "") == "ok"
 
     def sendRICRESTCmdFrameNoResp(self, msg: Union[str,bytes], 
-                    payload: Union[bytes, str, None] = None) -> bool:
+                    payload: Union[bytes, str, None] = None,
+                    bridgeID: int | None = None) -> bool:
         '''
         Send RICREST command frame message without expecting a response
         Args:
             msg: string or bytes containing command frame
             payload: optional payload
+            bridgeID: bridge ID to send message to (or None for unbridged)
         Returns:
             True if message sent
         '''
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTCmdFrame(msg, payload)
+        if bridgeID is not None:
+            ricRestMsg = self.ricProtocols.encodeBridgeMsg(ricRestMsg, bridgeID)
         if self.DEBUG_RIC_SEND_MSG:
             logger.debug(f"sendRICRESTCmdFrameNoResp msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
         self.commsHandler.send(ricRestMsg)
@@ -197,17 +208,22 @@ class RICInterface:
         return True
 
     def sendRICRESTCmdFrame(self, msg: Union[str,bytes], 
-                    payload: Union[bytes, str, None] = None, timeOutSecs: Optional[float] = None) -> bool:
+                    payload: Union[bytes, str, None] = None, 
+                    bridgeID: int | None = None,
+                    timeOutSecs: Optional[float] = None) -> bool:
         '''
         Send RICREST command frame message
         Args:
             msg: string or bytes containing command frame
             payload: optional payload
+            bridgeID: bridge ID to send message to (or None for unbridged)
             timeOutSecs: message time-out override in seconds (or None to use default)
         Returns:
             True if message sent
         '''
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTCmdFrame(msg, payload)
+        if bridgeID is not None:
+            ricRestMsg = self.ricProtocols.encodeBridgeMsg(ricRestMsg, bridgeID)
         if self.DEBUG_RIC_SEND_MSG:
             logger.debug(f"sendRICRESTCmdFrame msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
         timeOutSecs = timeOutSecs if timeOutSecs is not None else self.msgRespTimeoutSecs
@@ -219,18 +235,22 @@ class RICInterface:
 
     def sendRICRESTCmdFrameSync(self, msg: Union[str,bytes], 
                     payload: Union[Union[bytes, str], None] = None,
+                    bridgeID: int | None = None,
                     timeOutSecs: Optional[float] = None) -> Dict:
         '''
         Send RICREST command frame message and wait for response
         Args:
             msg: string or bytes containing command frame
             payload: optional payload
+            bridgeID: bridge ID to send message to (or None for unbridged)
             timeOutSecs: message time-out override in seconds (or None to use default)
         Returns:
             Response turned into a dictionary (from JSON)
         '''
         # Encode frame
         ricRestMsg, msgNum = self.ricProtocols.encodeRICRESTCmdFrame(msg, payload)
+        if bridgeID is not None:
+            ricRestMsg = self.ricProtocols.encodeBridgeMsg(ricRestMsg, bridgeID)
         if self.DEBUG_RIC_SEND_MSG:
             logger.debug(f"sendRICRESTCmdFrameSync msgNum {msgNum} len {len(ricRestMsg)} msg {msg}")
         msgSendTime = time.time()
@@ -359,8 +379,7 @@ class RICInterface:
                     which are bytesSent, totalBytes and the interface to RIC (of type RICInterface) and
                     returns a bool which should be True to continue the file upload or False to abort
             file_src: "fs" to download from file system, "martycam" for camera files
-            req_str: API request used for transfer, if left blank this is inferred from fileDest, other
-                    values include "filedownload" and "martycam"
+            req_str: API request used for transfer, if left blank this is inferred from file_src
         Returns:
             True if operation succeeded
         Throws:

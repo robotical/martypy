@@ -73,6 +73,7 @@ class ClientMV2(ClientGeneric):
         # Debug
         self.DEBUG_RECEIVE_PUBLISHED_MSG = False
         self.DEBUG_RECEIVE_RICREST_MSGS = False
+        self.DEBUG_RECEIVE_BRIDGE_RICREST_MSGS = False
         self.DEBUG_GET_RIC_VERSION = False
         self.DEBUG_GET_HW_ELEMS_INFO = False
         self.DEBUG_SUBSCRIBE_TO_PUB_MSGS = False
@@ -757,6 +758,9 @@ class ClientMV2(ClientGeneric):
                     self.reportMsgCallback(decodedMsg.payload.decode("utf-8"))
                 except:
                     logger.exception("Report callback failed:")
+        elif decodedMsg.protocolID == RICProtocols.PROTOCOL_BRIDGE_RICREST:
+            if self.DEBUG_RECEIVE_BRIDGE_RICREST_MSGS:
+                logger.debug(f"BRIDGE_RICREST message received {decodedMsg.payload}")
         else:
             logger.info(f"RIC UNKNOWN message received {decodedMsg.payload}")
             pass
