@@ -159,7 +159,7 @@ class RICProtocols:
             self.ricSerialMsgNum = 1
         return cmdFrame, msgNum
 
-    def encodeRICRESTCmdFrame(self, cmdStr: Union[Union[str,bytes], payload: Union[bytes, str], None] = None) -> Tuple[bytes, int]:
+    def encodeRICRESTCmdFrame(self, cmdStr: Union[str,bytes], payload: Union[Union[bytes, str], None] = None) -> Tuple[bytes, int]:
         # RICSerial command frame
         msgNum = self.ricSerialMsgNum
         cmdFrame = bytearray(
