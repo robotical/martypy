@@ -4,7 +4,6 @@ import time
 import re
 from typing import Callable, Dict, List, Optional, Union, Tuple
 from packaging import version
-
 from .ClientGeneric import ClientGeneric
 from .RICCommsSerial import RICCommsSerial
 from .RICCommsWiFi import RICCommsWiFi
@@ -25,7 +24,7 @@ class ClientMV2(ClientGeneric):
     def __init__(self,
                 method: str,
                 locator: str,
-                serialBaud: int | None = None,
+                serialBaud: Union[int, None] = None,
                 port = 80,
                 wsPath = "/ws",
                 subscribeRateHz = 10.0,
@@ -851,7 +850,7 @@ class ClientMV2(ClientGeneric):
         return True
 
     def send_file(self, filename: str,  
-                progress_callback: Callable[[int, int], bool] | None = None,
+                progress_callback: Union[Callable[[int, int], bool], None] = None,
                 file_dest:str = "fs") -> bool:
         self._sendFileProgressCB = progress_callback
         return self.ricIF.sendFile(filename, self._sendFileProgressAdapter, file_dest)
@@ -862,7 +861,7 @@ class ClientMV2(ClientGeneric):
         return True
     
     def get_file_contents(self, filename: str,
-                progress_callback: Callable[[int, int], bool] | None = None,
+                progress_callback: Union[Callable[[int, int], bool], None] = None,
                 file_src: str = 'fs') -> bytes | None:
         self._recvFileProgressCB = progress_callback
         return self.ricIF.getFileContents(filename, self._recvFileProgressAdapter, file_src)
@@ -873,7 +872,7 @@ class ClientMV2(ClientGeneric):
         return True
 
     def play_mp3(self, filename: str, ricInterface: RICInterface,
-                progress_callback: Callable[[int, int], bool] | None = None) -> bool:
+                progress_callback: Union[Callable[[int, int], bool], None] = None) -> bool:
         self._playMP3ProgressCB = progress_callback
         return self.ricIF.streamSoundFile(filename, "streamaudio", self._playMP3ProgressAdapter)
 

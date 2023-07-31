@@ -394,19 +394,19 @@ class ClientGeneric(ABC):
 
     @abstractmethod
     def send_file(self, filename: str, 
-                progress_callback: Callable[[int, int], bool] | None = None,
+                progress_callback: Union[Callable[[int, int], bool], None] = None,
                 file_dest:str = "fs") -> bool:
         return False
 
     @abstractmethod
     def get_file_contents(self, filename: str,
-                progress_callback: Callable[[int, int], bool] | None = None,
-                file_src: str = 'fs') -> bytes | None:
+                progress_callback: Union[Callable[[int, int], bool], None] = None,
+                file_src: str = 'fs') -> Union[bytes, None]:
         return None
     
     @abstractmethod
     def play_mp3(self, filename: str,
-                progress_callback: Callable[[int, int], bool] | None = None) -> bool:
+                progress_callback: Union[Callable[[int, int], bool], None] = None) -> bool:
         return False
 
     @abstractmethod

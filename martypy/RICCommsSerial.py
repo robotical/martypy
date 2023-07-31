@@ -7,9 +7,8 @@ from serial.serialutil import SerialException
 import serial.tools.list_ports
 from threading import Thread
 import time
-from typing import Dict, List
+from typing import Dict, List, Union
 from warnings import warn
-
 from .RICCommsBase import RICCommsBase
 from .LikeHDLC import LikeHDLC
 from .ProtocolOverAscii import ProtocolOverAscii
@@ -29,8 +28,8 @@ class RICCommsSerial(RICCommsBase):
         '''
         super().__init__()
         self._isOpen = False
-        self.serialReaderThread: Thread | None = None
-        self.serialDevice: serial.Serial | None = None
+        self.serialReaderThread: Union[Thread, None] = None
+        self.serialDevice: Union[serial.Serial, None] = None
         self.serialThreadEnabled = False
         self._hdlc = LikeHDLC(self._onHDLCFrame, self._onHDLCError)
         self.overAscii = False

@@ -24,8 +24,8 @@ class RICCommsWiFi(RICCommsBase):
         '''
         super().__init__()
         self._isOpen = False
-        self.webSocketThread: Thread | None = None
-        self.webSocket: WebSocket | None = None
+        self.webSocketThread: Union[Thread, None] = None
+        self.webSocket: Union[WebSocket, None] = None
         self.webSocketThreadEnabled = False
         self._hdlc = LikeHDLC(self._onHDLCFrame, self._onHDLCError)
         self.socketErrors = 0

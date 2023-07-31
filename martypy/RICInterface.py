@@ -7,7 +7,6 @@ import threading
 import logging
 import json
 import os
-
 from .ValueAverager import ValueAverager
 from .RICProtocols import DecodedMsg, RICProtocols
 from .RICCommsBase import RICCommsBase
@@ -219,7 +218,7 @@ class RICInterface:
         return True
 
     def sendRICRESTCmdFrameSync(self, msg: Union[str,bytes], 
-                    payload: Union[bytes, str] | None = None,
+                    payload: Union[Union[bytes, str], None] = None,
                     timeOutSecs: Optional[float] = None) -> Dict:
         '''
         Send RICREST command frame message and wait for response
@@ -328,7 +327,7 @@ class RICInterface:
             self.msgTxRate.addSample()
 
     def sendFile(self, filename: str, 
-                progressCB: Callable[[int, int, 'RICInterface'], bool] | None = None,
+                progressCB: Union[Callable[[int, int, 'RICInterface'], bool], None] = None,
                 fileDest: str = "fs", reqStr: str = '') -> bool:
         '''
         Send a file (from the file system)
@@ -349,7 +348,7 @@ class RICInterface:
         return self._ricFileHandler.sendFile(filename, progressCB, fileDest, reqStr)
     
     def getFileContents(self, filename: str,
-                progressCB: Callable[[int, int, 'RICInterface'], bool] | None = None,
+                progressCB: Union[Callable[[int, int, 'RICInterface'], bool], None] = None,
                 file_src: str = 'fs',
                 req_str: str = '') -> bytearray | None:
         '''
@@ -371,7 +370,7 @@ class RICInterface:
         return self._ricFileHandler.getFileContents(filename, progressCB, file_src, req_str)
 
     def streamSoundFile(self, fileName: str, targetEndpoint: str,
-                progressCB: Callable[[int, int, 'RICInterface'], bool] | None = None) -> bool:
+                progressCB: Union[Callable[[int, int, 'RICInterface'], bool], None] = None) -> bool:
         '''
         Stream sound from the file system
         Args:

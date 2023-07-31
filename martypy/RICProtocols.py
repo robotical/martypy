@@ -17,7 +17,7 @@ class DecodedMsg:
         self.errMsg = ""
         self.msgNum = None
         self.protocolID = None
-        self.payload : bytes | None = None
+        self.payload : Union[bytes, None] = None
         self.restType = None
         self.msgTypeCode = None
 
@@ -152,7 +152,7 @@ class RICProtocols:
             self.ricSerialMsgNum = 1
         return cmdFrame, msgNum
 
-    def encodeRICRESTCmdFrame(self, cmdStr: Union[str,bytes], payload: Union[bytes, str] | None = None) -> Tuple[bytes, int]:
+    def encodeRICRESTCmdFrame(self, cmdStr: Union[Union[str,bytes], payload: Union[bytes, str], None] = None) -> Tuple[bytes, int]:
         # RICSerial command frame
         msgNum = self.ricSerialMsgNum
         cmdFrame = bytearray([msgNum, (self.MSG_TYPE_COMMAND << self.MSG_TYPE_BIT_POS) + self.PROTOCOL_RICREST, self.RICREST_ELEM_CODE_CMD_FRAME])

@@ -1,8 +1,7 @@
 '''
 RICStreamHandler
 '''
-from typing import Callable
-
+from typing import Callable, Union
 from martypy import RICInterface
 from .Exceptions import MartyTransferException
 import logging
@@ -16,14 +15,14 @@ class RICStreamHandler:
     def __init__(self, ricInterface: 'RICInterface.RICInterface'):
         # Stream vars
         self._ricInterface = ricInterface
-        self._stream_id: int | None = None
+        self._stream_id: Union[int, None] = None
         self._stream_cur_sokto = 0
         self._stream_closed = False
         self._stream_new_sokto_flag = False
         self.DEBUG_RIC_STREAM = False
 
     def streamSoundFile(self, file_name: str, targetEndpoint: str,
-                progressCB: Callable[[int, int, 'RICInterface.RICInterface'], bool] | None = None) -> bool:
+                progressCB: Union[Callable[[int, int, 'RICInterface.RICInterface'], bool], None] = None) -> bool:
         '''
         Stream sound from the file system
         Args:
