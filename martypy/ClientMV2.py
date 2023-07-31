@@ -848,24 +848,24 @@ class ClientMV2(ClientGeneric):
     def _onReconnect(self):
         self._subscribeToPubMessages(True)
 
-    def _sendFileProgressAdapter(self, fileSize: int, bytesSent: int, ricInterface: RICInterface) -> bool:
+    def _sendFileProgressAdapter(self, fileSize: int, bytesSent: int, status:str, ricInterface: RICInterface) -> bool:
         if self._sendFileProgressCB:
-            return self._sendFileProgressCB(fileSize, bytesSent)
+            return self._sendFileProgressCB(fileSize, bytesSent, status)
         return True
 
     def send_file(self, filename: str,  
-                progress_callback: Optional[Callable[[int, int], bool]] = None,
+                progress_callback: Optional[Callable[[int, int, str], bool]] = None,
                 file_dest:str = "fs") -> bool:
         self._sendFileProgressCB = progress_callback
         return self.ricIF.sendFile(filename, self._sendFileProgressAdapter, file_dest)
 
-    def _recvFileProgressAdapter(self, fileSize: int, bytesSent: int, ricInterface: RICInterface) -> bool:
+    def _recvFileProgressAdapter(self, fileSize: int, bytesSent: int, status:str, ricInterface: RICInterface) -> bool:
         if self._recvFileProgressCB:
-            return self._recvFileProgressCB(fileSize, bytesSent)
+            return self._recvFileProgressCB(fileSize, bytesSent, status)
         return True
     
     def get_file_contents(self, filename: str,
-                progress_callback: Optional[Callable[[int, int], bool]] = None,
+                progress_callback: Optional[Callable[[int, int, str], bool]] = None,
                 file_src: str = 'fs') -> Union[bytes, None]:
         self._recvFileProgressCB = progress_callback
         return self.ricIF.getFileContents(filename, self._recvFileProgressAdapter, file_src)

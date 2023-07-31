@@ -872,15 +872,15 @@ class ClientMV1(ClientGeneric):
         pass
 
     def get_test_output(self) -> dict:
-        return ""
+        return {}
 
     def send_file(self, filename: str,
-                progress_callback: Callable[[int, int], bool] = None,
+                progress_callback: Optional[Callable[[int, int, str], bool]] = None,
                 file_dest:str = "fs") -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
 
     def play_mp3(self, filename: str,
-                progress_callback: Callable[[int, int], bool] = None) -> bool:
+                progress_callback: Optional[Callable[[int, int, str], bool]] = None) -> bool:
         raise MartyCommandException(ClientGeneric.NOT_IMPLEMENTED)
         
     def get_file_list(self) -> List[str]:

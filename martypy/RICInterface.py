@@ -347,14 +347,14 @@ class RICInterface:
             self.msgTxRate.addSample()
 
     def sendFile(self, filename: str, 
-                progressCB: Optional[Callable[[int, int, 'RICInterface'], bool]] = None,
+                progressCB: Optional[Callable[[int, int, str, 'RICInterface'], bool]] = None,
                 fileDest: str = "fs", reqStr: str = '') -> bool:
         '''
         Send a file (from the file system)
         Args:
             filename: name of file to send
-            progressCB: callback used to indicate how file send is progressing, callable takes three params
-                    which are bytesSent, totalBytes and the interface to RIC (of type RICInterface) and
+            progressCB: callback used to indicate how file send is progressing, callable takes four params
+                    which are bytesSent, totalBytes, status and the interface to RIC (of type RICInterface) and
                     returns a bool which should be True to continue the file upload or False to abort
             fileDest: "fs" to upload to file system, "ricfw" for new RIC firmware
             reqStr: API request used for transfer, if left blank this is inferred from fileDest, other
@@ -368,15 +368,15 @@ class RICInterface:
         return self._ricFileHandler.sendFile(filename, progressCB, fileDest, reqStr)
     
     def getFileContents(self, filename: str,
-                progressCB: Optional[Callable[[int, int, 'RICInterface'], bool]] = None,
+                progressCB: Optional[Callable[[int, int, str, 'RICInterface'], bool]] = None,
                 file_src: str = 'fs',
                 req_str: str = '') -> Union[bytearray, None]:
         '''
         Send a file (from the file system)
         Args:
             filename: name of file to send
-            progressCB: callback used to indicate how file send is progressing, callable takes three params
-                    which are bytesSent, totalBytes and the interface to RIC (of type RICInterface) and
+            progressCB: callback used to indicate how file send is progressing, callable takes four params
+                    which are bytesSent, totalBytes, status and the interface to RIC (of type RICInterface) and
                     returns a bool which should be True to continue the file upload or False to abort
             file_src: "fs" to download from file system, "martycam" for camera files
             req_str: API request used for transfer, if left blank this is inferred from file_src

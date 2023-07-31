@@ -1288,15 +1288,15 @@ class Marty(object):
         return self.client.get_test_output()
 
     def send_file(self, filename: str, 
-                progress_callback: Optional[Callable[[int, int], bool]] = None,
+                progress_callback: Optional[Callable[[int, int, str], bool]] = None,
                 file_dest:str = "fs") -> bool:
         '''
         Send a file to Marty. :two:
 
         Args:
             filename: the name of the file to send
-            progress_callback: callback used to indicate how file send is progressing, callable takes two params
-                    which are bytesSent and totalBytes and
+            progress_callback: callback used to indicate how file send is progressing, callable takes 
+                    three parameters which are bytesSent, totalBytes & status string and
                     returns a bool which should be True to continue the file upload or False to abort
             file_dest: "fs" to upload to file system, "ricfw" for new RIC firmware
         Returns:
@@ -1308,15 +1308,15 @@ class Marty(object):
         return self.client.send_file(filename, progress_callback, file_dest)
 
     def get_file_contents(self, filename: str,
-            progress_callback: Optional[Callable[[int, int], bool]] = None,
+            progress_callback: Optional[Callable[[int, int, str], bool]] = None,
             file_src: str = 'fs') -> Union[bytes, None]:
         '''
         Get the contents of a file from Marty. :two:
 
         Args:
             filename: the name of the file to get
-            progress_callback: callback used to indicate how file send is progressing, callable takes two params
-                    which are bytesSent and totalBytes and
+            progress_callback: callback used to indicate how file send is progressing, callable takes 
+                    three parameters which are bytesSent, totalBytes & status string and
                     returns a bool which should be True to continue the file upload or False to abort
             file_src: "fs" to get from file system
         Returns:

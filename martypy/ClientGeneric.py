@@ -394,13 +394,13 @@ class ClientGeneric(ABC):
 
     @abstractmethod
     def send_file(self, filename: str, 
-                progress_callback: Optional[Callable[[int, int], bool]] = None,
+                progress_callback: Optional[Callable[[int, int, str], bool]] = None,
                 file_dest:str = "fs") -> bool:
         return False
 
     @abstractmethod
     def get_file_contents(self, filename: str,
-                progress_callback: Optional[Callable[[int, int], bool]] = None,
+                progress_callback: Optional[Callable[[int, int, str], bool]] = None,
                 file_src: str = 'fs') -> Union[bytes, None]:
         return None
     

@@ -42,14 +42,19 @@ class RICFileHandler:
         self.uploadBytesPerSec = ValueAverager()
 
     def sendFile(self, file_name: str, 
-                progressCB: Optional[Callable[[int, int, 'RICInterface.RICInterface'], bool]] = None,
+                progressCB: Optional[Callable[[int, int, str, 'RICInterface.RICInterface'], bool]] = None,
                 fileDest: str = "fs", req_str: str = '') -> bool:
         
         # Check validity
         try:
             file_stat = os.stat(file_name)
         except OSError as e:
+            if progressCB is not None:
+                progressCB(0, 0, "File not found", self._ricInterface)
             raise MartyTransferException("File not found")
+        
+        # Status string
+        statusStr = f"Sending {file_name} to {fileDest}"
                 
         # Send the file using the file upload
         with open(file_name, "rb") as file_obj:
@@ -84,6 +89,8 @@ class RICFileHandler:
                             f'"fileName":"{upload_name}","fileLen":{str(file_length)}' + '}'
             resp = self._ricInterface.sendRICRESTCmdFrameSync(send_file_req, timeOutSecs = 10)
             if resp.get("rslt","") != "ok":
+                if progressCB is not None:
+                    progressCB(0, file_length, "Cannot start transfer", self._ricInterface)
                 raise MartyTransferException("File transfer start not acknowledged")
 
             # Block and batch sizes
@@ -96,16 +103,16 @@ class RICFileHandler:
                 logger.debug(f"ricIF sendFile negotiated blockMaxSize {block_max_size} batchAckSize {batch_ack_size} resp {resp}")
 
             # Progress and check for abort
-            if self._sendFileProgressCheckAbort(progressCB, self._file_send_ok_to, file_length):
+            if self._sendFileProgressCheckAbort(progressCB, self._file_send_ok_to, file_length, statusStr):
                 return False
 
             # Wait for a period depending on whether we're sending firmware - this is because starting
             # a firmware update involves the ESP32 in a long-running activity and the firmware becomes
             # unresponsive during this time
             if is_firmware:
-                for i in range(5):
-                    time.sleep(1)
-                    if self._sendFileProgressCheckAbort(progressCB, 0, file_length):
+                for i in range(6):
+                    time.sleep(1.0)
+                    if self._sendFileProgressCheckAbort(progressCB, 0, file_length, statusStr):
                         return False
                     if self._ota_update_start_ok:
                         break
@@ -155,7 +162,7 @@ class RICFileHandler:
                 timeNow = time.time()
                 while time.time() - timeNow < self.BLOCK_ACK_TIMEOUT:
                     # Progress update
-                    if self._sendFileProgressCheckAbort(progressCB, self._file_send_ok_to, file_length):
+                    if self._sendFileProgressCheckAbort(progressCB, self._file_send_ok_to, file_length, statusStr):
                         return False
 
                     # Debug
@@ -174,7 +181,7 @@ class RICFileHandler:
                         break
 
                     # Wait
-                    time.sleep(1)
+                    time.sleep(0.05)
 
                 # Check if no okto has been received with a greater position than batchStartPos
                 if self._file_send_ok_to <= batch_start_pos:
@@ -198,23 +205,26 @@ class RICFileHandler:
                 return False
             return True
         
-    def _sendFileProgressCheckAbort(self, progressCB: Optional[Callable[[int, int, 'RICInterface.RICInterface'], bool]], 
-                    currentPos: int, fileSize: int) -> bool:
+    def _sendFileProgressCheckAbort(self, progressCB: Optional[Callable[[int, int, str, 'RICInterface.RICInterface'], bool]], 
+                    currentPos: int, fileSize: int, statusStr: str) -> bool:
         if self._send_file_failed:
             return True
         if progressCB is None:
             return False
-        if not progressCB(currentPos, fileSize, self._ricInterface):
+        if not progressCB(currentPos, fileSize, statusStr, self._ricInterface):
             self._ricInterface.sendRICRESTCmdFrameSync('{"cmdName":"ufCancel"}')
             return True
         return False
 
     def getFileContents(self, filename: str, 
-                progressCB: Optional[Callable[[int, int, 'RICInterface.RICInterface'], bool]],
+                progressCB: Optional[Callable[[int, int, str, 'RICInterface.RICInterface'], bool]],
                 file_src: str,
                 req_str: str
                 ) -> Union[bytearray, None]:
         
+        # Status string
+        statusStr = f"Receiving {filename} from {file_src}"
+
         # Block and batch sizes
         block_max_size = self._ricInterface.commsHandler.commsParams.fileTransfer.get("fileBlockMax", 5000)
         batch_ack_size = self._ricInterface.commsHandler.commsParams.fileTransfer.get("fileBatchAck", 1)
@@ -227,6 +237,8 @@ class RICFileHandler:
             martycam_serial_port_name = "Serial1"
             result = self._ricInterface.cmdRICRESTURLSync(f"commandserial/bridge/setup?port={martycam_serial_port_name}&name=MartyCam")
             if result.get("rslt", "") != "ok":
+                if progressCB is not None:
+                    progressCB(0, 0, "Cannot connect device", self._ricInterface)
                 raise MartyTransferException("MartyCam bridge setup failed")
             
             # Commands need to be sent using the bridge protocol
@@ -241,6 +253,8 @@ class RICFileHandler:
         resp = self._ricInterface.sendRICRESTCmdFrameSync(recv_file_req, bridgeID=self._file_recv_bridgeID, timeOutSecs = 10)
         if resp.get("rslt","") != "ok":
             self._removeBridge()
+            if progressCB is not None:
+                progressCB(0, 0, "Cannot start transfer", self._ricInterface)
             raise MartyTransferException("File transfer start not acknowledged")
         
         # Extract file length and CRC info
@@ -266,6 +280,8 @@ class RICFileHandler:
             # Check for timeout
             if time.time() - start_time > self.OVERALL_FILE_TRANSFER_TIMEOUT:
                 self._removeBridge()
+                if progressCB is not None:
+                    progressCB(0, file_length, "Transfer time-out", self._ricInterface)
                 raise MartyTransferException("File transfer timeout")
             
             # Check for timeout on last block
@@ -273,6 +289,8 @@ class RICFileHandler:
                 block_ack_retry_count += 1
                 if block_ack_retry_count > self.BATCH_RETRY_MAX:
                     self._removeBridge()
+                    if progressCB is not None:
+                        progressCB(0, file_length, "Transfer block time-out", self._ricInterface)
                     raise MartyTransferException("File transfer block timeout")
 
                 # Send okto
@@ -315,7 +333,7 @@ class RICFileHandler:
 
                 # Progress update
                 if progressCB is not None:
-                    progressCB(file_length, file_length, self._ricInterface)
+                    progressCB(file_length, file_length, statusStr, self._ricInterface)
 
                 # Send end
                 self._ricInterface.sendRICRESTCmdFrame(
@@ -326,7 +344,7 @@ class RICFileHandler:
             # Progress update
             if progressCB is not None and block_pos != last_progress_block_pos:
                 last_progress_block_pos = block_pos
-                if not progressCB(block_pos, file_length, self._ricInterface):
+                if not progressCB(block_pos, file_length, statusStr, self._ricInterface):
                     self._ricInterface.sendRICRESTCmdFrameNoResp(
                         "{" + f'"cmdName":"dfCancel","streamID":{stream_id}' + "}",
                         bridgeID=self._file_recv_bridgeID)
