@@ -370,7 +370,7 @@ class RICInterface:
     def getFileContents(self, filename: str,
                 progressCB: Optional[Callable[[int, int, 'RICInterface'], bool]] = None,
                 file_src: str = 'fs',
-                req_str: str = '') -> bytearray | None:
+                req_str: str = '') -> Union[bytearray, None]:
         '''
         Send a file (from the file system)
         Args:

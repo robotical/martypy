@@ -8,7 +8,7 @@ import itertools
 import collections
 import logging
 import time
-from typing import Deque
+from typing import Deque, Union
 
 logger = logging.getLogger(__name__)
 
@@ -47,12 +47,12 @@ class WebSocketFrame():
     def getCloseRequired(self) -> bool:
         return self.closeRequired
 
-    def getTextMsg(self) -> str | None:
+    def getTextMsg(self) -> Union[str, None]:
         if len(self.textMsgs) > 0:
             return self.textMsgs.popleft()
         return None
 
-    def getBinaryMsg(self) -> bytes | None:
+    def getBinaryMsg(self) -> Union[bytes, None]:
         if len(self.binaryMsgs) > 0:
             binaryMsg = self.binaryMsgs.popleft()
             return binaryMsg
