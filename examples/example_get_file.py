@@ -24,6 +24,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('conn_method', type=str, help='Connection method (wifi or usb)')
 parser.add_argument('locator', type=str, help = 'IP Address for Wifi or Serial Port for USB', nargs='?')
+parser.add_argument('--filename', type=str, help='Name of file to get', default='index.html')
 args = parser.parse_args()
 
 # Import Marty from the martypy library
@@ -45,24 +46,21 @@ def logging_callback(log_message):
 # my_marty.register_logging_callback(logging_callback)
 
 # Function used for callback
-def progress_callback(bytes_sent, total_bytes):
-    logging.info(f"Progress {bytes_sent}/{total_bytes}")
+def progress_callback(bytes_sent, total_bytes, status_str):
+    logging.info(f"Progress {status_str} {bytes_sent}/{total_bytes}")
     return True
 
-# Test file
-file_name = "index.html"
-
 # Debug
-logging.info(f"Getting contents of file {file_name}")
+logging.info(f"Getting contents of file {args.filename}")
 
-# Send a file to marty's file system
-file_contents = my_marty.get_file_contents(file_name, progress_callback)
+# Get contents of file (doesn't store file to local machine)
+file_contents = my_marty.get_file_contents(args.filename, progress_callback)
 
 # Debug
 if file_contents is not None:
     logging.info(f"File received - {len(file_contents)} bytes")
 else:
-    logging.warning(f"File {file_name} was not received successfully")
+    logging.warning(f"File {args.filename} was not received successfully")
 
 # Disconnect from Marty
 my_marty.close()

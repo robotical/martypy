@@ -324,7 +324,10 @@ class RICFileHandler:
                                 bridgeID=self._file_recv_bridgeID)
                             if self.DEBUG_RECEIVE_FILE:
                                 logger.info(f"getFileContents sentOKTO block {block_pos} length {len(file_contents)}")
-                            batch_count_since_ack_sent = 0 
+                            batch_count_since_ack_sent = 0
+
+                        # Update timer
+                        last_block_time = time.time()
 
                     self._file_recv_last_block.clear()
 

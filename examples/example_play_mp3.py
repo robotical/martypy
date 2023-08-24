@@ -11,6 +11,9 @@ parser.add_argument('connMethod', type=str, help='Connection method (wifi or usb
 parser.add_argument('locator', type=str, help = 'IP Address for Wifi or Serial Port for USB', nargs='?')
 args = parser.parse_args()
 
+import pathlib
+cur_path = pathlib.Path(__file__).parent.resolve()
+
 # Import Marty from the martypy library
 from martypy import Marty
 
@@ -29,7 +32,7 @@ my_marty.set_volume(70)
 
 # Play an MP3 file
 fileName = "completed_tone_low_br.mp3"
-my_marty.play_mp3(cur_path.joinpath(fileName), progressCB)
+my_marty.play_mp3(str(cur_path.joinpath(fileName)), progressCB)
 
 # Disconnect from Marty
 my_marty.close()

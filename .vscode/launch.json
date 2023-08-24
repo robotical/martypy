@@ -49,6 +49,20 @@
             ],
         },
         {
+            "name": "Python: Get File Example",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/examples/example_get_file.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "USB",
+                "COM35",
+                "--filename",
+                "mic.wav"
+            ],
+        },
+        {
             "name": "Python: current file",
             "type": "python",
             "request": "launch",
