@@ -20,6 +20,12 @@ class ClientGeneric(ABC):
         'wiggle'  : 'wiggleEyes'
     }
 
+    DISCO_PATTERNS = {
+        "show-off": "show-off",
+        "pinwheel": "pinwheel",
+        "off": "off"
+    }
+
     NOT_IMPLEMENTED = "Unfortunately this Marty doesn't do that"
 
     def __init__(self, blocking: Union[bool, None], *args, **kwargs):

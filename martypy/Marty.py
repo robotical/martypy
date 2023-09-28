@@ -266,6 +266,36 @@ class Marty(object):
             num_steps = max(1, min(num_steps, 10))  # Clip num_steps
             self.client.wait_if_required(num_steps*move_time, blocking)
         return result
+    
+    def lift_foot(self, side: str) -> bool:
+        '''
+        Lift one of Marty's feet :two:
+        Args:
+            side: 'left' or 'right', which foot to lift
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.lift_foot(side)
+
+    def lower_foot(self, side: str) -> bool:
+        '''
+        Lower one of Marty's feet :two:
+        Args:
+            side: 'left' or 'right', which foot to lower
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.lower_foot(side)
+    
+    def wave(self, side: str) -> bool:
+        '''
+        Wave :two:
+        Args:
+            None
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.wave(side)
 
     def get_ready(self, blocking: Optional[bool] = None) -> bool:
         '''
@@ -966,9 +996,25 @@ class Marty(object):
         else:
             return self.client.disco_group_operation(self.client.disco_pattern, add_on.value, {'pattern':pattern})
 
+    def disco_named_pattern(self, add_on: str, pattern: str) -> bool:
+        '''
+        Turn on a named pattern of lights on the disco LED add on :two:
+        Args:
+            add_on: add on name of which the function applies to
+            pattern: name of the pattern to use
+        Returns:
+            True if Marty accepted the request
+        '''
+        if type(add_on) is str:
+            return self.client.disco_named_pattern(add_on, pattern)
+        else:
+            return self.client.disco_group_operation(self.client.disco_named_pattern, add_on.value, {'pattern':pattern})
+
     def disco_color(self, color: Union[str, Tuple[int, int, int]] = 'white', 
                     add_on: Union[Disco, str] = Disco.ALL, 
-                    region: Union[int, str] = 'all') -> bool:
+                    region: Union[int, str] = 'all',
+                    api = 'raw_query'
+                    ) -> bool:
         '''
         Turn on disco add on LED lights to a specific color :two:
         Args:
@@ -980,9 +1026,117 @@ class Marty(object):
             True if Marty accepted the request
         '''
         if type(add_on) is str:
-            return self.client.disco_color(color, add_on, region)
+            if api == 'raw_query':
+                return self.client.disco_color(color, add_on, region)
+            elif api == 'led':
+                return self.client.disco_color_led_api(color, add_on, region)
         else:
-            return self.client.disco_group_operation(self.client.disco_color, add_on.value, {'color':color, 'region':region}) 
+            if api == 'raw_query':
+                return self.client.disco_group_operation(self.client.disco_color, add_on.value, {'color':color, 'region':region}) 
+            elif api == 'led':
+                raise MartyCommandException("Disco LED API not supported for disco group operation. Please use addon name")
+    
+    def disco_color_specific_led(self, color: Union[str, Tuple[int, int, int]], add_on: str, led_id: int) -> bool:
+        '''
+        Turn on disco add on specific LED light to a color :two:
+        Args:
+            color: color to switch the LEDs to; takes in a hex code, RGB tuple of integers between 0-255, 
+                   or one of the built in colors: white, red, blue, yellow, green, teal, pink, purple, orange
+            add_on: add on name of which the function applies to
+            led_id: ID of the LED to change
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.disco_color_specific_led(color, add_on, led_id)
+
+    def disco_color_eyepicker(self, colours: Union[str, List[str]], add_on: str) -> bool:
+        '''
+        Turn on disco add on specific LED lights to specific colors :two:
+        Args:
+            colours: list of colors to switch the LEDs to; takes in a hex code, the position in the list corresponds to the LED ID
+            add_on: add on name of which the function applies to
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.disco_color_eyepicker(colours, add_on)
+
+    def rgb_operator(self, r: int, g: int, b: int) -> list[int]:
+        '''
+        Takes in RGB values and returns them as tuples :one: :two:
+        Args:
+            r: red value
+            g: green value
+            b: blue value
+        Returns:
+            List of RGB values after the operation
+        '''
+        return (r, g, b)
+
+    def hsv_operator(self, h: int, s: int, v: int) -> list[int]:
+        '''
+        Takes in HSL values and returns them in RGB tuples :one: :two:
+        Args:
+            h: hue value
+            s: saturation value
+            l: lightness value
+        Returns:
+            List of RGB values after the operation
+        '''
+        # first make sure s and v are 0-1
+        if s > 1:
+            s = s / 100
+        if v > 1:
+            v = v / 100
+        h = h % 360
+        if h < 0:
+            h += 360
+        s = max(0, min(s, 1))
+        v = max(0, min(v, 1))
+
+        i = int(h // 60)
+        f = (h / 60) - i
+        p = v * (1 - s)
+        q = v * (1 - (s * f))
+        t = v * (1 - (s * (1 - f)))
+
+        if i == 0:
+            r, g, b = v, t, p
+        elif i == 1:
+            r, g, b = q, v, p
+        elif i == 2:
+            r, g, b = p, v, t
+        elif i == 3:
+            r, g, b = p, q, v
+        elif i == 4:
+            r, g, b = t, p, v
+        elif i == 5:
+            r, g, b = v, p, q
+        else:
+            r, g, b = 0, 0, 0  # Fallback, though this shouldn't happen
+
+        return [int(r * 255), int(g * 255), int(b * 255)]
+
+    def function_led(self, colour: Tuple[int, int, int], breathe: str = "on", breath_ms: int = 1000) -> bool:
+        '''
+        Turn on function LED light to a color :two:
+        Args:
+            colour: color to switch the LEDs to; takes in an RGB tuple of integers between 0-255
+            breathe: "on"/"breath"
+            breath_ms: time in milliseconds for the LED to breath
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.function_led(colour, breathe, breath_ms)
+    
+    def function_led_off(self) -> bool:
+        '''
+        Turn off function LED light :two:
+        Args:
+            none
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.client.function_led_off()
 
     ''' 
     ============================================================

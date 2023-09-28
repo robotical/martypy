@@ -271,6 +271,30 @@ class ClientMV2(ClientGeneric):
         return self.ricIF.cmdRICRESTRslt(f"traj/step/{num_steps}?stepLength={step_length}&turn={turn}"
                                          f"&moveTime={move_time}" + side_url_param)
 
+    def lift_foot(self, side: str) -> bool:
+        try:
+            sideNum = ClientGeneric.SIDE_CODES[side]
+        except KeyError:
+            raise MartyCommandException("Direction must be one of {}, not '{}'"
+                                        "".format(set(ClientGeneric.SIDE_CODES.keys()), side))
+        return self.ricIF.cmdRICRESTRslt(f"traj/liftFoot/1/?side={sideNum}")
+
+    def lower_foot(self, side: str) -> bool:
+        try:
+            sideNum = ClientGeneric.SIDE_CODES[side]
+        except KeyError:
+            raise MartyCommandException("Direction must be one of {}, not '{}'"
+                                        "".format(set(ClientGeneric.SIDE_CODES.keys()), side))
+        return self.ricIF.cmdRICRESTRslt(f"traj/lowerFoot/1/?side={sideNum}")
+
+    def wave(self, side: str = 'right') -> bool:
+        try:
+            sideNum = ClientGeneric.SIDE_CODES[side]
+        except KeyError:
+            raise MartyCommandException("Direction must be one of {}, not '{}'"
+                                        "".format(set(ClientGeneric.SIDE_CODES.keys()), side))
+        return self.ricIF.cmdRICRESTRslt(f"traj/wave/1/?side={sideNum}")
+
     def eyes(self, joint_id: int, pose_or_angle: Union[str, int], move_time: int = 100) -> bool:
         if type(pose_or_angle) is str:
             try:
@@ -578,6 +602,7 @@ class ClientMV2(ClientGeneric):
     def _is_valid_disco_addon(self, add_on: str) -> bool:
         disco_whoamis = {"LEDfoot", "LEDarm", "LEDeye"}
         for attached_add_on in self.get_add_ons_status().values():
+            print("attached_add_on", attached_add_on)
             if type(attached_add_on) == dict and attached_add_on['name'] == add_on:
                 if attached_add_on['whoAmI'] in disco_whoamis:
                     return True
@@ -602,6 +627,15 @@ class ClientMV2(ClientGeneric):
         if self._is_valid_disco_addon(add_on):
             response = self.add_on_query(add_on, bytes.fromhex(pattern), 0)
             return response.get("rslt", "") == "ok"
+    
+    def disco_named_pattern(self, add_on: str, pattern: str) -> bool:
+        try :
+            pattern = ClientGeneric.DISCO_PATTERNS[pattern]
+        except KeyError:
+            raise MartyCommandException(f"Pattern must be one of {set(ClientGeneric.DISCO_PATTERNS.keys())}, not '{pattern}'")
+        if (pattern == ClientGeneric.DISCO_PATTERNS["off"]):
+            return self.ricIF.cmdRICRESTRslt(f"led/{add_on}/{pattern}")
+        return self.ricIF.cmdRICRESTRslt(f"led/{add_on}/pattern/{pattern}")
 
     def _region_to_bytes(self, region: Union[str, int]) -> bytes:
         if region == 'all':
@@ -669,6 +703,115 @@ class ClientMV2(ClientGeneric):
                 addon_name = attached_add_on['name']
                 result = result and disco_operation(add_on=addon_name, **operation_kwargs)
         return result
+
+    def disco_color_led_api(self, color: Union[str, Tuple[int, int, int]], add_on: str, region: Union[int, str]) -> bool:
+        '''
+        Sets the color of a disco add on :two:
+        Args:
+            color: RGB tuple
+            add_on: name of disco add on
+            region: region of add on to set color
+        Returns:
+            True if Marty accepted request
+        '''
+        default_colors = {
+            'white'  : 'FFFFFF',
+            'red'    : 'FF0000',
+            'blue'   : '0000FF',
+            'yellow' : 'FFFF00',
+            'green'  : '008000',
+            'teal'   : '008080',
+            'pink'   : 'eb1362',
+            'purple' : '7800c8',
+            'orange' : '961900'
+        }
+        if type(color) is str:
+            color = default_colors.get(color.lower(), color)
+        elif type(color) is tuple:
+            if len(color) != 3:
+                raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of: {color}. Please enter a valid color.')
+            color = self.rgb_to_hex(color)
+        if region == 'all':
+            return self.ricIF.cmdRICRESTRslt(f"led/{add_on}/color/{color}")
+        else:
+            print(f"led/{add_on}/color/region/{region}/{color}")
+            return self.ricIF.cmdRICRESTRslt(f"led/{add_on}/region/{region}/{color}")
+
+    def disco_color_specific_led(self, color: Union[str, Tuple[int, int, int]], add_on: str, led_id: int) -> bool:
+        '''
+        Sets the color of specific LED light of a disco add on :two:
+        Args:
+            color: RGB tuple
+            add_on: name of disco add on
+            led_id: ID of LED to set color
+        Returns:
+            True if Marty accepted request
+        '''
+        default_colors = {
+            'white'  : 'FFFFFF',
+            'red'    : 'FF0000',
+            'blue'   : '0000FF',
+            'yellow' : 'FFFF00',
+            'green'  : '008000',
+            'teal'   : '008080',
+            'pink'   : 'eb1362',
+            'purple' : '7800c8',
+            'orange' : '961900'
+        }
+        if type(color) is str:
+            color = default_colors.get(color.lower(), color)
+        elif type(color) is tuple:
+            if len(color) != 3:
+                raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of: {color}. Please enter a valid color.')
+            color = self.rgb_to_hex(color)
+        led_id = self.led_id_mapping(id=led_id, is_from_color_picker=False)
+        return self.ricIF.cmdRICRESTRslt(f"led/{add_on}/setled/{led_id}/{color}")
+
+    def disco_color_eyepicker(self, colours: Union[str, List[str]], add_on: str) -> bool:
+        '''
+        Turn on disco add on specific LED lights to specific colors :two:
+        Args:
+            colours: list of colors to switch the LEDs to; takes in a hex code, the position in the list corresponds to the LED ID
+            add_on: add on name of which the function applies to
+        Returns:
+            True if Marty accepted the request
+        '''
+        if type(colours) is str:
+            colours = [colours]
+            colours = ['{}'.format(colour.replace("#", "")) for colour in colours]
+        elif type(colours) is list:
+            colours = ['{}'.format(colour.replace("#", "")) for colour in colours]
+            for colour in colours:
+                if type(colour) is not str:
+                    raise MartyCommandException(f'Colour must be a string, not {type(colour)}')
+                if len(colour) != 6:
+                    raise MartyCommandException(f'Colour must be a hex code, not {colour}')
+        if len(colours) > 12:
+            raise MartyCommandException(f'Colours must be equal to or less than 12, not {len(colours)}')
+        return self.ricIF.cmdRICRESTRslt(f"led/{add_on}/color/persist?{'&'.join([f'{self.led_id_mapping(id=i, is_from_color_picker=True)}={colour}' for i, colour in enumerate(colours)])}")
+
+    def function_led(self, colour: Tuple[int, int, int], breathe: str = "on", breath_ms: int = 1000) -> bool:
+        '''
+        Turn on function LED light to a color :two:
+        Args:
+            colour: color to switch the LEDs to; takes in an RGB tuple of integers between 0-255
+            breathe: "on"/"breath"
+            breath_ms: time in milliseconds for the LED to breath
+        Returns:
+            True if Marty accepted the request
+        '''
+        if len(colour) != 3:
+            raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of: {colour}. Please enter a valid color.')
+        print(f"indicator/set?pixIdx=1;blinkType=on;r={colour[0]};g={colour[1]};b={colour[2]};rateMs={breath_ms}")
+        return self.ricIF.cmdRICRESTRslt(f"indicator/set?pixIdx=1;blinkType={breathe};r={colour[0]};g={colour[1]};b={colour[2]};rateMs={breath_ms}")
+
+    def function_led_off(self) -> bool:
+        '''
+        Turn off function LED light :two:
+        Returns:
+            True if Marty accepted the request
+        '''
+        return self.ricIF.cmdRICRESTRslt(f"indicator/set?pixIdx=1;blinkType=off;r=0;g=0;b=0;rateMs=1000")
 
     def register_logging_callback(self, loggingCallback: Callable[[str],None]) -> None:
         '''
@@ -864,3 +1007,15 @@ class ClientMV2(ClientGeneric):
     def delete_file(self, filename: str) -> bool:
         result = self.ricIF.cmdRICRESTURLSync(f"filedelete/local/{filename}", timeOutSecs=5)
         return result.get("rslt", "") == "ok"
+
+    def rgb_to_hex(self, rgb: Tuple[int, int, int]) -> str:
+        """Convert an RGB color to its hexadecimal representation."""
+        return "{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2])
+
+    def led_id_mapping(self, id, is_from_color_picker):
+        # Map LED position id to code id
+        # The order starting from the top id is: 6 5 4 3 2 1 0 11 10 9 8 7
+        MAP = [6, 5, 4, 3, 2, 1, 0, 11, 10, 9, 8, 7]
+        if is_from_color_picker:
+            return MAP[(id + 3) % 12]
+        return MAP[id]
