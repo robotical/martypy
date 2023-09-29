@@ -673,6 +673,22 @@ class Marty(object):
         '''
         return self.client.get_distance_sensor()
 
+    def speak(self, words: str = "hello", voice: str = "alto", blocking: Optional[bool] = False) -> bool:
+        '''
+        Make Marty speak :two:
+        Args:
+            words: what to say
+            voice: 'alto', 'tenor' or 'chipmunk' :two:
+            blocking: whether to wait for speech to finish before returning
+        Returns:
+            True if Marty accepted the request
+        '''
+        result = self.client.speak(words, voice)
+        if result:
+            if blocking:
+                self.client.wait_if_required(5000, blocking)
+        return result
+
     def foot_on_ground(self, add_on_or_side: str) -> bool:
         '''
         Checks whether the foot is on a surface :two:
@@ -705,6 +721,40 @@ class Marty(object):
             Raw reading of obstacle sensor data from the add on.
         '''
         return self.client.get_obstacle_sensor_reading(add_on_or_side)
+    
+    def get_color_sensor_color(self, add_on_or_side: str) -> int:
+        '''
+        Gets the colour detected by a colour sensor :two:
+        Args:
+            add_on_or_side: Takes in the name of a color sensor `'left'` for the add on connected to the left foot,
+             or `'right'` for the add on connected to the right foot. 
+        Returns:
+            one of  "yellow", "green", "blue", "purple", "red", "air", "unclear"
+        '''
+        return self.client.get_color_sensor_color(add_on_or_side)
+    
+    def get_color_sensor_hex(self, add_on_or_side: str) -> str:
+        '''
+        Gets the colour detected by a colour sensor :two:
+        Args:
+            add_on_or_side: Takes in the name of a color sensor `'left'` for the add on connected to the left foot,
+             or `'right'` for the add on connected to the right foot. 
+        Returns:
+            The hex code of the colour detected by the sensor
+        '''
+        return self.client.get_color_sensor_hex(add_on_or_side)
+    
+    def get_color_sensor_value_by_channel(self, add_on_or_side: str, channel: str) -> int:
+        '''
+        Gets the value of a colour sensor channel :two:
+        Args:
+            add_on_or_side: Takes in the name of a color sensor `'left'` for the add on connected to the left foot,
+             or `'right'` for the add on connected to the right foot. 
+            channel: Takes in the name of a channel `'clear'` `'red'`, `'green'`, or `'blue'`
+        Returns:
+            The value of the channel
+        '''
+        return self.client.get_color_sensor_value_by_channel(add_on_or_side, channel)
 
     def get_ground_sensor_reading(self, add_on_or_side: str) -> int:
         '''Gets a raw ground sensor reading from an IR or color sensor :two:

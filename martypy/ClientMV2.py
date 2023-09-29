@@ -15,6 +15,7 @@ from .RICInterface import RICInterface
 from .RICHWElems import RICHWElems
 from .Exceptions import (MartyConnectException,
                          MartyCommandException)
+from .Text2Speech import Text2Speech
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,16 @@ class ClientMV2(ClientGeneric):
         self.DEBUG_GET_HW_ELEMS_INFO = False
         self.DEBUG_SUBSCRIBE_TO_PUB_MSGS = False
         self.DEBUG_CONNECTION_PROCESS = False
+        self.color_boundaries = {
+            "red": ((20, 40, 100), (50, 300, 255)), 
+            "yellow": ((85, 5, 25), (160, 100, 150)), 
+            "green": ((180, 45, 55), (220, 230, 255)), 
+            "blue": ((200, 0, 25), (320,  50, 150)), 
+            "purple": ((345, 60, 40), (361, 200, 150)), 
+            "red": ((0, 60, 40), (10, 200, 150)), 
+        }
+        # default calibration - suitable for batch 1 colour sensors that won't have saved calibration
+        self.cal = [1.0, 1.65, 1.15, 1.0]
 
         # Check if we are given a RICInterface
         if ricInterface is None:
@@ -391,6 +402,26 @@ class ClientMV2(ClientGeneric):
                 return distance
         return 0
 
+    def _data_color(self, attached_add_on: dict) -> Tuple[int, str]:
+        '''
+        Parses data of passed-in color sensor :two:
+        Args:
+            attached_add_on: Name of color sensor add on
+        Returns:
+            A tuple with four integers of data (clear, red, green, blue)
+            and a string of whether the sensor is a default 'left' or 'right' add on
+        '''
+        if attached_add_on['whoAmI'] == 'coloursensor':
+            clear = attached_add_on['data'][1] * self.cal[0]
+            red = attached_add_on['data'][2] * self.cal[1]
+            green = attached_add_on['data'][3] * self.cal[2]
+            blue = attached_add_on['data'][4] * self.cal[3]
+            return (clear, red, green, blue), 'left'
+        raise MartyCommandException(
+            f"The add on '{attached_add_on['name']}' is not a valid add on for color sensing."
+            "Please make sure to pass in the name of a color sensor."
+        )
+
     def _index_data_color_ir(self, attached_add_on: str) -> Tuple[Tuple[int, int, int], str]:
         '''
         Parses data of passed-in color or IR sensor :two:
@@ -429,6 +460,9 @@ class ClientMV2(ClientGeneric):
         }
         addon_names = sensor_possible_names.get(add_on_or_side, [])
 
+        if addon_names == []:
+            addon_names = [add_on_or_side]
+
         # There may be a situation just after connecting to RIC where publication messages from the addon
         # have not yet been received so we need to wait for them to be received before we can parse them
         for retryLoop in range(10):
@@ -458,6 +492,58 @@ class ClientMV2(ClientGeneric):
                 "Please make sure to pass in the name of an IR sensor or Color sensor."
             )
 
+    def _get_color_sensor_raw_data(self, add_on_or_side: str) -> list:
+        '''
+        Finds the wanted color sensor and gets the parsed color data :two:
+        Args:
+            add_on_or_side: Takes in the name of a color sensor,
+            `'left'` for the add on connected to the left foot,
+            or `'right'` for the add on connected to the right foot
+        Returns:
+            A tuple of the detection byte, obstacle reading, and ground reading of the add on
+        '''
+        sensor_whoamis = {'coloursensor'}
+        sensor_data = {'left': [], 'right': []}
+        sensor_possible_names = {
+            'left': ['LeftColorSensor'],
+            'right': ['RightColorSensor']
+        }
+        addon_names = sensor_possible_names.get(add_on_or_side, [])
+
+        if addon_names == []:
+            addon_names = [add_on_or_side]
+
+        # There may be a situation just after connecting to RIC where publication messages from the addon
+        # have not yet been received so we need to wait for them to be received before we can parse them
+        for retryLoop in range(10):
+            addon_statuses = self.get_add_ons_status().values()
+            if len(addon_statuses) != 0:
+                break
+            time.sleep(0.1)
+
+        # Get the add-on values
+        for attached_add_on in addon_statuses:
+            if type(attached_add_on) == dict and attached_add_on.get('whoAmI','') in sensor_whoamis:
+                obstacle_and_ground_data, side = self._index_data_color_ir(attached_add_on)
+                color_data, side = self._data_color(attached_add_on)
+                if attached_add_on['name'] in addon_names:
+                    return (obstacle_and_ground_data, color_data)
+                else:
+                    sensor_data[side].append(obstacle_and_ground_data)
+        if len(sensor_data[add_on_or_side.lower()]) == 1:
+            return sensor_data[add_on_or_side.lower()][0]
+        elif add_on_or_side.lower() == 'left' or add_on_or_side.lower() == 'right':
+            raise MartyCommandException(
+                f"Marty could not find a {add_on_or_side} sensor. "
+                "Please make sure your add ons are plugged in and named correctly"
+            )
+        else:
+            raise MartyCommandException(
+                f"The add on '{add_on_or_side}' is not a valid add on for obstacle and ground sensing."
+                "Please make sure to pass in the name of an IR sensor or Color sensor."
+            )
+
+
     def foot_on_ground(self, add_on_or_side: str) -> bool:
         raw_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)
         if len(raw_data) > 0:
@@ -469,6 +555,81 @@ class ClientMV2(ClientGeneric):
         if len(raw_data) > 0:
             return (raw_data[0] & 0b1) == 0b1
         return False
+
+    def get_color_sensor_color(self, add_on_or_side: str) -> int:
+        '''
+        Gets the colour detected by a colour sensor :two:
+        Args:
+            add_on_or_side: Takes in the name of a color sensor `'left'` for the add on connected to the left foot,
+             or `'right'` for the add on connected to the right foot. 
+        Returns:
+            one of  "yellow", "green", "blue", "purple", "red", "air", "unclear"
+        '''
+        [foot_on_ground, raw_data] = self._get_color_sensor_raw_data(add_on_or_side) # (clear, red, green, blue)
+        if len(raw_data) > 0:
+            foot_on_ground = (foot_on_ground[0] & 0b10) == 0b00
+            if not foot_on_ground:
+                return "air"
+            [hue, chroma] = self._get_hue_color(raw_data[1], raw_data[2], raw_data[3])
+            for color, (lower, upper) in self.color_boundaries.items():
+                if lower[0] <= hue <= upper[0] and lower[1] <= chroma <= upper[1]:
+                    return color
+            return "unclear"
+        return 0
+
+    def get_color_sensor_hex(self, add_on_or_side: str) -> str:
+        '''
+        Gets the colour detected by a colour sensor :two:
+        Args:
+            add_on_or_side: Takes in the name of a color sensor `'left'` for the add on connected to the left foot,
+             or `'right'` for the add on connected to the right foot. 
+        Returns:
+            The hex code of the colour detected by the sensor
+        '''
+        [foot_on_ground, raw_data] = self._get_color_sensor_raw_data(add_on_or_side) # (clear, red, green, blue)
+        if len(raw_data) > 0:
+            hex_color = self.rgb_to_hex((raw_data[1], raw_data[2], raw_data[3]))
+            return hex_color
+        return 0
+    
+    def get_color_sensor_value_by_channel(self, add_on_or_side: str, channel: str) -> int:
+        '''
+        Gets the value of a colour sensor channel :two:
+        Args:
+            add_on_or_side: Takes in the name of a color sensor `'left'` for the add on connected to the left foot,
+             or `'right'` for the add on connected to the right foot. 
+            channel: Takes in the name of a channel `'clear'` `'red'`, `'green'`, or `'blue'`
+        Returns:
+            The value of the channel
+        '''
+        [foot_on_ground, raw_data] = self._get_color_sensor_raw_data(add_on_or_side)
+        if len(raw_data) > 0:
+            if channel.lower() == 'clear':
+                return raw_data[0]
+            elif channel.lower() == 'red':
+                return raw_data[1]
+            elif channel.lower() == 'green':
+                return raw_data[2]
+            elif channel.lower() == 'blue':
+                return raw_data[3]
+            else:
+                raise MartyCommandException(
+                    f"The channel '{channel}' is not a valid channel. "
+                    "Please make sure to pass in the name of a valid channel."
+                )
+        return 0
+    
+    def speak(self, words: str = "hello", voice: str = "alto") -> bool:
+        text2speech = Text2Speech()
+        audio = text2speech.speak(words, voice)
+        # store audio data to a file and then load it up and play it
+        with open("temp.mp3", "wb") as f:
+            f.write(audio)  
+
+        result = self.ricIF.streamSoundFile("temp.mp3", "streamaudio", self._playMP3ProgressAdapter)
+        os.remove("temp.mp3")
+        return result
+
 
     def get_obstacle_sensor_reading(self, add_on_or_side: str) -> int:
         raw_data = self._get_obstacle_and_ground_raw_data(add_on_or_side)
@@ -1010,7 +1171,7 @@ class ClientMV2(ClientGeneric):
 
     def rgb_to_hex(self, rgb: Tuple[int, int, int]) -> str:
         """Convert an RGB color to its hexadecimal representation."""
-        return "{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2])
+        return "{:02x}{:02x}{:02x}".format(int(rgb[0]), int(rgb[1]), int(rgb[2]))
 
     def led_id_mapping(self, id, is_from_color_picker):
         # Map LED position id to code id
@@ -1019,3 +1180,18 @@ class ClientMV2(ClientGeneric):
         if is_from_color_picker:
             return MAP[(id + 3) % 12]
         return MAP[id]
+
+    def _get_hue_color(self, r, g, b):
+        maxVal = max(r, g, b)
+        minVal = min(r, g, b)
+        chroma = maxVal - minVal
+        hue = 0
+        if r >= g and r >= b:
+            hue = (((g-b)/chroma)%6) * 60
+        elif g >= b:
+            hue = (((b-r)/chroma) + 2) * 60
+        else:
+            hue = (((r-g)/chroma) + 4) * 60
+        if hue < 0:
+            hue += 360
+        return [hue, chroma]
