@@ -20,7 +20,10 @@ setup(
     install_requires=[
         'pyserial',
         'packaging',
+        'requests',
+        'pydub'
     ],
+
     extras_require={
         "tests": [
             "pytest",
