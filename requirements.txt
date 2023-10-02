@@ -1,2 +1,5 @@
-pyserial==3.4
-packaging==21.3
+packaging==23.2
+pydub==0.25.1
+pyserial==3.5
+pytest==7.4.2
+Requests==2.31.0
