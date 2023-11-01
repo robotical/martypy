@@ -773,10 +773,13 @@ class ClientMV2(ClientGeneric):
         raise MartyCommandException(f"The add on name '{add_on}' is not a valid add on. Please check the add on "
                                     "name in the scratch app -> configure -> add ons")
 
-    def disco_off(self, add_on: str) -> bool:
-        if self._is_valid_disco_addon(add_on):
-            response = self.add_on_query(add_on, bytes.fromhex('01'), 0)
-            return response.get("rslt", "") == "ok"
+    def disco_off(self, add_on: str, api = 'led') -> bool:
+        if api == 'raw_query':
+            if self._is_valid_disco_addon(add_on):
+                response = self.add_on_query(add_on, bytes.fromhex('01'), 0)
+                return response.get("rslt", "") == "ok"
+        elif api == 'led':
+            return self.ricIF.cmdRICRESTRslt(f"led/{add_on}/off")
 
     def disco_pattern(self, pattern: int, add_on: str) -> bool:
         if pattern == 1:
@@ -848,17 +851,22 @@ class ClientMV2(ClientGeneric):
             response = self.add_on_query(add_on, command, 0)
             return response.get("rslt", "") == "ok"
 
-    def disco_group_operation(self, disco_operation: Callable, whoamis: set, operation_kwargs: dict) -> bool:
+    def disco_group_operation(self, disco_operation: Callable, whoamis: set, operation_kwargs: dict, api='led') -> bool:
         '''
         Calls disco operations in groups for multiple add ons :two:
         Args:
             disco_operation: function for disco add on
             whoami_type_codes: the add ons that the function applies to
             operation_kwargs: additional arguments that need to be passed into the operation
+            api: the api that the function uses (either 'raw_query' or 'led')
         Returns:
             True if Marty accepted all requests
         '''
         result = True
+        # if any of the whoamis is equal to "00000089" then 
+        # we need to also send to LEDeye in case the new LEDeyes (batch 4) are connected
+        if "00000089" in whoamis and api == 'led':
+            result = result and disco_operation(add_on="LEDeye", **operation_kwargs)
         for attached_add_on in self.get_add_ons_status().values():
             if type(attached_add_on) == dict and attached_add_on['whoAmI'] in whoamis:
                 addon_name = attached_add_on['name']

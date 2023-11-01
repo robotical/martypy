@@ -1019,21 +1019,23 @@ class Marty(object):
         '''
         return self.client.is_conn_ready()
         
-    def disco_off(self, add_on: Union[Disco, str] = Disco.ALL) -> bool:
+    def disco_off(self, add_on: Union[Disco, str] = Disco.ALL, api = 'led') -> bool:
         '''
         Turn disco add on LEDs off :two:
         Args:
             add_on: add on name of which the function applies to
+            api: which API to use, 'raw_query' or 'led'
         Returns:
             True if Marty accepted the request
         '''
         if type(add_on) is str:
-            return self.client.disco_off(add_on)
+            return self.client.disco_off(add_on, api)
         else:
-            return self.client.disco_group_operation(self.client.disco_off, add_on.value, {})
+            return self.client.disco_group_operation(self.client.disco_off, add_on.value, {'api':api}, api=api)
 
     def disco_pattern(self, pattern: int, add_on: Union[Disco, str] = Disco.ALL) -> bool:
         '''
+        DEPRECATED: use disco_named_pattern instead
         Turn on a pattern of lights on the disco LED add on :two:
         Args:
             pattern: 1 or 2, pattern of lights that user wants to use
@@ -1044,7 +1046,7 @@ class Marty(object):
         if type(add_on) is str:
             return self.client.disco_pattern(pattern, add_on)
         else:
-            return self.client.disco_group_operation(self.client.disco_pattern, add_on.value, {'pattern':pattern})
+            return self.client.disco_group_operation(self.client.disco_pattern, add_on.value, {'pattern':pattern}, api='raw_query')
 
     def disco_named_pattern(self, add_on: str, pattern: str) -> bool:
         '''
@@ -1058,12 +1060,12 @@ class Marty(object):
         if type(add_on) is str:
             return self.client.disco_named_pattern(add_on, pattern)
         else:
-            return self.client.disco_group_operation(self.client.disco_named_pattern, add_on.value, {'pattern':pattern})
+            return self.client.disco_group_operation(self.client.disco_named_pattern, add_on.value, {'pattern':pattern}, api='led')
 
     def disco_color(self, color: Union[str, Tuple[int, int, int]] = 'white', 
                     add_on: Union[Disco, str] = Disco.ALL, 
                     region: Union[int, str] = 'all',
-                    api = 'raw_query'
+                    api = 'led'
                     ) -> bool:
         '''
         Turn on disco add on LED lights to a specific color :two:
@@ -1082,9 +1084,10 @@ class Marty(object):
                 return self.client.disco_color_led_api(color, add_on, region)
         else:
             if api == 'raw_query':
-                return self.client.disco_group_operation(self.client.disco_color, add_on.value, {'color':color, 'region':region}) 
+                return self.client.disco_group_operation(self.client.disco_color, add_on.value, {'color':color, 'region':region}, api='raw_query')
             elif api == 'led':
-                raise MartyCommandException("Disco LED API not supported for disco group operation. Please use addon name")
+                return self.client.disco_group_operation(self.client.disco_color_led_api, add_on.value, {'color':color, 'region':region}, api='led')
+                # raise MartyCommandException("Disco LED API not supported for disco group operation. Please use addon name")
     
     def disco_color_specific_led(self, color: Union[str, Tuple[int, int, int]], add_on: str, led_id: int) -> bool:
         '''
