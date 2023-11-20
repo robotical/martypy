@@ -62,6 +62,31 @@ class RICHwIMU:
         xyzTuple = RICROSSerial.extractAccel(self.latestMsg)
         return xyzTuple[axisCode]
 
+class RICHwMagnetometer:
+    def __init__(self) -> None:
+        self.latestMsg: bytes = None
+        self.latestMsgTime: float = None
+        self.validForSecs = 3
+
+    def update(self, msgPayload: bytes) -> None:
+        if len(msgPayload) < RICROSSerial.ROS_MAGNETOMETER_BYTES:
+            return
+        self.latestMsg = msgPayload
+        self.latestMsgTime = time.time()
+        logger.debug(f"Magnetometer update len {len(msgPayload)}")
+
+    def xyz(self) -> Tuple[float, float, float]:
+        if self.latestMsgTime is None:
+            return (0,0,0)
+        return RICROSSerial.extractMagnetometer(self.latestMsg)
+
+    def axisVal(self, axisCode: int) -> float:
+        if self.latestMsgTime is None or time.time() > self.latestMsgTime + self.validForSecs:
+            return 0
+        xyzTuple = RICROSSerial.extractMagnetometer(self.latestMsg)
+        return xyzTuple[axisCode]
+
+
 class RICHwPowerStatus:
     def __init__(self) -> None:
         self.latestMsg: bytes = None
@@ -173,6 +198,8 @@ class RICHwPublishMonitor:
             return "addons"
         elif topicID == RICROSSerial.ROSTOPIC_V2_ROBOT_STATUS:
             return "robot"
+        elif topicID == RICROSSerial.ROSTOPIC_V2_MAGNETOMETER:
+            return "magnetometer"
         return "unknown"
 class RICHWElems:
 
@@ -183,6 +210,7 @@ class RICHWElems:
         self._addOnsStatus = RICHwAddOnStatus()
         self._robotStatus = RICHwRobotStatus()
         self._publishMonitor = RICHwPublishMonitor()
+        self._magnetometer = RICHwMagnetometer()
 
     def updateWithROSSerialMsg(self, topicID: int, payload: bytes) -> None:
         # logger.debug(f"Received ROSSerial topicID {topicID}")
@@ -196,6 +224,8 @@ class RICHWElems:
             self._addOnsStatus.update(payload)
         elif topicID == RICROSSerial.ROSTOPIC_V2_ROBOT_STATUS:
             self._robotStatus.update(payload)
+        elif topicID == RICROSSerial.ROSTOPIC_V2_MAGNETOMETER:
+            self._magnetometer.update(payload)
         self._publishMonitor.update(topicID)
 
     def getServos(self, dictOfHwElemsByIdNo: Dict) -> Dict:
@@ -215,6 +245,12 @@ class RICHWElems:
 
     def getIMUAxisValue(self, axisCode: int) -> float:
         return self._IMU.axisVal(axisCode)
+
+    def getMagnetometerAll(self) -> Tuple[float, float, float]:
+        return self._magnetometer.xyz()
+
+    def getMagnetometerAxisValue(self, axisCode: int) -> float:
+        return self._magnetometer.axisVal(axisCode)
 
     def getPowerStatus(self) -> Dict:
         return self._powerStatus.powerStatus()

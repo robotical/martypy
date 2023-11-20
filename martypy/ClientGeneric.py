@@ -227,6 +227,10 @@ class ClientGeneric(ABC):
         return 0
 
     @abstractmethod
+    def get_magnetometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float:
+        return 0
+
+    @abstractmethod
     def enable_motors(self, enable: bool = True, clear_queue: bool = True) -> bool:
         return False
 

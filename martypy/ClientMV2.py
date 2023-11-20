@@ -648,6 +648,11 @@ class ClientMV2(ClientGeneric):
             return self.ricHardware.getIMUAll()
         return self.ricHardware.getIMUAxisValue(axisCode)
 
+    def get_magnetometer(self, axis: Optional[str] = None, axisCode: int = 0) -> float:
+        if axis is None:
+            return self.ricHardware.getMagnetometerAll()
+        return self.ricHardware.getMagnetometerAxisValue(axisCode)
+
     def enable_motors(self, enable: bool = True, clear_queue: bool = True) -> bool:
         return True
 

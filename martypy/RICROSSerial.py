@@ -16,6 +16,7 @@ class RICROSSerial:
     ROSTOPIC_V2_POWER_STATUS = 122
     ROSTOPIC_V2_ADDONS = 123
     ROSTOPIC_V2_ROBOT_STATUS = 124
+    ROSTOPIC_V2_MAGNETOMETER = 125
 
     # ROSSerial message format
     RS_MSG_MIN_LENGTH = 8
@@ -88,6 +89,13 @@ class RICROSSerial:
     ROS_ADDON_STATUS_POS = 2
     ROS_ADDON_STATUS_BYTES = 10
 
+    # V2 ROSTOPIC MAGNETOMETER message layout
+    ROS_MAGNETOMETER_BYTES = 13
+    ROS_MAGNETOMETER_POS_X = 0
+    ROS_MAGNETOMETER_POS_Y = 4
+    ROS_MAGNETOMETER_POS_Z = 8
+    ROS_MAGNETOMETER_POS_IDNO = 12
+
     @classmethod
     def decode(cls, rosSerialMsg: bytes, startPos: int, elemDecodeCB: Callable[[int,bytes],None]) -> None:
 
@@ -152,6 +160,11 @@ class RICROSSerial:
     @classmethod
     def extractAccel(cls, buf: bytes) -> Tuple[float, float, float]:
         xyzTimes1024 = struct.unpack(">fffBB", buf[0:cls.ROS_ACCEL_BYTES])
+        return [round(val/1024,2) for val in xyzTimes1024[0:3]]
+
+    @classmethod
+    def extractMagnetometer(cls, buf: bytes) -> Tuple[float, float, float]:
+        xyzTimes1024 = struct.unpack(">fffB", buf[0:cls.ROS_MAGNETOMETER_BYTES])
         return [round(val/1024,2) for val in xyzTimes1024[0:3]]
 
     @classmethod

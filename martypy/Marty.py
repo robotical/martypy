@@ -71,6 +71,12 @@ class Marty(object):
         'z' : 2,
     }
 
+    MAGNETOMETER_AXES = {
+        'x' : 0,
+        'y' : 1,
+        'z' : 2,
+    }
+
     HW_ELEM_TYPES = [
         "SmartServo",
         "IMU",
@@ -103,6 +109,7 @@ class Marty(object):
     PUBLISH_TOPIC_POWER = RICROSSerial.ROSTOPIC_V2_POWER_STATUS
     PUBLISH_TOPIC_ADDONS = RICROSSerial.ROSTOPIC_V2_ADDONS
     PUBLISH_TOPIC_ROBOT_STATUS = RICROSSerial.ROSTOPIC_V2_ROBOT_STATUS
+    PUBLISH_TOPIC_MAGNETOMETER = RICROSSerial.ROSTOPIC_V2_MAGNETOMETER
 
     class Disco(Enum):
         ARMS = {"00000088"}
@@ -477,6 +484,27 @@ class Marty(object):
                                             "".format(set(self.ACCEL_AXES.keys()), axis))
             axisCode = self.ACCEL_AXES.get(axis, 0)
         return self.client.get_accelerometer(axis, axisCode)
+
+    def get_magnetometer(self, axis: Optional[str] = None) -> float:
+        '''
+        Get the latest value from the Marty's magnetometer :one: :two:
+        Args:
+            axis: (optional) 'x', 'y' or 'z' OR no parameter at all (see returns below)
+        Returns:  
+            * The magnetometer value from the axis (if axis specified)  
+            * A tuple containing x, y and z values (if no axis) :two:
+            Note that the returned value will be 0 if no value is available
+        Raises:
+            MartyCommandException if the axis is unknown
+        '''
+        axisCode = 0
+        if (axis is not None) and (type(axis) is str):
+            if axis not in self.MAGNETOMETER_AXES:
+                self.client.preException(True)
+                raise MartyCommandException("Axis must be one of {}, not '{}'"
+                                            "".format(set(self.MAGNETOMETER_AXES.keys()), axis))
+            axisCode = self.MAGNETOMETER_AXES.get(axis, 0)
+        return self.client.get_magnetometer(axis, axisCode)
 
     def is_moving(self) -> bool:
         '''
