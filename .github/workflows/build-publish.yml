@@ -9,14 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v3
-          with:
-            name: dist
-            path: dist/
-        - name: Publish package distributions to PyPI
-          uses: pypa/gh-action-pypi-publish@release/v1
-          with:
-            verbose: true
-            print-hash: true
+        with:
+          name: dist
+          path: dist/
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          print-hash: true
     # - name: Check out the repository
     #   uses: actions/checkout@v2
 
