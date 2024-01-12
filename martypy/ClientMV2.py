@@ -906,12 +906,13 @@ class ClientMV2(ClientGeneric):
             print(f"led/{add_on}/color/region/{region}/{color}")
             return self.ricIF.cmdRICRESTRslt(f"led/{add_on}/region/{region}/{color}")
 
-    def disco_color_specific_led(self, color: Union[str, Tuple[int, int, int]], add_on: str, led_id: int) -> bool:
+    def disco_color_specific_led(self, color: Union[str, Tuple[int, int, int]], add_on: str, add_on_who_am_i: str, led_id: int) -> bool:
         '''
         Sets the color of specific LED light of a disco add on :two:
         Args:
             color: RGB tuple
             add_on: name of disco add on
+            add_on_who_am_i: who am i string of the add on
             led_id: ID of LED to set color
         Returns:
             True if Marty accepted request
@@ -933,7 +934,7 @@ class ClientMV2(ClientGeneric):
             if len(color) != 3:
                 raise MartyCommandException(f'RGB tuple must be 3 numbers, instead of: {color}. Please enter a valid color.')
             color = self.rgb_to_hex(color)
-        led_id = self.led_id_mapping(id=led_id, is_from_color_picker=False)
+        led_id = self.led_id_mapping(id=led_id, is_from_color_picker=False, add_on_who_am_i=add_on_who_am_i)
         return self.ricIF.cmdRICRESTRslt(f"led/{add_on}/setled/{led_id}/{color}")
 
     def disco_color_eyepicker(self, colours: Union[str, List[str]], add_on: str) -> bool:
@@ -1181,13 +1182,24 @@ class ClientMV2(ClientGeneric):
         """Convert an RGB color to its hexadecimal representation."""
         return "{:02x}{:02x}{:02x}".format(int(rgb[0]), int(rgb[1]), int(rgb[2]))
 
-    def led_id_mapping(self, id, is_from_color_picker):
-        # Map LED position id to code id
-        # The order starting from the top id is: 6 5 4 3 2 1 0 11 10 9 8 7
-        MAP = [6, 5, 4, 3, 2, 1, 0, 11, 10, 9, 8, 7]
-        if is_from_color_picker:
-            return MAP[(id + 3) % 12]
-        return MAP[id]
+    def led_id_mapping(self, id, is_from_color_picker, add_on_who_am_i='LEDeye'):
+
+        if add_on_who_am_i == 'LEDeye':
+            # Map LED position id to code id
+            # The order starting from the top id is: 6 5 4 3 2 1 0 11 10 9 8 7
+            MAP = [6, 5, 4, 3, 2, 1, 0, 11, 10, 9, 8, 7]
+            if is_from_color_picker:
+                return MAP[(id + 3) % 12]
+            return MAP[id]
+        
+        elif add_on_who_am_i == 'LEDarm':
+            MAP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+        
+        elif add_on_who_am_i == 'LEDfoot':
+            MAP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+            return MAP[id]
+
+        return id
 
     def _get_hue_color(self, r, g, b):
         maxVal = max(r, g, b)

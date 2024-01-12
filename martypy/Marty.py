@@ -1089,18 +1089,19 @@ class Marty(object):
                 return self.client.disco_group_operation(self.client.disco_color_led_api, add_on.value, {'color':color, 'region':region}, api='led')
                 # raise MartyCommandException("Disco LED API not supported for disco group operation. Please use addon name")
     
-    def disco_color_specific_led(self, color: Union[str, Tuple[int, int, int]], add_on: str, led_id: int) -> bool:
+    def disco_color_specific_led(self, color: Union[str, Tuple[int, int, int]], add_on: str, add_on_who_am_i: str, led_id: int) -> bool:
         '''
         Turn on disco add on specific LED light to a color :two:
         Args:
             color: color to switch the LEDs to; takes in a hex code, RGB tuple of integers between 0-255, 
                    or one of the built in colors: white, red, blue, yellow, green, teal, pink, purple, orange
             add_on: add on name of which the function applies to
+            add_on_who_am_i: who am i string of the add on
             led_id: ID of the LED to change
         Returns:
             True if Marty accepted the request
         '''
-        return self.client.disco_color_specific_led(color, add_on, led_id)
+        return self.client.disco_color_specific_led(color, add_on, add_on_who_am_i, led_id)
 
     def disco_color_eyepicker(self, colours: Union[str, List[str]], add_on: str) -> bool:
         '''
