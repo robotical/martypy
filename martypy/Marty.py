@@ -84,7 +84,8 @@ class Marty(object):
         "BusPixels",
         "GPIO",
         "FuelGauge",
-        "PowerCtrl"
+        "PowerCtrl",
+        "Magnetometer"
         ]
 
     HW_ELEM_IDS = {

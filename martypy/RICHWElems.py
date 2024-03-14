@@ -73,7 +73,7 @@ class RICHwMagnetometer:
             return
         self.latestMsg = msgPayload
         self.latestMsgTime = time.time()
-        logger.debug(f"Magnetometer update len {len(msgPayload)}")
+        #logger.debug(f"Magnetometer update len {len(msgPayload)}")
 
     def xyz(self) -> Tuple[float, float, float]:
         if self.latestMsgTime is None:
