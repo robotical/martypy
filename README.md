@@ -8,7 +8,7 @@ To regenerate documentation:
 - pip install -r dev-requirements.txt
 - pydoc-markdown --server --open
 OR, automatically:
-- run docgen.bat (or docgen.sh on Mac/Linux) from Python environment (will put the contents of the formatted docs into clipboard)
+- run docgen.bat (or docgen.sh on Mac/Linux) from Python environment (will also create a docs-wiki.wiki file with the dokuwiki format)
 
 ## How to run example scripts
 
