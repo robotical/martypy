@@ -7,8 +7,11 @@ Python library to communicate with Marty the Robot V1 and V2 by Robotical
 To regenerate documentation:
 - pip install -r dev-requirements.txt
 - pydoc-markdown --server --open
+- markdown_mmd api-documentation-edited.md -t dokuwiki -o docs-wiki.wiki
 OR, automatically:
 - run docgen.bat (or docgen.sh on Mac/Linux) from Python environment (will also create a docs-wiki.wiki file with the dokuwiki format)
+
+### NOTE: Make sure `pandoc` is installed on your system to generate the dokuwiki documentation. You can install `pandoc` from [here](https://pandoc.org/installing.html)
 
 ## How to run example scripts
 
