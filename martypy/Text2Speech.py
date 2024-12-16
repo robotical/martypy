@@ -2,11 +2,11 @@ import requests
 import json
 import time
 from urllib.parse import quote
-from pydub import AudioSegment
-from pydub.playback import play
-
-from .Exceptions import (MartyConnectException,
-                         MartyCommandException)
+# from pydub import AudioSegment
+# from pydub.playback import play
+from io import BytesIO
+# from .Exceptions import (MartyConnectException,
+#                          MartyCommandException)
 import io
 
 
@@ -260,10 +260,10 @@ class Text2Speech:
 
     def speak(self, words, voice, language="en"):
         voice_id = voice.upper()
-        if voice_id not in VOICES.values():
-            raise MartyCommandException(f"Voice must be one of {set(VOICES.values())}, not {voice_id}")
-        if language not in LANGUAGES.values():
-            raise MartyCommandException(f"Language must be one of {set(LANGUAGES.values())}, not {language}")
+        # if voice_id not in VOICES.values():
+        #     raise MartyCommandException(f"Voice must be one of {set(VOICES.values())}, not {voice_id}")
+        # if language not in LANGUAGES.values():
+        #     raise MartyCommandException(f"Language must be one of {set(LANGUAGES.values())}, not {language}")
 
         locale = self._get_speech_synth_locale(language)
         gender = VOICE_INFO[voice_id]["gender"]
@@ -287,29 +287,15 @@ class Text2Speech:
         # perform http request to get audio file
         response = requests.get(path)
         response.raise_for_status()
+        silence_frame = response.content[:2000]  # Extract the first 1000 bytes to simulate "silence"
+
         audio = response.content
-        
-        # extend audio to extra 1 second to avoid truncation
-        audio = AudioSegment.from_mp3(io.BytesIO(audio))
-        silence = AudioSegment.silent(duration=1000)
-        audio += silence
-
-        # TODO: adjust pitch and playback rate
-
-        # increase volume
-        audio += 12
-
-        # Convert back to a byte-like object for mp3
-        byte_io = io.BytesIO()
-        audio.export(byte_io, format="mp3")
-        audio_bytes = byte_io.read()
-
-        return audio_bytes
+        mp3_data = BytesIO(audio)
+        final_mp3 = mp3_data.getvalue() + silence_frame  # This appends raw MP3 data
+        return final_mp3
 
     def _get_speech_synth_locale(self, language):
         if language in LANGUAGE_INFO:
             return LANGUAGE_INFO[language]["speechSynthLocale"]
         else:
             return "en"
-        
-    
