@@ -43,3 +43,9 @@ import pathlib
 cur_path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(str(cur_path.parent.resolve()))
 ```
+
+## Publishing
+
+- Update version: bump the version in `setup.py`.
+- Push changes: commit and push to GitHub.
+- Publish: in GitHub Actions, manually run the "Publish to PyPI" workflow.
