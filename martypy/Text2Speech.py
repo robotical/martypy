@@ -287,12 +287,11 @@ class Text2Speech:
         # perform http request to get audio file
         response = requests.get(path)
         response.raise_for_status()
-        silence_frame = response.content[:2000]  # Extract the first 1000 bytes to simulate "silence"
 
-        audio = response.content
-        mp3_data = BytesIO(audio)
-        final_mp3 = mp3_data.getvalue() + silence_frame  # This appends raw MP3 data
-        return final_mp3
+        # Return the MP3 bytes as-is. Previously this method appended the
+        # first bytes of the MP3 to the end to simulate a short silence, but
+        # that caused the start of the phrase to repeat briefly.
+        return response.content
 
     def _get_speech_synth_locale(self, language):
         if language in LANGUAGE_INFO:
