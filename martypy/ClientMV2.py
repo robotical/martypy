@@ -2,6 +2,7 @@ import logging
 import os
 import time
 import re
+import tempfile
 from typing import Callable, Dict, List, Optional, Union, Tuple
 from packaging import version
 
@@ -619,16 +620,17 @@ class ClientMV2(ClientGeneric):
                 )
         return 0
     
-    def speak(self, words: str = "hello", voice: str = "alto") -> bool:
+    def speak(self, words: str = "hello", voice: str = "alto", language: str = "en", speed: float = 1) -> bool:
         text2speech = Text2Speech()
-        audio = text2speech.speak(words, voice)
-        # store audio data to a file and then load it up and play it
-        with open("temp.mp3", "wb") as f:
-            f.write(audio)  
-
-        result = self.ricIF.streamSoundFile("temp.mp3", "streamaudio", self._playMP3ProgressAdapter)
-        os.remove("temp.mp3")
-        return result
+        audio = text2speech.speak(words, voice, language, speed)
+        self.last_speech_duration_ms = text2speech.duration_ms
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as speech_file:
+            speech_file.write(audio)
+            speech_path = speech_file.name
+        try:
+            return self.ricIF.streamSoundFile(speech_path, "streamaudio", self._playMP3ProgressAdapter)
+        finally:
+            os.remove(speech_path)
 
 
     def get_obstacle_sensor_reading(self, add_on_or_side: str) -> int:

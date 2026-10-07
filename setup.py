@@ -5,7 +5,7 @@ with open('README.md') as f:
 
 setup(
     name="martypy",
-    version="3.7.2",
+    version="3.8.0",
     description="Python library for Marty the Robot V1 and V2",
     long_description=readme,
     long_description_content_type="text/markdown",
@@ -21,7 +21,8 @@ setup(
         'pyserial',
         'packaging',
         'requests',
-        'pydub'
+        'pydub',
+        'audioop-lts; python_version >= "3.13"'
     ],
 
     extras_require={
@@ -60,4 +61,3 @@ setup(
 # $ python setup.py sdist
 # Then upload this to PyPi (have ~/.pypirc exist)
 # $ twine upload dist/*
-

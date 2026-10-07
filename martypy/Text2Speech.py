@@ -1,13 +1,9 @@
 import requests
-import json
-import time
-from urllib.parse import quote
-# from pydub import AudioSegment
-# from pydub.playback import play
+import locale
+import math
+import re
+from pydub import AudioSegment
 from io import BytesIO
-# from .Exceptions import (MartyConnectException,
-#                          MartyCommandException)
-import io
 
 
 # Voice IDs
@@ -70,9 +66,9 @@ VOICE_INFO =  {
     VOICES['KITTEN_ID']: {"name": {"id": "text2speech.kitten", "default": "kitten", "description": "A baby cat."},
                     "gender": "female", "playbackRate": 1.41, "pitch": 1.5},
     VOICES['GIANT_ID']: {"name": {"id": "text2speech.giant", "default": "giant", "description": "A giant."},
-                    "gender": "male", "playbackRate": 0.79, "pitch": 0.5},
+                    "gender": "male", "playbackRate": 0.7, "pitch": 0.5},
     VOICES['TENOR_ID']: {"name": {"id": "text2speech.tenor", "default": "tenor", "description": "A tenor."},
-                    "gender": "female", "playbackRate": 1.41, "pitch": 0.5},
+                    "gender": "male", "playbackRate": 1, "pitch": 0.5},
     VOICES['ALIEN_ID']: {"name": {"id": "text2speech.alien", "default": "alien", "description": "An alien."},
                     "gender": "female", "playbackRate": 0.79, "pitch": 1.5},
     VOICES['THUNDER_ID']: {"name": {"id": "text2speech.thunder", "default": "Thunder", "description": "Male voice with low pitch and playback rate."},
@@ -255,43 +251,102 @@ LANGUAGE_INFO = {
 
 class Text2Speech:
     def __init__(self):
-        self.SERVER_HOST = "https://synthesis-service.scratch.mit.edu"
+        self.SERVER_HOST = "https://appv2-analytics-server.robotical.io"
         self.voiceSpeed = 1
+        self.duration_ms = 0
 
-    def speak(self, words, voice, language="en"):
-        voice_id = voice.upper()
-        # if voice_id not in VOICES.values():
-        #     raise MartyCommandException(f"Voice must be one of {set(VOICES.values())}, not {voice_id}")
-        # if language not in LANGUAGES.values():
-        #     raise MartyCommandException(f"Language must be one of {set(LANGUAGES.values())}, not {language}")
+    @staticmethod
+    def normalise_voice(voice):
+        aliases = {"FEMALE": "ALTO", "MALE": "TENOR", "SQUEAK": "KITTEN", "CHIPMUNK": "KITTEN"}
+        voice_id = str(voice).upper()
+        try:
+            index = float(voice_id)
+            if math.isfinite(index):
+                menu = ("TENOR", "ALTO", "KITTEN", "ALIEN", "GIANT", "BOLT", "STARLIGHT", "WHIRLWIND")
+                voice_id = menu[(int(index) - 1) % len(menu)]
+        except ValueError:
+            pass
+        voice_id = aliases.get(voice_id, voice_id)
+        if voice_id not in VOICE_INFO:
+            raise ValueError("Unknown speech voice: {}".format(voice))
+        return voice_id
 
-        locale = self._get_speech_synth_locale(language)
+    @staticmethod
+    def validate_speed(speed):
+        value = float(speed)
+        if not math.isfinite(value) or not 0.1 <= value <= 2:
+            raise ValueError("Speech speed must be between 0.1 and 2")
+        return value
+
+    @staticmethod
+    def language_code(language):
+        value = str(language).strip().lower().replace("_", "-")
+        for code, info in LANGUAGE_INFO.items():
+            if value in (code, info["name"].lower(), info["speechSynthLocale"].lower()) or value in info["locales"]:
+                return code
+        # Translate supports more languages than speech synthesis.
+        if re.fullmatch(r"[a-z]{2,3}(?:-[a-z0-9]{2,4})?", value):
+            return value
+        raise ValueError("Unknown language: {}. Use a language code such as 'en'.".format(language))
+
+    def speak(self, words, voice="alto", language="en", speed=None):
+        voice_id = self.normalise_voice(voice)
+        language = self.language_code(language)
+        if language not in LANGUAGE_INFO:
+            raise ValueError("Unsupported speech language: {}".format(language))
+        locale_code = self._get_speech_synth_locale(language)
         gender = VOICE_INFO[voice_id]["gender"]
-        playback_rate = VOICE_INFO[voice_id]["playbackRate"] * self.voiceSpeed
-        pitch = VOICE_INFO[voice_id]["pitch"]
+        voice_speed = self.validate_speed(self.voiceSpeed if speed is None else speed)
+        playback_rate = VOICE_INFO[voice_id]["playbackRate"] * voice_speed
         
         # Special case for voices where the synthesis service only provides a
         # single gender voice. In that case, always request the female voice,
         # and set special playback rates for the tenor and giant voices.
         if LANGUAGE_INFO[language]['singleGender']: 
             gender = "female"
+            if voice_id == "TENOR":
+                playback_rate = 0.89 * voice_speed
+            elif voice_id == "GIANT":
+                playback_rate = 0.79 * voice_speed
 
         if voice_id == VOICES['KITTEN_ID']:
-            words = " ".join(["meow" for word in words.split(" ")])
-            locale = LANGUAGE_INFO["en"]["speechSynthLocale"]
+            words = " ".join("meow" for word in str(words).split())
+            locale_code = LANGUAGE_INFO["en"]["speechSynthLocale"]
         
-        path = f"{self.SERVER_HOST}/synth"
-        path += f"?locale={locale}"
-        path += f"&gender={gender}"
-        path += f"&text={quote(words[:128])}"    
-        # perform http request to get audio file
-        response = requests.get(path)
+        response = requests.get(self.SERVER_HOST + "/synth", params={
+            "locale": locale_code, "gender": gender, "text": str(words)[:128]
+        }, timeout=10)
         response.raise_for_status()
+        audio = AudioSegment.from_file(BytesIO(response.content), format="mp3")
+        if playback_rate != 1:
+            audio = audio._spawn(audio.raw_data, overrides={
+                "frame_rate": int(audio.frame_rate * playback_rate)
+            }).set_frame_rate(audio.frame_rate)
+        self.duration_ms = len(audio)
+        if playback_rate == 1:
+            return response.content
+        return audio.export(BytesIO(), format="mp3").getvalue()
 
-        # Return the MP3 bytes as-is. Previously this method appended the
-        # first bytes of the MP3 to the end to simulate a short silence, but
-        # that caused the start of the phrase to repeat briefly.
-        return response.content
+    def translate(self, words, language):
+        """Translate text using the same online service as Blocks. Requires internet."""
+        words = str(words)
+        if not words or words.isdigit():
+            return words
+        response = requests.get(self.SERVER_HOST + "/translate", params={
+            "language": self.language_code(language), "text": words
+        }, timeout=10)
+        response.raise_for_status()
+        result = response.json().get("result")
+        if not isinstance(result, str):
+            raise ValueError("Translation service returned an invalid result")
+        return result
+
+    @staticmethod
+    def get_language():
+        """Return the computer's language name (the editor language in Blocks)."""
+        language = (locale.getlocale()[0] or "en").replace("_", "-").lower()
+        info = LANGUAGE_INFO.get(language) or LANGUAGE_INFO.get(language.split("-")[0])
+        return info["name"] if info else language
 
     def _get_speech_synth_locale(self, language):
         if language in LANGUAGE_INFO:

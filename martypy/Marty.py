@@ -23,6 +23,7 @@ from .ClientMV1 import ClientMV1
 from .Exceptions import (MartyCommandException,
                          MartyConfigException)
 from .RICROSSerial import RICROSSerial
+from .Text2Speech import Text2Speech, LANGUAGE_INFO
 
 class Marty(object):
 
@@ -673,20 +674,71 @@ class Marty(object):
         '''
         return self.client.get_distance_sensor()
 
-    def speak(self, words: str = "hello", voice: str = "alto", blocking: Optional[bool] = False) -> bool:
+    def _get_speech_settings(self):
+        if not hasattr(self, "_speech_settings"):
+            self._speech_settings = {"voice": "ALTO", "language": "en", "speed": 1.0}
+        return self._speech_settings
+
+    def set_voice(self, voice: str):
+        """Set the voice for subsequent speech, e.g. 'FEMALE', 'MALE' or 'KITTEN'."""
+        self._get_speech_settings()["voice"] = Text2Speech.normalise_voice(voice)
+
+    def set_voice_speed(self, speed: float):
+        """Set subsequent speech speed (0.1 to 2; 1 is normal)."""
+        self._get_speech_settings()["speed"] = Text2Speech.validate_speed(speed)
+
+    def set_speech_language(self, language: str):
+        """Set the speech accent, using a code such as 'en' or 'fr'."""
+        code = Text2Speech.language_code(language)
+        if code not in LANGUAGE_INFO:
+            raise ValueError("Unsupported speech language: {}".format(language))
+        self._get_speech_settings()["language"] = code
+
+    def translate(self, words: str, language: str) -> str:
+        """Translate text online. No robot command is sent; internet is required."""
+        return Text2Speech().translate(words, language)
+
+    def get_language(self) -> str:
+        """Return the computer's language name (the editor language in Blocks)."""
+        return Text2Speech.get_language()
+
+    def speak_on_computer(self, words: str = "hello", voice: Optional[str] = None,
+                          language: Optional[str] = None, speed: Optional[float] = None) -> bool:
+        """Speak through the computer and wait. Requires internet and FFmpeg/ffplay."""
+        from io import BytesIO
+        from pydub import AudioSegment
+        from pydub.playback import play
+        settings = self._get_speech_settings()
+        audio = Text2Speech().speak(words, voice if voice is not None else settings["voice"],
+                                  language if language is not None else settings["language"],
+                                  speed if speed is not None else settings["speed"])
+        play(AudioSegment.from_file(BytesIO(audio), format="mp3"))
+        return True
+
+    def speak(self, words: str = "hello", voice: Optional[str] = None, blocking: Optional[bool] = False,
+              language: Optional[str] = None, speed: Optional[float] = None) -> bool:
         '''
         Make Marty speak :two:
         Args:
             words: what to say
-            voice: 'alto', 'tenor' or 'chipmunk' :two:
+            voice: voice name, or None to use set_voice :two:
             blocking: whether to wait for speech to finish before returning
+            language: accent code, or None to use set_speech_language
+            speed: rate from 0.1 to 2, or None to use set_voice_speed
         Returns:
             True if Marty accepted the request
         '''
-        result = self.client.speak(words, voice)
+        settings = self._get_speech_settings()
+        voice = settings["voice"] if voice is None else Text2Speech.normalise_voice(voice)
+        language = settings["language"] if language is None else language
+        speed = settings["speed"] if speed is None else speed
+        if isinstance(self.client, ClientMV2):
+            result = self.client.speak(words, voice, language=language, speed=speed)
+        else:
+            result = self.client.speak(words, voice)
         if result:
             if blocking:
-                self.client.wait_if_required(5000, blocking)
+                self.client.wait_if_required(getattr(self.client, "last_speech_duration_ms", 5000), blocking)
         return result
 
     def foot_on_ground(self, add_on_or_side: str) -> bool:

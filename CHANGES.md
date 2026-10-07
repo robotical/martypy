@@ -1,3 +1,11 @@
+Version 3.8.0 :
+- Add Translate and computer-language reporting APIs.
+- Add persistent speech voice, speed and accent settings, plus speech on the computer.
+- Use Robotical's online speech and translation services with request timeouts.
+- Apply speech playback rates, wait for the actual audio duration, and safely clean up temporary audio files.
+- Support audio processing on Python 3.13 and later with a conditional audioop compatibility dependency.
+- Desktop speech requires FFmpeg; computer playback also needs an audio player such as ffplay.
+
 Version 3.5.0 :
 - Add streaming sound support
 

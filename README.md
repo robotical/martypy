@@ -44,8 +44,31 @@ cur_path = pathlib.Path(__file__).parent.resolve()
 sys.path.append(str(cur_path.parent.resolve()))
 ```
 
+## Speak and Translate
+
+The Speak and Translate APIs use Robotical's online services and require an internet
+connection. Speech synthesis and changing playback speed require FFmpeg on the
+computer; `speak_on_computer` also needs a supported audio player (such as ffplay).
+
+```python
+my_marty.set_voice("FEMALE")        # Also MALE, KITTEN, ALIEN, GIANT, BOLT, STARLIGHT, WHIRLWIND
+my_marty.set_voice_speed(1.5)       # 0.1 to 2; 1 is normal speed
+my_marty.set_speech_language("fr") # Accent; does not translate the words
+words = my_marty.translate("Hello", "fr")
+my_marty.speak(words, blocking=True)  # Marty's speaker
+my_marty.speak_on_computer(words)     # Computer speaker; waits until finished
+print(my_marty.get_language())        # Computer language name
+```
+
+Speech settings persist until changed. Explicit `voice`, `language` and `speed`
+arguments to `speak`/`speak_on_computer` override them for that call. Translation
+returns text, not speech, and raises an error if its online request fails. In Blocks,
+the matching calls use the existing browser extensions, and `get_language` reports
+the editor's language instead of the computer's Python locale. Browser speech uses
+the browser audio system, so it does not require a local FFmpeg installation.
+
 ## Publishing
 
-- Update version: bump the version in `setup.py`.
+- Update version: keep `setup.py` and `martypy/__init__.py` in sync and update `CHANGES.md`.
 - Push changes: commit and push to GitHub.
 - Publish: in GitHub Actions, manually run the "Publish to PyPI" workflow.
